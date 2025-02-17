@@ -1,0 +1,89 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table member {
+  id integer [primary key]
+  unicore_id integer
+  email string
+  phone_num string 
+  superuser bool
+  is_staff bool
+  name string
+  ssn string
+  section_id integer [ref:> section.id]
+  registration_year string
+  status string
+
+}
+
+Table section {
+  id integer [primary key]
+  name_en string
+  name_sv string
+  abbreviation string
+  study_program string
+
+}
+
+Table application {
+  id integer [primary key]
+  position_id integer [ref:> position.id]
+  member_id integer [ref:> member.id]
+  status string
+  // removed bool
+  cover_letter string
+  qualifications string
+  gdpr bool
+  rejection_date integer
+
+}
+
+Table mandate_history {
+  position_id integer [ref:<> position.id]
+  member_id integer [ref:<> member.id]
+}
+
+Table position {
+  id integer [primary key]
+  role_id integer [ref:> role.id]
+  recruitment_start date
+  recruitment_end date
+  amount integer
+  term_from date
+  term_end date
+  comment_en string
+  comment_sv string
+}
+
+Table role{
+  id integer [primary key]
+  team_id integer [ref:> team.id]
+  role_type string
+  archived bool
+  name_en string
+  name_sv string
+  description_en string
+  description_sv string
+  contact_email string
+
+}
+
+Table team{
+  id integer [primary key]
+  name_en string
+  name_sv string
+  logo string
+  desc_en string
+  desc_sv string
+}
+
+Table reference{
+  id string [primary key]
+  application_id integer [ref:> application.id]
+  name string
+  phone_num string
+  title string
+  email string
+  comment string
+}
+
