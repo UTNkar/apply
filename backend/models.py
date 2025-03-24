@@ -411,6 +411,27 @@ class Application(models.Model):
         blank=True
     )
 
+    def get_application_title(self):
+        #TODO add role name string with either term start and term end or both.
+        pass
+
+    def get_term_duration(self):
+        pass
+
+    def get_role_description(self, link = False):
+        pass
+    
+    def get_team_of_role(self):
+        pass
+
+    def get_deadline(self):
+        pass
+
+    def get_position_comments(self):
+        pass
+
+    def get_member_information(self):
+        pass
 class Role(models.Model):
     """
     This class represents a role within a committee/working group of UTN
