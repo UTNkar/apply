@@ -1,0 +1,18 @@
+# async functionality
+asgiref==3.6.0
+
+# Websockets
+channels[daphne]==4.0.0
+channels_redis==4.1.0
+
+# Django
+Django[argon2]==4.1.7
+django-cors-headers==3.14.0
+django-filter==23.2
+djangorestframework==3.14.0
+
+# Handy config
+python-decouple==3.8
+
+psycopg2
+Pillow>=8.0.0
