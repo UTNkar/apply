@@ -19,3 +19,9 @@ docker-compose down  # Stoppar och tar bort containrar och nätverk
 
 # För att också ta bort volymer (t.ex. om du vill återställa databasen)
 docker-compose down --volumes  # Stoppar och tar bort containrar, nätverk och volymer
+
+
+# Efter du startat docker
+Efter du har startat docker så har du nu en databas (postgres) och en server som kör på port localhost:8000
+
+Nu behöver du bara gå in i frontend/apply och köra npm run dev
