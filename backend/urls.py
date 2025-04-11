@@ -17,11 +17,34 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PositionViewSet
+from .views import (
+    PositionViewSet,
+
+    # Authentication
+    LoginAPIView,
+    LogoutAPIView,  
+    SignupAPIView, 
+    EmailVerificationAPIView, 
+    ResendVerificationEmailAPIView,
+    InitiatePasswordResetViewAPIView, 
+    PasswordResetAPIView,
+    ChangePasswordAPIView,
+    ChangeEmailAPIView
+)
 
 router = DefaultRouter()
 
 router.register('positions', PositionViewSet)
+
+router.register('auth/login', LoginAPIView, basename='login')
+router.register('auth/logout', LogoutAPIView, basename='logout')
+router.register('auth/signup', SignupAPIView, basename='signup')
+router.register('auth/verify-email', EmailVerificationAPIView, basename='verify-email')
+router.register('auth/resend-verification-email', ResendVerificationEmailAPIView, basename='resend-verification-email')
+router.register('auth/password-reset', InitiatePasswordResetViewAPIView, basename='password-reset')
+router.register('auth/reset-password', PasswordResetAPIView, basename='reset-password')
+router.register('auth/change-password', ChangePasswordAPIView, basename='change-password')
+router.register('auth/change-email', ChangeEmailAPIView, basename='change-email')
 
 
 urlpatterns = [
