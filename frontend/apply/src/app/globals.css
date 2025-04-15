@@ -295,8 +295,10 @@ a:active, a:hover {
   font-family: var(--text);
   font-size: 14px;
   font-weight: bold;
-  background-color: var(--grey-300);
+  background-color: var(--grey-200);
   cursor: pointer;
+  transition: background-color .1s ease;
+
 }
 
 .smallButton{
@@ -308,9 +310,14 @@ a:active, a:hover {
   font-family: var(--text);
   font-size: 14px;
   font-weight: bold;
-  background-color: var(--grey-300);
+  background-color: var(--grey-200);
   cursor: pointer;
+  transition: background-color .1s ease;
 
+}
+
+.button:hover, .smallButton:hover{
+    background-color: var(--grey-300);
 }
 
 .activeButton{
