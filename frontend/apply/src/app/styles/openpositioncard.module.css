@@ -52,5 +52,6 @@
     padding: 30px;
     border-top: 3px solid var(--grey-200);
     opacity: 1;
+    max-height: 1000px;
   }
   
