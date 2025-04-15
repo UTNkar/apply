@@ -31,6 +31,8 @@ if DEBUG:
     ALLOWED_HOSTS = ["localhost"]
 
 
+AUTH_USER_MODEL = "backend.Member"
+
 # Application definition
 
 INSTALLED_APPS = [
