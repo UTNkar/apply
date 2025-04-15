@@ -411,6 +411,16 @@ class Application(models.Model):
         blank=True
     )
 
+    def filter_applications_by_team(team_id: int):
+        """
+        Filter applications by team ID.    
+        """
+        return  Application.objects.filter(
+    position__role__team=team_id
+    )
+
+    
+
 class Role(models.Model):
     """
     This class represents a role within a committee/working group of UTN
