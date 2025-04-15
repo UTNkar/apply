@@ -4,7 +4,6 @@ import styles from './page.module.css'
 import ApplicationCard from '@/components/ApplicationCard'
 import MyPositionCard from '@/components/MyPositionCard'
 import OpenPositionCard from './components/OpenPositionCard'
-import { group } from 'console'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('Open Positions') 
