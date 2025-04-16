@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 #Taken from moore
 class SSNValidator(validators.RegexValidator):
-    century = r'[1-2][0|9]'  # YY-- Only allows 19-- and 20--
+    century = r'19|20'  # YY-- Only allows 19-- and 20--
     decade = r'[0-9]{2}'  # --YY
     month = r'[0-1][0-9]'
     day = r'[0-3][0-9]'
