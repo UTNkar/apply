@@ -411,15 +411,16 @@ class Application(models.Model):
         blank=True
     )
 
-    def filter_applications_by_team(team_id: int):
+    @classmethod
+    def filter_applications_by_team(cls, team_id: int):
         """
-        Filter applications by team ID.    
+        Return distinct applications for positions in the given team.
         """
-        return  Application.objects.filter(
-    position__role__team=team_id
-    )
-
-    
+        return (
+            cls.objects
+               .filter(position__role__team_id=team_id)
+               .distinct()
+        )
 
 class Role(models.Model):
     """
