@@ -14,7 +14,7 @@ services:
 
   backend:
     build:
-      context: .  
+      context: ./backend  
       dockerfile: backend.Dockerfile  
     container_name: django_backend
     depends_on:
