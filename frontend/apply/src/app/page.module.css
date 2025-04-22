@@ -1,0 +1,21 @@
+.buttonsContainer{
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+
+.myApplicationsContainer, .myPositionsContainer{
+    padding: 50px 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.openPositionsContainer{
+    padding: 50px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}

@@ -1,0 +1,326 @@
+@import url('https://fonts.googleapis.com/css2?family=Domine:wght@400..700&family=Inconsolata:wght@200..900&family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp');
+
+:root {
+  --text: Outfit, sans-serif;
+  --text-primary: #212427;
+  --desktop-text-width: 60ch;
+  --mobile-text-width: 40ch;
+  --text-paragraph: Domine, sans-serif;
+  --text-accent: #004c98;
+  --text-secondary: #5c5c5c;
+  --icon: "Material Symbols Sharp", sans-serif;
+  --button-corner-radius: 6px;
+  --blue-100: #dbebff;
+  --blue-300: #b8d8ff;
+  --grey-200: #eee;
+  --grey-300: #e0e0e0;
+  --white: white;
+  --blue-500: #00459a;
+  --grey-100: whitesmoke;
+  --image-corner-radius: 6px;
+  --white-subdued: #e0e0e0;
+  --paper-border-radius: 6px;
+  --form-field-border-radius: 6px;
+  --teal-500: #e6e200;
+  --error-500: #e62525;
+  --black: black;
+  --grey-50: #fafafa;
+  --grey-400: #bdbdbd;
+  --grey-600: #757575;
+  --grey-900: #212121;
+  --grey-500: #9e9e9e;
+  --grey-700: #616161;
+  --grey-800: #424242;
+  --orange-100: #ffe5df;
+  --orange-700: #b35012;
+  --blue-900: #024;
+  --orange-300: #ffc4a1;
+  --blue-700: #003374;
+  --orange-500: #e56617;
+  --orange-900: #802f0e;
+  --teal-100: #ccf2f0;
+  --teal-300: white;
+  --teal-900: #045356;
+  --teal-700: #067378;
+  --text-code: Inconsolata, monospace;
+  --heading-decoration: #00000021;
+  --heading-decoration-over_dark: #fff6;
+  --notice-background-yellow: #ffc80042;
+  --white-2: white;
+  --black-2: black;
+}
+
+
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+
+body {
+  font-family: var(--text);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+}
+
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+
+
+
+
+section {
+    box-sizing: border-box;
+    display: block;
+    unicode-bidi: isolate;
+}
+
+div {
+    display: block;
+    unicode-bidi: isolate;
+    margin: 0;
+}
+
+img {
+    border: 0;
+    vertical-align: middle;
+    max-width: 100%;
+    display: inline-block;
+    max-width: 100%;
+    display: inline-block;
+}
+
+h1:not(.without_decoration), h2:not(.without_decoration), h3:not(.without_decoration), h4:not(.without_decoration), h5:not(.without_decoration), h6:not(.without_decoration) {
+    margin-bottom: 0;
+}
+
+
+
+h1 {
+    max-width: var(--desktop-text-width);
+    margin-top: 0;
+    margin-bottom: .75em;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 48px;
+}
+
+h2 {
+    max-width: var(--desktop-text-width);
+    margin-top: 1.25em;
+    margin-bottom: .5em;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 30px;
+}
+
+h3 {
+    font-family: var(--text);
+    max-width: var(--desktop-text-width);
+    padding-top: 0;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 26px;
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    unicode-bidi: isolate;
+}
+
+h4 {
+    font-family: var(--text);
+    max-width: var(--desktop-text-width);
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 24px;
+    display: block;
+    margin-block-start: 1.33em;
+    margin-block-end: 1.33em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    unicode-bidi: isolate;
+}
+
+h5 {
+    max-width: var(--desktop-text-width);
+    margin-top: 1.25em;
+    margin-bottom: .75em;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 22px;
+}
+
+h6 {
+    max-width: var(--desktop-text-width);
+    margin-top: 1.5em;
+    margin-bottom: .75em;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 19px;
+}
+
+/* This works for the gray lines under the headings */
+h1:not(.without_decoration):after, h2:not(.without_decoration):after, h3:not(.without_decoration):after,  h5:not(.without_decoration):after, h6:not(.without_decoration):after {
+    height: 0.3ch;
+    margin-top: 0.75em;
+    margin-bottom: 1em;
+    width: 3.71875em;
+    min-height: 3px;
+    content: "";
+    background-color: var(--heading-decoration, rgba(0, 0, 0, 0.1));
+    display: block;
+}
+
+
+
+
+p {
+    max-width: var(--desktop-text-width);
+    font-family: var(--text-paragraph);
+    text-align: left;
+    margin-top: .5em;
+    margin-bottom: .75em;
+    font-weight: 400;
+    line-height: 26px;
+    display: block;
+    unicode-bidi: isolate;
+}
+
+a:-webkit-any-link {
+    color: -webkit-link;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+a:-webkit-any-link:active {
+    color: -webkit-activelink;
+}
+
+a:-webkit-any-link:focus-visible {
+    outline-offset: 1px;
+}
+
+a {
+    font-family: var(--text);
+    color: var(--text-accent) !important;
+    font-weight: 500 ;
+    text-decoration: none !important;
+    background-color: #0000;
+}
+
+a:active, a:hover {
+    outline: 0;
+    cursor: pointer;
+}
+
+.without_spacing {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.pageContainer {
+    padding: 0px 50px 20px 50px !important;
+}
+
+
+/*put over_dark on parent elements*/
+.over_dark {
+    color: var(--white);
+    position: relative;
+}
+
+.over_dark h1::after, .over_dark h2::after, .over_dark h3::after, .over_dark h4::after, .over_dark h5::after, .over_dark h6::after {
+    background-color: var(--heading-decoration-over_dark, rgba(255, 255, 255, 0.4));
+}
+
+
+@media screen and (max-width: 991px) {
+    h3 {
+        font-weight:600;
+    }
+
+    .section {
+        margin-top: 4em;
+    }
+
+    .spacer.less {
+        margin-top: .5em;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    h1 {
+        max-width:var(--mobile-text-width);
+    }
+
+    h2 {
+        max-width: 35ch;
+    }
+
+    h3 {
+        max-width: var(--mobile-text-width);
+    }
+
+    h4 {
+        max-width: 50ch;
+    }
+
+    h5,h6,p,li,blockquote,figcaption {
+        max-width: var(--mobile-text-width);
+    }
+}
+
+@media screen and (max-width: 479px) {
+}
+
+
+
+.button{
+  border: none;
+  height: 40px;
+  width: 200px;
+  border-radius: var(--button-corner-radius);
+  font-family: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+  background-color: var(--grey-200);
+  cursor: pointer;
+  transition: background-color .1s ease;
+
+}
+
+.smallButton{
+  border: none;
+  height: 35px;
+  min-width: 100px;
+  padding: 0 30px;
+  border-radius: var(--button-corner-radius);
+  font-family: var(--text);
+  font-size: 14px;
+  font-weight: bold;
+  background-color: var(--grey-200);
+  cursor: pointer;
+  transition: background-color .1s ease;
+
+}
+
+.button:hover, .smallButton:hover{
+    background-color: var(--grey-300);
+}
+
+.activeButton{
+  background-color: var(--blue-100);
+  color: var(--text-accent);
+}

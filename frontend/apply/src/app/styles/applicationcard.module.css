@@ -1,0 +1,19 @@
+.card {
+    border-radius: var(--paper-border-radius);
+    height: 310px;
+    width: 350px;
+    border: 2px solid var(--grey-200);
+    padding: 10px 30px 30px 30px;
+}
+
+.cardHeading {
+    max-width: 160px;
+    min-height: 70px;
+    max-height: 70px;
+}
+
+.cardButton {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+}

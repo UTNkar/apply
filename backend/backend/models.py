@@ -1,8 +1,12 @@
 from django.db import models
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import UserManager
+#from django.contrib.auth.models import UserManager
 from django.core import validators
+#from django.contrib.auth.models import (
+#    AbstractBaseUser, UserManager, PermissionsMixin
+#)
+from .utils.validators import SSNValidator
 
 # from wagtail.admin.edit_handlers import MultiFieldPanel, FieldPanel, \
 #     FieldRowPanel
@@ -101,7 +105,27 @@ class Member(models.Model):
         blank=False,
         default='unknown'
     )
-    
+
+    @staticmethod
+    def find_user_by_ssn(ssn):
+        """
+        Checks if a user exists in our db
+        """
+        ssn = ssn.strip()
+
+        if SSNValidator()(ssn) is False:
+            raise ValueError(_('Invalid SSN format'))
+        
+        else:
+            try:
+                user = Member.objects.filter(ssn=ssn).first()
+                if user is not None:
+                    return user
+            except Exception:
+                pass
+
+            return None
+             
     
 class Position(models.Model):
     """
