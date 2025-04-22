@@ -31,6 +31,8 @@ class LoginAPIView(APIView):
     It verifies that users have confirmed their email and that their account is active
     before granting login access.
 
+    DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING
+
     Methods
     -------
         post(request)
@@ -127,7 +129,6 @@ class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # request.user.auth_token.delete()
         logout(request)
         return Response({
             'message': 'Logout successful'
