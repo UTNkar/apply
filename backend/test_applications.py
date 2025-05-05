@@ -1,154 +1,108 @@
 from django.test import TestCase
-from .models import Member, Application, Position, Role, Team, MandateHistory
+from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework import status
+from rest_framework.exceptions import NotFound
+from django.contrib.auth.models import User
 
-class ApplicationFilteringTests(TestCase):
-    
+from .views import ApplicationViewSet
+from .models import Team, Role, MandateHistory, Position, Member, Application
+
+
+class ApplicationViewSetTests(TestCase):
+
     def setUp(self):
-        """Set up test data for the application filtering tests"""
-        # Create teams
-        self.team1 = Team.objects.create(
-            name_en="IT Committee",
-            name_sv="IT-utskottet",
-            desc_en="IT Committee description",
-            desc_sv="IT-utskottet beskrivning"
+        self.factory = APIRequestFactory()
+        # create an admin user (IsAdminUser permission)
+        self.admin = User.objects.create_user(
+            username="admin", password="pass", is_staff=True, is_superuser=True
         )
-        
-        self.team2 = Team.objects.create(
-            name_en="PR Committee", 
-            name_sv="PR-utskottet",
-            desc_en="PR Committee description",
-            desc_sv="PR-utskottet beskrivning"
+
+        # create one team + related objects + two application
+        self.team = Team.objects.create(
+            name_en="Digitaliseringsgruppen",
+            name_sv="Digitaliseringsgruppen",
+            desc_en="desc",
+            desc_sv="beskrivning",
         )
-        
-        # Create roles
-        self.role1 = Role.objects.create(
-            team=self.team1,
+        self.role = Role.objects.create(
+            team=self.team,
             role_type="involved",
-            title_en="Developer",
+            title_en="Dev",
             title_sv="Utvecklare",
-            description_en="Developer role",
-            description_sv="Utvecklarroll",
-            contact_email="dev@example.com"
+            description_en="-",
+            description_sv="-",
+            contact_email="dev@example.com",
         )
-        
-        self.role2 = Role.objects.create(
-            team=self.team2,
-            role_type="involved",
-            title_en="Designer",
-            title_sv="Designer",
-            description_en="Designer role",
-            description_sv="Designroll",
-            contact_email="design@example.com"
-        )
-        
-        # Create mandate history
-        self.mandate_history = MandateHistory.objects.create()
-        
-        # Create positions
-        self.position1 = Position.objects.create(
-            role=self.role1,
+        self.mandate = MandateHistory.objects.create()
+        self.position = Position.objects.create(
+            role=self.role,
             recruitment_start="2025-01-01",
             recruitment_end="2025-02-01",
             appointed=1,
             term_from="2025-03-01",
-            term_end="2026-03-01"
+            term_end="2026-03-01",
         )
-        self.position1.mandate_history.add(self.mandate_history)
-        
-        self.position2 = Position.objects.create(
-            role=self.role2,
-            recruitment_start="2025-01-01",
-            recruitment_end="2025-02-01",
-            appointed=1,
-            term_from="2025-03-01",
-            term_end="2026-03-01"
-        )
-        self.position2.mandate_history.add(self.mandate_history)
-        
-        # Create members
+        self.position.mandate_history.add(self.mandate)
         self.member1 = Member.objects.create(
             name="John Doe",
             email="john@example.com",
-            phone_number="123456789",
-            ssn="199001011234",
+            phone_number="123",
+            ssn="19900101",
             is_superuser=False,
             is_staff=False,
-            status="member"
+            status="member",
         )
-        
         self.member2 = Member.objects.create(
-            name="Jane Smith",
-            email="jane@example.com",
-            phone_number="987654321",
-            ssn="199201021234",
+            name="Billy Bob",
+            email="billybob@example.com",
+            phone_number="123",
+            ssn="20000101",
             is_superuser=False,
             is_staff=False,
-            status="member"
+            status="member",
         )
-        
-        # Create applications
         self.application1 = Application.objects.create(
-            position=self.position1,
+            position=self.position,
             member=self.member1,
             status="submitted",
-            cover_letter="Cover letter for IT position",
-            qualifications="IT qualifications",
-            gdpr=True
+            cover_letter="hi",
+            qualifications="none",
+            gdpr=True,
         )
-        
         self.application2 = Application.objects.create(
-            position=self.position2,
+            position=self.position,
             member=self.member2,
             status="submitted",
-            cover_letter="Cover letter for PR position",
-            qualifications="PR qualifications",
-            gdpr=True
+            cover_letter="hi",
+            qualifications="none",
+            gdpr=True,
         )
-        
-    def test_filter_applications_by_team_returns_correct_members(self):
-        """Test that filter_applications_by_team returns members who applied to positions in the specified team"""
-        # Get members who applied for team1 positions
-        applications = Application.filter_applications_by_team(self.team1.id)
-        
-        # Check that only member1 is returned
-        self.assertEqual(applications.count(), 1)
-        self.assertEqual(applications.first().member, self.member1)
-    
-    def test_filter_applications_by_team_returns_empty_for_nonexistent_team(self):
-        """Test that filter_applications_by_team returns an empty queryset for a nonexistent team ID"""
-        nonexistent_team_id = 999
-        applications = Application.filter_applications_by_team(nonexistent_team_id)
-        
-        self.assertEqual(applications.count(), 0)
 
-    def test_filter_applications_by_team_handles_members_with_multiple_applications(self):
-        """Test that filter_applications_by_team correctly handles members with multiple applications"""
-        # Create another position in team1
-        position3 = Position.objects.create(
-            role=self.role1,
-            recruitment_start="2025-04-01",
-            recruitment_end="2025-05-01", 
-            appointed=1,
-            term_from="2025-06-01",
-            term_end="2026-06-01"
-        )
-        position3.mandate_history.add(self.mandate_history)
-        
-        # Make member2 apply for this position too
-        Application.objects.create(
-            position=position3,
-            member=self.member2,
-            status="submitted",
-            cover_letter="Another application",
-            qualifications="More qualifications",
-            gdpr=True
-        )
-        
-        # Now member2 has applied for positions in both teams
-        application = Application.filter_applications_by_team(self.team1.id)
-        
-        # Should now include both members, but without duplicates
-        self.assertEqual(application.count(), 2)
-        self.assertEqual(self.member1, application.first().member)        
-        self.assertEqual(self.member2, application.last().member)
+    def test_list_returns_apps_for_valid_team(self):
+        request = self.factory.get("/api/applications/")
+        force_authenticate(request, user=self.admin)
 
+        view = ApplicationViewSet.as_view({"get": "list"})
+        response = view(request, team_name="Digitaliseringsgruppen")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # should be a list with one element
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(len(response.data), 2)
+
+        # payload should include the nested member
+        item1 = response.data[0]
+        item2 = response.data[1]
+        self.assertIn("member", item1)
+        self.assertEqual(item1["member"]["name"], "John Doe")
+        self.assertEqual(item2["member"]["name"], "Billy Bob")
+
+    def test_list_raises_404_for_invalid_team(self):
+        request = self.factory.get("/api/applications/")
+        force_authenticate(request, user=self.admin)
+
+        view = ApplicationViewSet.as_view({"get": "list"})
+
+        response = view(request, team_name="unknown")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("Invalid team name 'unknown'", response.data.get("detail", ""))

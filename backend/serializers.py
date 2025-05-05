@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import Position, Role, Team
+from .models import Position, Role, Team, Application, Member
+
+class MemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Member
+        fields = ['id', 'name', 'email', 'status'] # Add other relevant fields if needed
+        read_only_fields = ['id', 'status'] # Assuming status is determined by logic, not direct input
 
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,3 +64,13 @@ class PositionSerializer(serializers.ModelSerializer):
         ]
 
         read_only_fields = ['id']
+
+class ApplicationSerializer(serializers.ModelSerializer):
+    # Only include member details as requested
+    member = MemberSerializer(read_only=True) 
+
+    class Meta:
+        model = Application
+        # Only include the member field in the output
+        fields = ['id', 'member'] 
+        read_only_fields = ['id', 'member']
