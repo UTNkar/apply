@@ -24,5 +24,5 @@ router = DefaultRouter()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(backend.urls)),  # Include the URLs from the backend app
+    path('', include('backend.urls')),  # Include the URLs from the backend app
 ]
