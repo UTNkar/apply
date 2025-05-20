@@ -1,14 +1,58 @@
+import uuid
+
 from django.db import models
 from datetime import date
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import UserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.core import validators
+#from django.contrib.auth.models import (
+#    AbstractBaseUser, UserManager, PermissionsMixin
+#)
+from .utils.validators import SSNValidator
 
 # from wagtail.admin.edit_handlers import MultiFieldPanel, FieldPanel, \
 #     FieldRowPanel
 
+class MemberManager(BaseUserManager):
+    """
+    Custom manager for Member model.
+    Required as we are using ssn as the username instead of a username.
+    
+    Methods
+    -------
+    create_user(email, password=None, **extra_fields)
+        Creates and returns a user with an email, password and other fields.
+    create_superuser(email, password=None, **extra_fields)
+        Creates and returns a superuser with an email, password and other fields.
+    """
 
-class Member(models.Model):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            **extra_fields
+        )
+
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        user = self.model(
+            email=self.normalize_email(email),
+            is_staff=True,
+            is_superuser=True,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+
+        return user
+
+
+class Member(AbstractBaseUser, PermissionsMixin):
     """
     TODO NOT DONE
     Represents a member in the system.
@@ -24,6 +68,18 @@ class Member(models.Model):
         registration_year (CharField): The year the member started studying at the TekNat faculty.
         status (CharField): The membership status of the member, with choices including 'unknown', 'nonmember', 'member', and 'alumnus'.
     """
+
+    USERNAME_FIELD = 'ssn'
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = [] # TODO: add more fields, maybe
+
+    objects = MemberManager()
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     
     unicore_id = models.IntegerField(
         blank=True,
@@ -40,6 +96,8 @@ class Member(models.Model):
         verbose_name=_('Email'),
         help_text=_('Enter an email address that you want to connect to this account.')
     )
+
+    verified_email = models.BooleanField(default=False)
     
     phone_number = models.CharField(
         max_length=20,
@@ -57,6 +115,14 @@ class Member(models.Model):
         help_text=_('Designates whether the user can log into the admin site.'),
     )
 
+    # Required by AbstractBaseUser
+    is_active = models.BooleanField(
+        _('Active'),
+        default=True,
+        help_text=_('Designates whether this user should be treated as active. '
+                    'Unselect this instead of deleting accounts.'),
+    )
+
     name = models.CharField(
         max_length=254,
         verbose_name=_('Name'),
@@ -64,6 +130,7 @@ class Member(models.Model):
 
     ssn = models.CharField(
         max_length=13,
+        unique=True,
         verbose_name=_('Social security number'),
     )
 
@@ -101,7 +168,47 @@ class Member(models.Model):
         blank=False,
         default='unknown'
     )
-    
+
+    def has_perm(self, perm, obj=None):
+        if not self.verified_email:
+            return False
+
+        # Lets superusers and staff do anything
+        if self.is_superuser or self.is_staff:
+            return True
+        
+        return super().has_perm(perm, obj)
+
+    def has_module_perms(self, app_label):
+        if not self.verified_email:
+            return False
+
+        # Lets superusers and staff do anything
+        if self.is_superuser or self.is_staff:
+            return True
+        
+        return super().has_module_perms(app_label)
+
+    @staticmethod
+    def find_user_by_ssn(ssn):
+        """
+        Checks if a user exists in our db
+        """
+        ssn = ssn.strip()
+
+        if SSNValidator()(ssn) is False:
+            raise ValueError(_('Invalid SSN format'))
+        
+        else:
+            try:
+                user = Member.objects.filter(ssn=ssn).first()
+                if user is not None:
+                    return user
+            except Exception:
+                pass
+
+            return None
+             
     
 class Position(models.Model):
     """

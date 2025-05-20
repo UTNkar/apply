@@ -1,0 +1,62 @@
+.navbar{
+    height: 100px;
+    border-bottom: 2px solid rgb(239, 239, 239);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0px 50px;
+    justify-content: space-between;
+}
+
+.navbarItems{
+    display: flex;
+    flex-direction: row;
+    gap: 35px;
+}
+
+.navLink {
+    display: flex;
+    align-items: center;
+    position: relative;
+    text-decoration: none;
+  }
+  
+  .navLink::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background-color: var(--text-accent);
+    transition: width 0.3s ease;
+  }
+  
+  .navLink:hover::after,
+  .activeNavLink::after {
+    width: 100%;
+  }
+  
+
+  
+.langBtns{
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.svLang, .engLang{
+    padding: 5px;
+    border: none;
+    border-radius: 0;
+}
+
+.svLang{
+    border-right: 1px solid var(--grey-300);
+}
+
+.activeBtn{
+    background-color: var(--blue-100);
+    color: var(--text-accent);
+}

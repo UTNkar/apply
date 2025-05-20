@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # copy the whole project (including manage.py in the root dir)
 COPY . .
 
+# switch to backend directory
+WORKDIR /app/backend
+
 # expose port 8000 for Django
 EXPOSE 8000
 
