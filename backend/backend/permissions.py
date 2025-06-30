@@ -11,7 +11,7 @@ class CanCreatePosition(BasePermission):
 
     """
     Custom permission to check if a user can create a position.
-    This permission checks if the user has a high enough role 
+    This permission checks if the user currently has a high enough role 
     to create a position of the requested role
     """
     def has_permission(self, request, view):
