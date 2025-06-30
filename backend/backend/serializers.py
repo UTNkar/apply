@@ -98,3 +98,18 @@ class PositionSerializer(ModelSerializer):
         ]
 
         read_only_fields = ['id']
+
+
+class CreatePositionSerializer(ModelSerializer):
+    class Meta:
+        model = Position
+        fields = [
+            'role', 
+            'recruitment_start', 
+            'recruitment_end',
+            'appointed', 
+            'term_from', 
+            'term_end',
+            'comment_eng', 
+            'comment_sv'
+        ]

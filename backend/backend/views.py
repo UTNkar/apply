@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Position
-from .serializers import PositionSerializer, MemberSerializer
+from .serializers import PositionSerializer, MemberSerializer, CreatePositionSerializer
 from .email import send_password_reset_email, send_verification_email
+from .permissions import CanCreatePosition
 
 # Create your views here.
 
@@ -375,3 +376,33 @@ class ChangeEmailAPIView(APIView):
         }, status=400)
 
 #### END OF AUTHENTICATION VIEWS ####
+
+class CreatePositionAPIView(APIView):
+    """
+    CreatePositionAPIView handles creating new positions.
+    Only authenticated users with appropriate permissions can create positions.
+    
+    Methods
+    -------
+        post(request)
+            Process position creation requests and return appropriate responses.
+            
+    Returns
+    -------
+        Responds with HTTP 201
+            When position is created successfully.
+        Responds with HTTP 400
+            When provided data is invalid.
+    """
+    permission_classes = [IsAuthenticated, CanCreatePosition]
+
+    def post(self, request):
+        serializer = CreatePositionSerializer(data=request.data)
+        if serializer.is_valid():
+            position = serializer.save()
+            return Response({
+                'message': 'Position created successfully',
+                'position': PositionSerializer(position).data
+            }, status=201)
+        
+        return Response(serializer.errors, status=400)

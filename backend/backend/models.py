@@ -555,6 +555,32 @@ class Role(models.Model):
         null=False,
     )
 
+    @staticmethod
+    def role_type_to_level(role_type):
+        """
+        Converts the role type to a level.
+        0 = admin
+        1 = fum
+        2 = board
+        3 = presidium
+        4 = group_leader
+        5 = involved
+        6 = not in the list
+        """
+
+        # Map of role types to levels
+        role_levels = {
+            'admin': 0,
+            'fum': 1,
+            'board': 2,
+            'presidium': 3,
+            'group_leader': 4,
+            'involved': 5
+        }
+
+        # Return the corresponding level or 6 if the role_type is not in the dictionary
+        return role_levels.get(role_type, 6)
+
     archived = models.BooleanField(
         verbose_name=_('Archived'),
         help_text=_('Hide the role from menus'),
