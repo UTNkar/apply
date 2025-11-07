@@ -3,25 +3,23 @@ System for applying for positions within UTN
 
 
 
-
-
 ## Docker
-Notera att du måste ha .env filen i root mappen för att allt ska fungera!
+Note that you must have the .env file in the root folder for everything to work!
 
-# För att starta Docker
-docker-compose up --build  # Bygger och startar alla tjänster
+# To start docker
+docker-compose up --build  # Builds and starts all services
 
-# För att starta om Docker
-docker-compose restart  # Startar om alla tjänster
+# To restart docker
+docker-compose restart  # Restarts all services
 
-# För att stoppa och ta bort Docker-containrar
+# To stop and remove Docker-containers
 docker-compose down  # Stoppar och tar bort containrar och nätverk
 
-# För att också ta bort volymer (t.ex. om du vill återställa databasen)
+# To stop and remove Docker containers and volumes (if you want to reset the database for example)
 docker-compose down --volumes  # Stoppar och tar bort containrar, nätverk och volymer
 
 
-# Efter du startat docker
-Efter du har startat docker så har du nu en databas (postgres) och en server som kör på port localhost:8000
+# After you have started docker
+After you have started docker you will have a database (postgres) and a server that runs on localhost:8000
 
-Nu behöver du bara gå in i frontend/apply och köra npm run dev
+Now you can cd into frontend/apply and run npm run dev
