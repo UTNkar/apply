@@ -48,7 +48,3 @@ Thumbs.db
 
 # Logs
 *.log
-
-# Misc
-docker-compose.yml
-*.md
