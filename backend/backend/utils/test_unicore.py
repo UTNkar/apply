@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from unicore import unicoremember
+from backend.utils.unicore import unicoremember
 
 class TestUnicoremember(unittest.TestCase):
 
-    @patch('unicore.requests.get')
+    @patch('backend.utils.unicore.requests.get')
     def test_get_user_data_with_medlemsnr(self, mock_get):
         # Test get_user_data when 'Personnr' is None and fallback to 'Medlemsnr'
         fake_response = MagicMock()
@@ -36,7 +36,7 @@ class TestUnicoremember(unittest.TestCase):
         }
         self.assertEqual(data, expected)
 
-    @patch('unicore.requests.get')
+    @patch('backend.utils.unicore.requests.get')
     def test_get_user_data_status_not_200(self, mock_get):
         # Test get_user_data when the response status is not 200
         fake_response = MagicMock()
@@ -52,7 +52,7 @@ class TestUnicoremember(unittest.TestCase):
 
         self.assertIsNone(data)
 
-    @patch('unicore.requests.get')
+    @patch('backend.utils.unicore.requests.get')
     def test_is_member_true(self, mock_get):
         # Test is_member returning True when response.Member is True
         fake_response = MagicMock()
@@ -69,7 +69,7 @@ class TestUnicoremember(unittest.TestCase):
 
         self.assertTrue(result)
 
-    @patch('unicore.requests.get')
+    @patch('backend.utils.unicore.requests.get')
     def test_is_member_false_response(self, mock_get):
         # Test is_member returning False when response status is not 200
         fake_response = MagicMock()

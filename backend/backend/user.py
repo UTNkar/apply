@@ -1,5 +1,5 @@
 from .models import Member
-from utils.unicore import unicoremember
+from backend.utils.unicore import unicoremember
 
 
 """
