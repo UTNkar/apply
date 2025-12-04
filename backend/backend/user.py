@@ -1,6 +1,6 @@
-from .models import Member
 from backend.utils.unicore import unicoremember
 
+from .models import Member
 
 """
 Creates a user
@@ -16,18 +16,28 @@ Attributes:
     password: The password of the user
 """
 
-def _create_user(email, phone_number, is_superuser, is_staff, 
-                name, ssn, study_program, registrasion_year, password):
-    
+
+def _create_user(
+    email,
+    phone_number,
+    is_superuser,
+    is_staff,
+    name,
+    ssn,
+    study_program,
+    registrasion_year,
+    password,
+):
+
     user = Member.objects.create(
-        email= email,
-        phone_number= phone_number,
-        is_superuser= is_superuser,
-        is_staff= is_staff,
-        name= name,
-        ssn= ssn,
-        study_program= study_program,
-        registration_year= registrasion_year
+        email=email,
+        phone_number=phone_number,
+        is_superuser=is_superuser,
+        is_staff=is_staff,
+        name=name,
+        ssn=ssn,
+        study_program=study_program,
+        registration_year=registrasion_year,
     )
     user.set_password(password)
     user.save()
@@ -47,66 +57,97 @@ Attributes:
     is_staff: If the user is staff
     name: The name of the user (optional)
 """
-def create_user(ssn, study_program, registrasion_year, password, 
-                email=None, phone_number=None, is_superuser=False, is_staff=False, name=None):
-    
+
+
+def create_user(
+    ssn,
+    study_program,
+    registrasion_year,
+    password,
+    email=None,
+    phone_number=None,
+    is_superuser=False,
+    is_staff=False,
+    name=None,
+):
+
     data = unicoremember.get_user_data(ssn)
-   
-    #TODO lägg till try catch?
+
+    # TODO lägg till try catch?
     if data is not None:
-        name = "{} {}".format(
-            data['firstname'].strip(),
-            data['lastname'].strip()
-            )
-        
-        #TODO lägg till status när vi listat ut de
+        name = "{} {}".format(data["firstname"].strip(), data["lastname"].strip())
+
+        # TODO lägg till status när vi listat ut de
         user = _create_user(
-            unicore_id= data['unicore_id'].strip(),
-            email= data['email'].strip(),
-            phone_number= data['phone_number'].strip(),
-            is_superuser= False,
-            is_staff= False,
-            name= name,
-            ssn= data['ssn'].strip(),
-            study_program= study_program,
-            registration_year= registrasion_year  
+            unicore_id=data["unicore_id"].strip(),
+            email=data["email"].strip(),
+            phone_number=data["phone_number"].strip(),
+            is_superuser=False,
+            is_staff=False,
+            name=name,
+            ssn=data["ssn"].strip(),
+            study_program=study_program,
+            registration_year=registrasion_year,
         )
 
     else:
-        user = _create_user(email, phone_number, is_superuser, is_staff, 
-                name, ssn, study_program, registrasion_year, password)
-
+        user = _create_user(
+            email,
+            phone_number,
+            is_superuser,
+            is_staff,
+            name,
+            ssn,
+            study_program,
+            registrasion_year,
+            password,
+        )
 
     return user
 
-def create_super_user(ssn, study_program, registrasion_year, password, 
-                email=None, phone_number=None, is_superuser=True, is_staff=True, name=None):
+
+def create_super_user(
+    ssn,
+    study_program,
+    registrasion_year,
+    password,
+    email=None,
+    phone_number=None,
+    is_superuser=True,
+    is_staff=True,
+    name=None,
+):
     data = unicoremember.get_user_data(ssn)
-   
-    #TODO lägg till try catch?
+
+    # TODO lägg till try catch?
     if data is not None:
 
-        name = "{} {}".format(
-            data['firstname'].strip(),
-            data['lastname'].strip()
-            )
-        
-        #TODO lägg till status när vi listat ut de
+        name = "{} {}".format(data["firstname"].strip(), data["lastname"].strip())
+
+        # TODO lägg till status när vi listat ut de
         user = _create_user(
-            unicore_id= data['unicore_id'].strip(),
-            email= data['email'].strip(),
-            phone_number= data['phone_number'].strip(),
-            is_superuser= False,
-            is_staff= False,
-            name= name,
-            ssn= data['ssn'].strip(),
-            study_program= study_program,
-            registration_year= registrasion_year  
+            unicore_id=data["unicore_id"].strip(),
+            email=data["email"].strip(),
+            phone_number=data["phone_number"].strip(),
+            is_superuser=False,
+            is_staff=False,
+            name=name,
+            ssn=data["ssn"].strip(),
+            study_program=study_program,
+            registration_year=registrasion_year,
         )
 
     else:
-        user = _create_user(email, phone_number, is_superuser, is_staff, 
-                name, ssn, study_program, registrasion_year, password)
+        user = _create_user(
+            email,
+            phone_number,
+            is_superuser,
+            is_staff,
+            name,
+            ssn,
+            study_program,
+            registrasion_year,
+            password,
+        )
 
     return user
-

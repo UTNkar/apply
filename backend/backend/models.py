@@ -1,8 +1,11 @@
 import uuid
 from datetime import date
 
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
-                                        PermissionsMixin)
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.core import validators
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -31,12 +34,9 @@ class MemberManager(BaseUserManager):
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError("The Email field must be set")
 
-        user = self.model(
-            email=self.normalize_email(email),
-            **extra_fields
-        )
+        user = self.model(email=self.normalize_email(email), **extra_fields)
 
         user.set_password(password)
         user.save(using=self._db)
@@ -47,7 +47,7 @@ class MemberManager(BaseUserManager):
             email=self.normalize_email(email),
             is_staff=True,
             is_superuser=True,
-            **extra_fields
+            **extra_fields,
         )
         user.set_password(password)
         user.save(using=self._db)
@@ -72,8 +72,8 @@ class Member(AbstractBaseUser, PermissionsMixin):
         status (CharField): The membership status of the member, with choices including 'unknown', 'nonmember', 'member', and 'alumnus'.
     """
 
-    USERNAME_FIELD = 'ssn'
-    EMAIL_FIELD = 'email'
+    USERNAME_FIELD = "ssn"
+    EMAIL_FIELD = "email"
     REQUIRED_FIELDS = []  # TODO: add more fields, maybe
 
     objects = MemberManager()
@@ -96,52 +96,52 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     email = models.EmailField(
         max_length=255,
-        verbose_name=_('Email'),
-        help_text=_(
-            'Enter an email address that you want to connect to this account.')
+        verbose_name=_("Email"),
+        help_text=_("Enter an email address that you want to connect to this account."),
     )
 
     verified_email = models.BooleanField(default=False)
 
     phone_number = models.CharField(
         max_length=20,
-        verbose_name=_('Phone number'),
-        help_text=_(
-            'Enter a phone number that you want to connect to this account.'),
+        verbose_name=_("Phone number"),
+        help_text=_("Enter a phone number that you want to connect to this account."),
     )
 
     is_superuser = models.BooleanField(
-        help_text=('Designates whether the user is a superuser')
+        help_text=("Designates whether the user is a superuser")
     )
 
     is_staff = models.BooleanField(
-        _('Staff status'),
+        _("Staff status"),
         default=False,
-        help_text=_('Designates whether the user can log into the admin site.'),
+        help_text=_("Designates whether the user can log into the admin site."),
     )
 
     # Required by AbstractBaseUser
     is_active = models.BooleanField(
-        _('Active'),
+        _("Active"),
         default=True,
-        help_text=_('Designates whether this user should be treated as active. '
-                    'Unselect this instead of deleting accounts.'),
+        help_text=_(
+            "Designates whether this user should be treated as active. "
+            "Unselect this instead of deleting accounts."
+        ),
     )
 
     name = models.CharField(
         max_length=254,
-        verbose_name=_('Name'),
+        verbose_name=_("Name"),
     )
 
     ssn = models.CharField(
         max_length=13,
         unique=True,
-        verbose_name=_('Social security number'),
+        verbose_name=_("Social security number"),
     )
 
     study_program = models.ForeignKey(
-        'StudyProgram',
-        verbose_name=_('Study program'),
+        "StudyProgram",
+        verbose_name=_("Study program"),
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -149,37 +149,37 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     registration_year = models.CharField(
         max_length=4,
-        verbose_name=_('Registration year'),
-        help_text=_('Enter the year you started studying at the TekNat '
-                    'faculty'),
-        validators=[validators.RegexValidator(
-            regex=r'^20\d{2}$',
-            message=_('Please enter a valid year')
-        )],
+        verbose_name=_("Registration year"),
+        help_text=_("Enter the year you started studying at the TekNat " "faculty"),
+        validators=[
+            validators.RegexValidator(
+                regex=r"^20\d{2}$", message=_("Please enter a valid year")
+            )
+        ],
         blank=True,
     )
 
     MEMBERSHIP_CHOICES = (
-        ('unknown', _('Unknown')),
-        ('nonmember', _('Nonmember')),
-        ('member', _('Member')),
-        ('alumnus', _('Alumnus')),
+        ("unknown", _("Unknown")),
+        ("nonmember", _("Nonmember")),
+        ("member", _("Member")),
+        ("alumnus", _("Alumnus")),
     )
 
     status = models.CharField(
         max_length=20,
         choices=MEMBERSHIP_CHOICES,
-        verbose_name=_('Membership status'),
+        verbose_name=_("Membership status"),
         blank=False,
-        default='unknown'
+        default="unknown",
     )
 
     positions = models.ManyToManyField(
-        'Position',
-        through='Appointment',
-        through_fields=('member', 'position'),
-        related_name='members',
-        verbose_name=_('Positions'),
+        "Position",
+        through="Appointment",
+        through_fields=("member", "position"),
+        related_name="members",
+        verbose_name=_("Positions"),
     )
 
     def has_perm(self, perm, obj=None):
@@ -210,7 +210,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         ssn = ssn.strip()
 
         if SSNValidator()(ssn) is False:
-            raise ValueError(_('Invalid SSN format'))
+            raise ValueError(_("Invalid SSN format"))
 
         else:
             try:
@@ -238,45 +238,33 @@ class Position(models.Model):
     """
 
     role = models.ForeignKey(
-        'Role',
-        related_name='positions',
+        "Role",
+        related_name="positions",
         on_delete=models.PROTECT,
         blank=False,
     )
 
     recruitment_start = models.DateField(
-        verbose_name=('Start of recruitment'),
+        verbose_name=("Start of recruitment"),
         default=date.today,
     )
 
-    recruitment_end = models.DateField(
-        verbose_name=('Recruitment deadline')
-    )
+    recruitment_end = models.DateField(verbose_name=("Recruitment deadline"))
     # ---- Appointment Information ------
 
     appointed = models.IntegerField(
-        verbose_name=('Number of people appointed'),
-        help_text=('Enter the number of people to appoint'),
+        verbose_name=("Number of people appointed"),
+        help_text=("Enter the number of people to appoint"),
         default=1,
     )
 
-    term_from = models.DateTimeField(
-        verbose_name=('Date of appointment')
-    )
+    term_from = models.DateTimeField(verbose_name=("Date of appointment"))
 
-    term_end = models.DateField(
-        verbose_name=('End date of the appointment')
-    )
+    term_end = models.DateField(verbose_name=("End date of the appointment"))
 
-    comment_eng = models.TextField(
-        verbose_name=('Comment in English'),
-        blank=True
-    )
+    comment_eng = models.TextField(verbose_name=("Comment in English"), blank=True)
 
-    comment_sv = models.TextField(
-        verbose_name=('Comment in Swedish'),
-        blank=True
-    )
+    comment_sv = models.TextField(verbose_name=("Comment in Swedish"), blank=True)
 
 
 class Appointment(models.Model):
@@ -293,69 +281,70 @@ class Appointment(models.Model):
         resignation_reason (TextField): The reason for resignation.
         notes (TextField): Additional notes about the appointment.
     """
+
     member = models.ForeignKey(
-        'Member',
+        "Member",
         on_delete=models.CASCADE,
-        related_name='appointments',
-        verbose_name=_('Member'),
+        related_name="appointments",
+        verbose_name=_("Member"),
     )
 
     position = models.ForeignKey(
-        'Position',
+        "Position",
         on_delete=models.CASCADE,
-        related_name='appointments',
-        verbose_name=_('Position'),
+        related_name="appointments",
+        verbose_name=_("Position"),
     )
 
     appointed_by = models.ForeignKey(
-        'Member',
+        "Member",
         on_delete=models.SET_NULL,
-        related_name='appointments_made',
+        related_name="appointments_made",
         null=True,
         blank=True,
-        verbose_name=_('Appointed by'),
+        verbose_name=_("Appointed by"),
     )
 
     appointed_date = models.DateField(
         default=date.today,
-        verbose_name=_('Appointed date'),
+        verbose_name=_("Appointed date"),
     )
 
     STATUS_CHOICES = (
-        ('appointed', _('Appointed')),
-        ('resigned', _('Resigned')),
-        ('terminated', _('Terminated')),
+        ("appointed", _("Appointed")),
+        ("resigned", _("Resigned")),
+        ("terminated", _("Terminated")),
     )
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='appointed',
-        verbose_name=_('Status'),
+        default="appointed",
+        verbose_name=_("Status"),
     )
 
     resignation_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name=_('Resignation date'),
+        verbose_name=_("Resignation date"),
     )
 
     resignation_reason = models.TextField(
         null=True,
         blank=True,
-        verbose_name=_('Resignation reason'),
+        verbose_name=_("Resignation reason"),
     )
 
     notes = models.TextField(
         null=True,
         blank=True,
-        verbose_name=_('Notes'),
+        verbose_name=_("Notes"),
     )
 
     class Meta:
-        verbose_name = _('Appointment')
-        verbose_name_plural = _('Appointments')
-        unique_together = [['member', 'position']]
+        verbose_name = _("Appointment")
+        verbose_name_plural = _("Appointments")
+        unique_together = [["member", "position"]]
 
     def __str__(self):
         return f"{self.member} - {self.position} ({self.status})"
@@ -374,42 +363,38 @@ class Reference(models.Model):
     """
 
     application = models.ForeignKey(
-        'Application',
-        related_name='reference',
+        "Application",
+        related_name="reference",
         on_delete=models.CASCADE,
         blank=False,
     )
 
-    name = models.CharField(
-        max_length=255,
-        verbose_name=_('Name'),
-        blank=False
-    )
+    name = models.CharField(max_length=255, verbose_name=_("Name"), blank=False)
 
     phone_num = models.CharField(
         max_length=20,
-        verbose_name=_('Phone number'),
+        verbose_name=_("Phone number"),
         blank=True,
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_('Title/Role'),
-        help_text=_('Enter the title or role of the reference'),
-        blank=True
+        verbose_name=_("Title/Role"),
+        help_text=_("Enter the title or role of the reference"),
+        blank=True,
     )
 
     email = models.EmailField(
-        verbose_name=_('Email'),
-        help_text=_('Enter the email of the reference'),
-        blank=True
+        verbose_name=_("Email"),
+        help_text=_("Enter the email of the reference"),
+        blank=True,
     )
 
     comment = models.CharField(
         max_length=511,
-        verbose_name=_('Comment'),
-        help_text=_('Enter a comment about the reference'),
-        blank=True
+        verbose_name=_("Comment"),
+        help_text=_("Enter a comment about the reference"),
+        blank=True,
     )
 
 
@@ -423,23 +408,23 @@ class StudyProgram(models.Model):
     """
 
     section = models.ForeignKey(
-        'Section',
-        related_name='study_programs',
+        "Section",
+        related_name="study_programs",
         on_delete=models.CASCADE,
         blank=False,
     )
 
     name_en = models.CharField(
         max_length=255,
-        verbose_name=_('English section name'),
-        help_text=_('Enter the name of the section in English'),
+        verbose_name=_("English section name"),
+        help_text=_("Enter the name of the section in English"),
         blank=False,
     )
 
     name_sv = models.CharField(
         max_length=255,
         verbose_name=_("Swedish section name"),
-        help_text=_('Enter the name of the section in Swedish'),
+        help_text=_("Enter the name of the section in Swedish"),
     )
 
 
@@ -454,22 +439,22 @@ class Section(models.Model):
 
     abbreviation = models.CharField(
         max_length=20,
-        verbose_name=_('Abbreviation'),
-        help_text=_('Enter the abbreviation of the section'),
+        verbose_name=_("Abbreviation"),
+        help_text=_("Enter the abbreviation of the section"),
         blank=False,
     )
 
     section_en = models.CharField(
         max_length=255,
-        verbose_name=_('Section name in English'),
-        help_text=_('Enter the name of the section in English'),
+        verbose_name=_("Section name in English"),
+        help_text=_("Enter the name of the section in English"),
         blank=False,
     )
 
     section_sv = models.CharField(
         max_length=255,
-        verbose_name=_('Section name in Swedish'),
-        help_text=_('Enter the name of the section in Swedish'),
+        verbose_name=_("Section name in Swedish"),
+        help_text=_("Enter the name of the section in Swedish"),
         blank=False,
     )
 
@@ -487,34 +472,34 @@ class Team(models.Model):
 
     name_en = models.CharField(
         max_length=255,
-        verbose_name=_('English team name'),
-        help_text=_('Enter the name of the team'),
+        verbose_name=_("English team name"),
+        help_text=_("Enter the name of the team"),
         blank=False,
     )
 
     name_sv = models.CharField(
         max_length=255,
-        verbose_name=_('Swedish team name'),
-        help_text=_('Enter the name of the team'),
+        verbose_name=_("Swedish team name"),
+        help_text=_("Enter the name of the team"),
         blank=False,
     )
 
     logo = models.ImageField(
-        verbose_name=_('Logo'),
-        help_text=_('Upload a logo for the team'),
+        verbose_name=_("Logo"),
+        help_text=_("Upload a logo for the team"),
         blank=True,
-        upload_to='../media/',
+        upload_to="../media/",
     )
 
     desc_en = models.TextField(
-        verbose_name=_('English team description'),
-        help_text=_('Enter a description of the team'),
+        verbose_name=_("English team description"),
+        help_text=_("Enter a description of the team"),
         blank=True,
     )
 
     desc_sv = models.TextField(
-        verbose_name=_('Swedish team description'),
-        help_text=_('Enter a description of the team'),
+        verbose_name=_("Swedish team description"),
+        help_text=_("Enter a description of the team"),
         blank=True,
     )
 
@@ -544,59 +529,61 @@ class Application(models.Model):
     """
 
     position = models.ForeignKey(
-        'Position',
-        related_name='applications',
+        "Position",
+        related_name="applications",
         on_delete=models.CASCADE,
         blank=False,
     )
 
     member = models.ForeignKey(
-        'Member',
+        "Member",
         on_delete=models.CASCADE,
         blank=False,
     )
 
     STATUS_CHOICES = (
-        ('draft', _('Draft')),
-        ('submitted', _('Submitted')),
-        ('approved', _('Approved')),
-        ('disapproved', _('Disapproved')),  # TODO Ta bort ?
-        ('appointed', _('Appointed')),
-        ('turned_down', _('Turned down')),
+        ("draft", _("Draft")),
+        ("submitted", _("Submitted")),
+        ("approved", _("Approved")),
+        ("disapproved", _("Disapproved")),  # TODO Ta bort ?
+        ("appointed", _("Appointed")),
+        ("turned_down", _("Turned down")),
     )
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        verbose_name=_('Status'),
+        verbose_name=_("Status"),
         blank=False,
         null=False,
     )
 
     # ---- Application Information ------
     cover_letter = models.TextField(
-        verbose_name=_('Cover Letter'),
-        help_text=_("""Present yourself and state why you are
-         who we are looking for"""),
+        verbose_name=_("Cover Letter"),
+        help_text=_(
+            """Present yourself and state why you are
+         who we are looking for"""
+        ),
     )
     qualifications = models.TextField(
-        verbose_name=_('Qualifications'),
-        help_text=_('Give a summary of relevant qualifications'),
+        verbose_name=_("Qualifications"),
+        help_text=_("Give a summary of relevant qualifications"),
     )
     gdpr = models.BooleanField(
         default=False,
-        verbose_name=('GDPR'),
-        help_text=_("""
+        verbose_name=("GDPR"),
+        help_text=_(
+            """
             I accept that my data is saved in accordance
             with Uppsala Union of Engineering and Science Students integrity
             policy that can be found within the link:
-        """),
+        """
+        ),
     )
 
     rejection_date = models.DateField(
-        verbose_name=_('Rejection date'),
-        null=True,
-        blank=True
+        verbose_name=_("Rejection date"), null=True, blank=True
     )
 
 
@@ -613,26 +600,27 @@ class Role(models.Model):
         description_sv (CharField): The swedish description of the role. This field is required.
         contact_email (EmailField): Contact email to highest position within committee/working group. This field is required
     """
+
     team = models.ForeignKey(
-        'Team',
-        related_name='role',
+        "Team",
+        related_name="role",
         on_delete=models.CASCADE,
         blank=False,
     )
 
     TYPE_CHOICES = (
-        ('admin', _('Admin')),
-        ('fum', _('FUM')),
-        ('board', _('Board')),
-        ('presidium', _('Presidium')),
-        ('group_leader', _('Group Leader')),
-        ('involved', _('Involved')),
+        ("admin", _("Admin")),
+        ("fum", _("FUM")),
+        ("board", _("Board")),
+        ("presidium", _("Presidium")),
+        ("group_leader", _("Group Leader")),
+        ("involved", _("Involved")),
     )
 
     role_type = models.CharField(
         max_length=255,
         choices=TYPE_CHOICES,
-        verbose_name=_('Role type'),
+        verbose_name=_("Role type"),
         blank=False,
         null=False,
     )
@@ -652,52 +640,52 @@ class Role(models.Model):
 
         # Map of role types to levels
         role_levels = {
-            'admin': 0,
-            'fum': 1,
-            'board': 2,
-            'presidium': 3,
-            'group_leader': 4,
-            'involved': 5
+            "admin": 0,
+            "fum": 1,
+            "board": 2,
+            "presidium": 3,
+            "group_leader": 4,
+            "involved": 5,
         }
 
         # Return the corresponding level or 6 if the role_type is not in the dictionary
         return role_levels.get(role_type, 6)
 
     archived = models.BooleanField(
-        verbose_name=_('Archived'),
-        help_text=_('Hide the role from menus'),
+        verbose_name=_("Archived"),
+        help_text=_("Hide the role from menus"),
         default=False,
     )
 
     title_en = models.CharField(
         max_length=255,
-        verbose_name=_('English role name'),
-        help_text=_('Enter the name of the role'),
+        verbose_name=_("English role name"),
+        help_text=_("Enter the name of the role"),
         blank=False,
     )
 
     title_sv = models.CharField(
         max_length=255,
-        verbose_name=_('Swedish role name'),
-        help_text=_('Enter the name of the role'),
+        verbose_name=_("Swedish role name"),
+        help_text=_("Enter the name of the role"),
         blank=False,
     )
 
     description_en = models.TextField(
-        verbose_name=_('English role description'),
-        help_text=_('Enter a description of the role'),
+        verbose_name=_("English role description"),
+        help_text=_("Enter a description of the role"),
         blank=False,
     )
 
     description_sv = models.TextField(
-        verbose_name=_('Swedish role description'),
-        help_text=_('Enter a description of the role'),
+        verbose_name=_("Swedish role description"),
+        help_text=_("Enter a description of the role"),
         blank=False,
     )
 
     contact_email = models.EmailField(
-        verbose_name=_('Contact email address'),
-        help_text=_('The email address for the current position holder'),
+        verbose_name=_("Contact email address"),
+        help_text=_("The email address for the current position holder"),
         blank=False,
     )
     # ------ Administrator settings ------
