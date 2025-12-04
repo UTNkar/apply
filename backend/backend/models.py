@@ -1,23 +1,26 @@
 import uuid
-
-from django.db import models
 from datetime import date
-from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
 from django.core import validators
-#from django.contrib.auth.models import (
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+# from django.contrib.auth.models import (
 #    AbstractBaseUser, UserManager, PermissionsMixin
-#)
+# )
 from .utils.validators import SSNValidator
 
 # from wagtail.admin.edit_handlers import MultiFieldPanel, FieldPanel, \
 #     FieldRowPanel
 
+
 class MemberManager(BaseUserManager):
     """
     Custom manager for Member model.
     Required as we are using ssn as the username instead of a username.
-    
+
     Methods
     -------
     create_user(email, password=None, **extra_fields)
@@ -71,7 +74,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'ssn'
     EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = [] # TODO: add more fields, maybe
+    REQUIRED_FIELDS = []  # TODO: add more fields, maybe
 
     objects = MemberManager()
 
@@ -80,7 +83,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         default=uuid.uuid4,
         editable=False,
     )
-    
+
     unicore_id = models.IntegerField(
         blank=True,
         editable=False,
@@ -90,19 +93,21 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     # TODO: figure out what this does
     unicore_user_data = None
-    
+
     email = models.EmailField(
         max_length=255,
         verbose_name=_('Email'),
-        help_text=_('Enter an email address that you want to connect to this account.')
+        help_text=_(
+            'Enter an email address that you want to connect to this account.')
     )
 
     verified_email = models.BooleanField(default=False)
-    
+
     phone_number = models.CharField(
         max_length=20,
         verbose_name=_('Phone number'),
-        help_text=_('Enter a phone number that you want to connect to this account.'),
+        help_text=_(
+            'Enter a phone number that you want to connect to this account.'),
     )
 
     is_superuser = models.BooleanField(
@@ -160,13 +165,21 @@ class Member(AbstractBaseUser, PermissionsMixin):
         ('member', _('Member')),
         ('alumnus', _('Alumnus')),
     )
-    
+
     status = models.CharField(
         max_length=20,
         choices=MEMBERSHIP_CHOICES,
         verbose_name=_('Membership status'),
         blank=False,
         default='unknown'
+    )
+
+    positions = models.ManyToManyField(
+        'Position',
+        through='Appointment',
+        through_fields=('member', 'position'),
+        related_name='members',
+        verbose_name=_('Positions'),
     )
 
     def has_perm(self, perm, obj=None):
@@ -176,7 +189,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         # Lets superusers and staff do anything
         if self.is_superuser or self.is_staff:
             return True
-        
+
         return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
@@ -186,7 +199,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         # Lets superusers and staff do anything
         if self.is_superuser or self.is_staff:
             return True
-        
+
         return super().has_module_perms(app_label)
 
     @staticmethod
@@ -198,7 +211,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
         if SSNValidator()(ssn) is False:
             raise ValueError(_('Invalid SSN format'))
-        
+
         else:
             try:
                 user = Member.objects.filter(ssn=ssn).first()
@@ -208,13 +221,12 @@ class Member(AbstractBaseUser, PermissionsMixin):
                 pass
 
             return None
-             
-    
+
+
 class Position(models.Model):
     """
     Represents a position within an organization.
     Attributes:
-        mandate_history (ManyToManyField): A many-to-many relationship with MandateHistory, representing the mandate history associated with the position.
         role (ForeignKey): A foreign key to the Role model, representing the role associated with the position.
         recruitment_start (DateField): The start date of the recruitment process.
         recruitment_end (DateField): The deadline for the recruitment process.
@@ -224,12 +236,6 @@ class Position(models.Model):
         comment_eng (TextField): A comment about the position in English.
         comment_sv (TextField): A comment about the position in Swedish.
     """
-    
-    mandate_history = models.ManyToManyField(
-        'MandateHistory',
-        related_name= 'positions',
-        blank=False
-    )
 
     role = models.ForeignKey(
         'Role',
@@ -237,12 +243,12 @@ class Position(models.Model):
         on_delete=models.PROTECT,
         blank=False,
     )
-    
+
     recruitment_start = models.DateField(
         verbose_name=('Start of recruitment'),
-        default= date.today,
+        default=date.today,
     )
-    
+
     recruitment_end = models.DateField(
         verbose_name=('Recruitment deadline')
     )
@@ -253,7 +259,7 @@ class Position(models.Model):
         help_text=('Enter the number of people to appoint'),
         default=1,
     )
-    
+
     term_from = models.DateTimeField(
         verbose_name=('Date of appointment')
     )
@@ -271,18 +277,89 @@ class Position(models.Model):
         verbose_name=('Comment in Swedish'),
         blank=True
     )
-    
-class MandateHistory(models.Model):
+
+
+class Appointment(models.Model):
     """
-    This model shows the mandate history of a UTN member
-    Attribute:
-        member: A many to many relation to the member
+    Appointment model represents an appointment of a member to a position.
+    This is a through table between Member and Position.
+    Attributes:
+        member (ForeignKey): A foreign key to the Member model.
+        position (ForeignKey): A foreign key to the Position model.
+        appointed_by (ForeignKey): A foreign key to the Member model who made the appointment.
+        appointed_date (DateField): The date when the appointment was made.
+        status (CharField): The status of the appointment, default is 'appointed'.
+        resignation_date (DateField): The date when the member resigned from the position.
+        resignation_reason (TextField): The reason for resignation.
+        notes (TextField): Additional notes about the appointment.
     """
-    member = models.ManyToManyField(
+    member = models.ForeignKey(
         'Member',
-        related_name='MandateHistory',
-        blank=False
+        on_delete=models.CASCADE,
+        related_name='appointments',
+        verbose_name=_('Member'),
     )
+
+    position = models.ForeignKey(
+        'Position',
+        on_delete=models.CASCADE,
+        related_name='appointments',
+        verbose_name=_('Position'),
+    )
+
+    appointed_by = models.ForeignKey(
+        'Member',
+        on_delete=models.SET_NULL,
+        related_name='appointments_made',
+        null=True,
+        blank=True,
+        verbose_name=_('Appointed by'),
+    )
+
+    appointed_date = models.DateField(
+        default=date.today,
+        verbose_name=_('Appointed date'),
+    )
+
+    STATUS_CHOICES = (
+        ('appointed', _('Appointed')),
+        ('resigned', _('Resigned')),
+        ('terminated', _('Terminated')),
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='appointed',
+        verbose_name=_('Status'),
+    )
+
+    resignation_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name=_('Resignation date'),
+    )
+
+    resignation_reason = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name=_('Resignation reason'),
+    )
+
+    notes = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name=_('Notes'),
+    )
+
+    class Meta:
+        verbose_name = _('Appointment')
+        verbose_name_plural = _('Appointments')
+        unique_together = [['member', 'position']]
+
+    def __str__(self):
+        return f"{self.member} - {self.position} ({self.status})"
+
 
 class Reference(models.Model):
     """
@@ -295,26 +372,26 @@ class Reference(models.Model):
         email (EmailField): The email address of the reference. This field is optional.
         comment (CharField): A comment about the reference. This field is optional.
     """
-    
+
     application = models.ForeignKey(
-        'Application', 
+        'Application',
         related_name='reference',
         on_delete=models.CASCADE,
         blank=False,
     )
 
     name = models.CharField(
-        max_length=255, 
+        max_length=255,
         verbose_name=_('Name'),
         blank=False
     )
-    
+
     phone_num = models.CharField(
         max_length=20,
         verbose_name=_('Phone number'),
         blank=True,
     )
-    
+
     title = models.CharField(
         max_length=255,
         verbose_name=_('Title/Role'),
@@ -336,7 +413,7 @@ class Reference(models.Model):
     )
 
 
-class StudyProgram(models.Model): 
+class StudyProgram(models.Model):
     """
     StudyProgram model represents a study program associated with a specific section.
     Attributes:
@@ -354,16 +431,17 @@ class StudyProgram(models.Model):
 
     name_en = models.CharField(
         max_length=255,
-        verbose_name = _('English section name'),
-        help_text = _('Enter the name of the section in English'),
+        verbose_name=_('English section name'),
+        help_text=_('Enter the name of the section in English'),
         blank=False,
     )
 
     name_sv = models.CharField(
         max_length=255,
         verbose_name=_("Swedish section name"),
-        help_text = _('Enter the name of the section in Swedish'),
+        help_text=_('Enter the name of the section in Swedish'),
     )
+
 
 class Section(models.Model):
     """
@@ -376,24 +454,26 @@ class Section(models.Model):
 
     abbreviation = models.CharField(
         max_length=20,
-        verbose_name = _('Abbreviation'),
-        help_text = _('Enter the abbreviation of the section'),
-        blank=False, 
+        verbose_name=_('Abbreviation'),
+        help_text=_('Enter the abbreviation of the section'),
+        blank=False,
     )
 
     section_en = models.CharField(
         max_length=255,
-        verbose_name = _('Section name in English'),
-        help_text = _('Enter the name of the section in English'),
+        verbose_name=_('Section name in English'),
+        help_text=_('Enter the name of the section in English'),
         blank=False,
     )
 
     section_sv = models.CharField(
         max_length=255,
-        verbose_name = _('Section name in Swedish'),
-        help_text = _('Enter the name of the section in Swedish'),
+        verbose_name=_('Section name in Swedish'),
+        help_text=_('Enter the name of the section in Swedish'),
         blank=False,
     )
+
+
 class Team(models.Model):
     """
     This class represents a working group within UTN
@@ -404,18 +484,18 @@ class Team(models.Model):
         desc_en: Description of the committee/working group in English.
         desc_sv: Description of the committee/working group in Swedish.
     """
-    
+
     name_en = models.CharField(
         max_length=255,
-        verbose_name = _('English team name'),
-        help_text = _('Enter the name of the team'),
+        verbose_name=_('English team name'),
+        help_text=_('Enter the name of the team'),
         blank=False,
     )
 
     name_sv = models.CharField(
         max_length=255,
-        verbose_name = _('Swedish team name'),
-        help_text = _('Enter the name of the team'),
+        verbose_name=_('Swedish team name'),
+        help_text=_('Enter the name of the team'),
         blank=False,
     )
 
@@ -427,16 +507,16 @@ class Team(models.Model):
     )
 
     desc_en = models.TextField(
-        verbose_name = _('English team description'),
-        help_text = _('Enter a description of the team'),
-        blank = True,
+        verbose_name=_('English team description'),
+        help_text=_('Enter a description of the team'),
+        blank=True,
     )
 
     desc_sv = models.TextField(
-         verbose_name = _('Swedish team description'),
-         help_text = _('Enter a description of the team'),
-         blank = True,
-     )
+        verbose_name=_('Swedish team description'),
+        help_text=_('Enter a description of the team'),
+        blank=True,
+    )
 
     # ------ Administrator settings ------
     # panels = [MultiFieldPanel([
@@ -448,6 +528,7 @@ class Team(models.Model):
     #     FieldPanel('description_en'),
     #     FieldPanel('description_sv'),
     # ])]
+
 
 class Application(models.Model):
     """
@@ -463,23 +544,23 @@ class Application(models.Model):
     """
 
     position = models.ForeignKey(
-        'Position', 
+        'Position',
         related_name='applications',
         on_delete=models.CASCADE,
         blank=False,
     )
-    
+
     member = models.ForeignKey(
         'Member',
         on_delete=models.CASCADE,
         blank=False,
     )
-    
+
     STATUS_CHOICES = (
         ('draft', _('Draft')),
         ('submitted', _('Submitted')),
         ('approved', _('Approved')),
-        ('disapproved', _('Disapproved')), # TODO Ta bort ?
+        ('disapproved', _('Disapproved')),  # TODO Ta bort ?
         ('appointed', _('Appointed')),
         ('turned_down', _('Turned down')),
     )
@@ -491,7 +572,7 @@ class Application(models.Model):
         blank=False,
         null=False,
     )
-    
+
     # ---- Application Information ------
     cover_letter = models.TextField(
         verbose_name=_('Cover Letter'),
@@ -511,19 +592,20 @@ class Application(models.Model):
             policy that can be found within the link:
         """),
     )
-    
+
     rejection_date = models.DateField(
         verbose_name=_('Rejection date'),
         null=True,
         blank=True
     )
 
+
 class Role(models.Model):
     """
     This class represents a role within a committee/working group of UTN
     Attributes:
         team (ForeignKey): A foreign key to the Team model, representing the committee/working group this role is associated with.
-        role_type (CharField): Level/type of role. Choose between "admin", "fum", "board", "presidium", "group_leader" and "involved". This field is required. 
+        role_type (CharField): Level/type of role. Choose between "admin", "fum", "board", "presidium", "group_leader" and "involved". This field is required.
         archived (BooleanField): Marks if a role has been archived - it can no longer be applied to. This field is optional.
         title_en (CharField): The english title/name of the role. This field is required.
         title_sv (CharField): The swedish title/name of the role. This field is required.
@@ -537,7 +619,7 @@ class Role(models.Model):
         on_delete=models.CASCADE,
         blank=False,
     )
-    
+
     TYPE_CHOICES = (
         ('admin', _('Admin')),
         ('fum', _('FUM')),
@@ -546,7 +628,7 @@ class Role(models.Model):
         ('group_leader', _('Group Leader')),
         ('involved', _('Involved')),
     )
-        
+
     role_type = models.CharField(
         max_length=255,
         choices=TYPE_CHOICES,
@@ -586,8 +668,7 @@ class Role(models.Model):
         help_text=_('Hide the role from menus'),
         default=False,
     )
-    
-    
+
     title_en = models.CharField(
         max_length=255,
         verbose_name=_('English role name'),
@@ -601,7 +682,6 @@ class Role(models.Model):
         help_text=_('Enter the name of the role'),
         blank=False,
     )
-
 
     description_en = models.TextField(
         verbose_name=_('English role description'),
@@ -638,5 +718,3 @@ class Role(models.Model):
     #     FieldPanel('role_type'),
     #     FieldPanel('teams', widget=CheckboxSelectMultiple),
     # ])]
-
-    
