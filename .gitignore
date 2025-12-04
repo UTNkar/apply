@@ -3,3 +3,8 @@ __pycache__
 .vscode
 .env
 venv
+.claude
+.idea
+.junie
+.cursor
+.DS_Store
