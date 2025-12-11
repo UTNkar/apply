@@ -1,59 +1,13 @@
 import uuid
 from datetime import date
 
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core import validators
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-# from django.contrib.auth.models import (
-#    AbstractBaseUser, UserManager, PermissionsMixin
-# )
+from .managers import MemberManager, PositionManager
 from .utils.validators import SSNValidator
-
-# from wagtail.admin.edit_handlers import MultiFieldPanel, FieldPanel, \
-#     FieldRowPanel
-
-
-class MemberManager(BaseUserManager):
-    """
-    Custom manager for Member model.
-    Required as we are using ssn as the username instead of a username.
-
-    Methods
-    -------
-    create_user(email, password=None, **extra_fields)
-        Creates and returns a user with an email, password and other fields.
-    create_superuser(email, password=None, **extra_fields)
-        Creates and returns a superuser with an email, password and other fields.
-    """
-
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("The Email field must be set")
-
-        user = self.model(email=self.normalize_email(email), **extra_fields)
-
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        user = self.model(
-            email=self.normalize_email(email),
-            is_staff=True,
-            is_superuser=True,
-            **extra_fields,
-        )
-        user.set_password(password)
-        user.save(using=self._db)
-
-        return user
-
 
 class Member(AbstractBaseUser, PermissionsMixin):
     """
@@ -159,6 +113,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
 
+    # TODO: Choices need to be enumerated with string constants
     MEMBERSHIP_CHOICES = (
         ("unknown", _("Unknown")),
         ("nonmember", _("Nonmember")),
@@ -237,6 +192,8 @@ class Position(models.Model):
         comment_sv (TextField): A comment about the position in Swedish.
     """
 
+    objects = PositionManager()
+
     role = models.ForeignKey(
         "Role",
         related_name="positions",
@@ -258,6 +215,7 @@ class Position(models.Model):
         default=1,
     )
 
+    # TODO: Should be DateField
     term_from = models.DateTimeField(verbose_name=("Date of appointment"))
 
     term_end = models.DateField(verbose_name=("End date of the appointment"))
@@ -310,6 +268,7 @@ class Appointment(models.Model):
         verbose_name=_("Appointed date"),
     )
 
+    # TODO: Choices need to be enumerated with string constants
     STATUS_CHOICES = (
         ("appointed", _("Appointed")),
         ("resigned", _("Resigned")),
@@ -541,6 +500,7 @@ class Application(models.Model):
         blank=False,
     )
 
+    # TODO: Choices need to be enumerated with string constants
     STATUS_CHOICES = (
         ("draft", _("Draft")),
         ("submitted", _("Submitted")),
@@ -582,6 +542,7 @@ class Application(models.Model):
         ),
     )
 
+    # TODO: Should be decision_date
     rejection_date = models.DateField(
         verbose_name=_("Rejection date"), null=True, blank=True
     )
@@ -608,6 +569,7 @@ class Role(models.Model):
         blank=False,
     )
 
+    # TODO: Choices need to be enumerated with string constants
     TYPE_CHOICES = (
         ("admin", _("Admin")),
         ("fum", _("FUM")),

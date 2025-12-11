@@ -1,10 +1,24 @@
 from django.utils import timezone
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 from .models import Role
 from .serializers import CreatePositionSerializer
 
 CAN_CREATE_POSITION_ROLES = ["admin", "fum", "board", "presidium", "group_leader"]
+
+
+class IsMemberOwner(BasePermission):
+    """
+    Permission to only allow owners of an object to edit/delete it.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Allow read permissions for any request
+        if request.method in SAFE_METHODS:
+            return True
+
+        # Write permissions only to the owner
+        return obj.member == request.user
 
 
 class CanCreatePosition(BasePermission):

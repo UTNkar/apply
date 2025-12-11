@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import Member
+from .models import *
 
 
 # Register your models here.
@@ -46,3 +46,9 @@ class MemberAdmin(UserAdmin):
 
 
 admin.site.register(Member, MemberAdmin)
+admin.site.register(Role)
+admin.site.register(Team)
+admin.site.register(Position)
+admin.site.register(Application)
+admin.site.register(Reference)
+admin.site.register(Appointment)

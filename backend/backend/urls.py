@@ -13,11 +13,13 @@ from .views import (
     PositionViewSet,
     ResendVerificationEmailAPIView,
     SignupAPIView,
+    ApplicationViewSet
 )
 
 router = DefaultRouter()
 
 router.register("positions", PositionViewSet)
+router.register("applications", ApplicationViewSet, basename="application")
 
 
 urlpatterns = [
