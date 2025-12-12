@@ -2,8 +2,9 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.middleware.csrf import get_token
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -13,11 +14,12 @@ from .models import Application, Position
 from .permissions import CanCreatePosition, IsMemberOwner
 from .serializers import (
     ApplicationSerializer,
-    ListApplicationSerializer,
     CreatePositionSerializer,
+    ListApplicationSerializer,
     MemberSerializer,
     PositionSerializer,
 )
+
 # Create your views here.
 
 
@@ -367,7 +369,7 @@ class ChangeEmailAPIView(APIView):
 
 #### END OF AUTHENTICATION VIEWS ####
 
-
+# TODO: Should be removed if we're considering django-admin for admin functionalities
 class CreatePositionAPIView(APIView):
     """
     CreatePositionAPIView handles creating new positions.
@@ -439,20 +441,25 @@ class ApplicationViewSet(ModelViewSet):
         """Prevent updating finalized applications"""
         instance = self.get_object()
 
-        # Only allow updates to draft/submitted applications
-        if instance.status in ["approved", "appointed", "disapproved"]:
+        # Only allow updates to draft applications
+        if instance.status != Application.DRAFT:
             raise PermissionDenied(
                 f"Cannot update application with status: {instance.status}"
             )
 
         serializer.save()
 
-    def perform_destroy(self, instance):
+    def destroy(self, request, *args, **kwargs):
         """Only allow deletion of draft applications"""
-        if instance.status != "draft":
+        instance = self.get_object()
+
+        if instance.status != Application.DRAFT:
             raise PermissionDenied("You can only delete draft applications")
 
         instance.delete()
+        return Response(
+            {"message": "Application deleted successfully"}, status=status.HTTP_200_OK
+        )
 
 
 class PositionViewSet(ReadOnlyModelViewSet):
@@ -464,13 +471,17 @@ class PositionViewSet(ReadOnlyModelViewSet):
         """Return both open positions and user's positions"""
 
         my_positions = Position.objects.for_member(request.user).select_related(
-            'role', 'role__team'
+            "role", "role__team"
         )
-        open_positions = Position.objects.open_positions().exclude(id__in=my_positions).select_related(
-            'role', 'role__team'
+        open_positions = (
+            Position.objects.open_positions()
+            .exclude(id__in=my_positions)
+            .select_related("role", "role__team")
         )
 
-        return Response({
-            'open_positions': self.get_serializer(open_positions, many=True).data,
-            'my_positions': self.get_serializer(my_positions, many=True).data,
-        })
+        return Response(
+            {
+                "open_positions": self.get_serializer(open_positions, many=True).data,
+                "my_positions": self.get_serializer(my_positions, many=True).data,
+            }
+        )

@@ -1,5 +1,5 @@
 from django.contrib.auth.models import BaseUserManager
-from django.db.models import Manager, Count, F, Q
+from django.db.models import Count, F, Manager, Q
 from django.utils import timezone
 
 
@@ -45,17 +45,20 @@ class PositionManager(Manager):
     def open_positions(self):
         """Get positions currently in recruitment period with unfilled slots"""
         now = timezone.now()
-        return self.get_queryset().filter(
-            recruitment_start__lte=now,
-            recruitment_end__gte=now,
-        ).annotate(
-            appointed_count=Count(
-                'applications', filter=Q(applications__status='appointed')
+        return (
+            self.get_queryset()
+            .filter(
+                recruitment_start__lte=now,
+                recruitment_end__gte=now,
             )
-        ).filter(Q(appointed_count__lt=F('appointed')))
+            .annotate(
+                appointed_count=Count(
+                    "applications", filter=Q(applications__status="appointed")
+                )
+            )
+            .filter(Q(appointed_count__lt=F("appointed")))
+        )
 
     def for_member(self, member):
         """Get positions a member has applied to"""
-        return self.get_queryset().filter(
-            appointments__member=member
-        ).distinct()
+        return self.get_queryset().filter(appointments__member=member).distinct()

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
@@ -44,6 +45,7 @@ class MemberSerializer(ModelSerializer):
 
         return user
 
+
 class RoleDetailSerializer(ModelSerializer):
     team_name = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
@@ -61,21 +63,23 @@ class RoleDetailSerializer(ModelSerializer):
         ]
 
     def get_team_name(self, obj):
-        lang = self.context.get('request').query_params.get('lang', 'en')
-        return obj.team.name_sv if lang == 'sv' else obj.team.name_en
+        lang = self.context.get("request").query_params.get("lang", "en")
+        return obj.team.name_sv if lang == "sv" else obj.team.name_en
 
     def get_title(self, obj):
-        lang = self.context.get('request').query_params.get('lang', 'en')
-        return obj.title_sv if lang == 'sv' else obj.title_en
+        lang = self.context.get("request").query_params.get("lang", "en")
+        return obj.title_sv if lang == "sv" else obj.title_en
 
     def get_description(self, obj):
-        lang = self.context.get('request').query_params.get('lang', 'en')
-        return obj.description_sv if lang == 'sv' else obj.description_en
+        lang = self.context.get("request").query_params.get("lang", "en")
+        return obj.description_sv if lang == "sv" else obj.description_en
 
 
 class PositionSerializer(ModelSerializer):
     role = RoleDetailSerializer(read_only=True)
     comment = serializers.SerializerMethodField()
+    user_app_status = serializers.SerializerMethodField()
+
     class Meta:
         model = Position
         fields = [
@@ -86,13 +90,27 @@ class PositionSerializer(ModelSerializer):
             "term_from",
             "term_end",
             "comment",
+            "user_app_status",
         ]
 
     def get_comment(self, obj):
-        lang = self.context.get('request').query_params.get('lang', 'en')
-        return obj.comment_sv if lang == 'sv' else obj.comment_eng
+        lang = self.context.get("request").query_params.get("lang", "en")
+        return obj.comment_sv if lang == "sv" else obj.comment_eng
+
+    def get_user_app_status(self, obj):
+        request = self.context.get("request")
+        application = obj.applications.filter(member=request.user).first()
+        status = ""
+        if application:
+            status = (
+                _("In Progress")
+                if application.status == Application.DRAFT
+                else _("Already Applied")
+            )
+        return status
 
 
+# TODO: Should be removed if we're considering django-admin for admin functionalities
 class CreatePositionSerializer(ModelSerializer):
     class Meta:
         model = Position
@@ -108,6 +126,27 @@ class CreatePositionSerializer(ModelSerializer):
         ]
 
 
+class ReferenceNestedSerializer(ModelSerializer):
+    """Nested serializer for references in application creation"""
+
+    class Meta:
+        model = Reference
+        fields = ["name", "title", "phone_num", "email", "comment"]
+
+    def validate(self, data):
+        """Validate that email OR phone are required"""
+        phone_num = data.get("phone_num", "")
+        email = data.get("email", "")
+
+        # At least email OR phone is required
+        if not email and not phone_num:
+            raise serializers.ValidationError(
+                {"email_or_phone_num": "Either email or phone number is required for a reference"}
+            )
+
+        return data
+
+
 class ListApplicationSerializer(ModelSerializer):
     """Serializer for Application model with nested position details (read-only)"""
 
@@ -115,6 +154,7 @@ class ListApplicationSerializer(ModelSerializer):
     phone_number = serializers.CharField(source="member.phone_number", read_only=True)
     email = serializers.CharField(source="member.email", read_only=True)
     study_program = serializers.CharField(source="member.study_program", read_only=True)
+    references = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
@@ -128,48 +168,15 @@ class ListApplicationSerializer(ModelSerializer):
             "cover_letter",
             "qualifications",
             "gdpr",
-            "rejection_date",
+            "decision_date",
+            "references",
         ]
         read_only_fields = ["id", "status"]
 
-
-class ReferenceNestedSerializer(ModelSerializer):
-    """Nested serializer for references in application creation"""
-
-    class Meta:
-        model = Reference
-        fields = ["name", "phone_num", "email", "comment"]
-        extra_kwargs = {
-            "name": {"required": False, "allow_blank": True},
-            "phone_num": {"required": False, "allow_blank": True},
-            "email": {"required": False, "allow_blank": True},
-            "comment": {"required": False, "allow_blank": True},
-        }
-
-    def validate(self, data):
-        """Validate that if any field is filled, name and (email OR phone) are required"""
-        name = (data.get("name") or "").strip()
-        phone_num = (data.get("phone_num") or "").strip()
-        email = (data.get("email") or "").strip()
-        comment = (data.get("comment") or "").strip()
-
-        # Check if any field has data
-        has_any_field = any([name, phone_num, email, comment])
-
-        if has_any_field:
-            # name is required
-            if not name:
-                raise serializers.ValidationError(
-                    {"name": "Name is required when providing reference information"}
-                )
-
-            # At least email OR phone is required
-            if not email and not phone_num:
-                raise serializers.ValidationError(
-                    "Either email or phone number is required for a reference"
-                )
-
-        return data
+    def get_references(self, obj):
+        """Get references for the application"""
+        references = Reference.objects.filter(application=obj)
+        return ReferenceNestedSerializer(references, many=True).data
 
 
 class ApplicationSerializer(ModelSerializer):
@@ -201,15 +208,17 @@ class ApplicationSerializer(ModelSerializer):
                 )
 
         # prevent editing submitted applications
-        if self.instance and self.instance.status == "submitted":
-            raise serializers.ValidationError(
-                "Cannot edit a submitted application"
-            )
+        if self.instance and self.instance.status == Application.SUBMITTED:
+            raise serializers.ValidationError("Cannot edit a submitted application")
 
         # Check if GDPR is accepted only when the user has decided to submit the application
-        status = data.get("status", self.instance.status if self.instance else "draft")
-        if status == "submitted":
-            gdpr_value = data.get("gdpr", self.instance.gdpr if self.instance else False)
+        status = data.get(
+            "status", self.instance.status if self.instance else Application.DRAFT
+        )
+        if status == Application.SUBMITTED:
+            gdpr_value = data.get(
+                "gdpr", self.instance.gdpr if self.instance else False
+            )
             if not gdpr_value:
                 raise serializers.ValidationError(
                     {"gdpr": "You must accept the GDPR policy to submit an application"}
@@ -226,7 +235,7 @@ class ApplicationSerializer(ModelSerializer):
 
     def validate_status(self, value):
         """Validate status - only draft and submitted allowed"""
-        allowed_statuses = ["draft", "submitted"]
+        allowed_statuses = [Application.DRAFT, Application.SUBMITTED]
         if value not in allowed_statuses:
             raise serializers.ValidationError(
                 f"Invalid status. Allowed values: {', '.join(allowed_statuses)}"

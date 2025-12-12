@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from .managers import MemberManager, PositionManager
 from .utils.validators import SSNValidator
 
+
 class Member(AbstractBaseUser, PermissionsMixin):
     """
     TODO NOT DONE
@@ -25,6 +26,18 @@ class Member(AbstractBaseUser, PermissionsMixin):
         registration_year (CharField): The year the member started studying at the TekNat faculty.
         status (CharField): The membership status of the member, with choices including 'unknown', 'nonmember', 'member', and 'alumnus'.
     """
+
+    UNKNOWN = "unknown"
+    NONMEMBER = "nonmember"
+    MEMBER = "member"
+    ALUMNUS = "alumnus"
+
+    MEMBERSHIP_CHOICES = (
+        (UNKNOWN, _("Unknown")),
+        (NONMEMBER, _("Nonmember")),
+        (MEMBER, _("Member")),
+        (ALUMNUS, _("Alumnus")),
+    )
 
     USERNAME_FIELD = "ssn"
     EMAIL_FIELD = "email"
@@ -113,20 +126,12 @@ class Member(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
 
-    # TODO: Choices need to be enumerated with string constants
-    MEMBERSHIP_CHOICES = (
-        ("unknown", _("Unknown")),
-        ("nonmember", _("Nonmember")),
-        ("member", _("Member")),
-        ("alumnus", _("Alumnus")),
-    )
-
     status = models.CharField(
         max_length=20,
         choices=MEMBERSHIP_CHOICES,
         verbose_name=_("Membership status"),
         blank=False,
-        default="unknown",
+        default=UNKNOWN,
     )
 
     positions = models.ManyToManyField(
@@ -215,13 +220,9 @@ class Position(models.Model):
         default=1,
     )
 
-    # TODO: Should be DateField
-    term_from = models.DateTimeField(verbose_name=("Date of appointment"))
-
+    term_from = models.DateField(verbose_name=("Date of appointment"))
     term_end = models.DateField(verbose_name=("End date of the appointment"))
-
     comment_eng = models.TextField(verbose_name=("Comment in English"), blank=True)
-
     comment_sv = models.TextField(verbose_name=("Comment in Swedish"), blank=True)
 
 
@@ -268,17 +269,20 @@ class Appointment(models.Model):
         verbose_name=_("Appointed date"),
     )
 
-    # TODO: Choices need to be enumerated with string constants
+    APPOINTED = "appointed"
+    RESIGNED = "resigned"
+    TERMINATED = "terminated"
+
     STATUS_CHOICES = (
-        ("appointed", _("Appointed")),
-        ("resigned", _("Resigned")),
-        ("terminated", _("Terminated")),
+        (APPOINTED, _("Appointed")),
+        (RESIGNED, _("Resigned")),
+        (TERMINATED, _("Terminated")),
     )
 
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default="appointed",
+        default=APPOINTED,
         verbose_name=_("Status"),
     )
 
@@ -484,8 +488,24 @@ class Application(models.Model):
         cover_letter (TextField): The cover letter submitted with the application.
         qualifications (TextField): A summary of relevant qualifications provided by the applicant.
         gdpr (BooleanField): Indicates whether the applicant has accepted the GDPR policy.
-        rejection_date (DateField): The date when the application was rejected, if applicable.
+        decision_date (DateField): The date when the application was rejected, if applicable.
     """
+
+    DRAFT = "draft"
+    SUBMITTED = "submitted"
+    APPROVED = "approved"
+    DISAPPROVED = "disapproved"
+    APPOINTED = "appointed"
+    TURNED_DOWN = "turned_down"
+
+    STATUS_CHOICES = (
+        (DRAFT, _("Draft")),
+        (SUBMITTED, _("Submitted")),
+        (APPROVED, _("Approved")),
+        (DISAPPROVED, _("Disapproved")),  # TODO Ta bort ?
+        (APPOINTED, _("Appointed")),
+        (TURNED_DOWN, _("Turned down")),
+    )
 
     position = models.ForeignKey(
         "Position",
@@ -498,16 +518,6 @@ class Application(models.Model):
         "Member",
         on_delete=models.CASCADE,
         blank=False,
-    )
-
-    # TODO: Choices need to be enumerated with string constants
-    STATUS_CHOICES = (
-        ("draft", _("Draft")),
-        ("submitted", _("Submitted")),
-        ("approved", _("Approved")),
-        ("disapproved", _("Disapproved")),  # TODO Ta bort ?
-        ("appointed", _("Appointed")),
-        ("turned_down", _("Turned down")),
     )
 
     status = models.CharField(
@@ -542,9 +552,8 @@ class Application(models.Model):
         ),
     )
 
-    # TODO: Should be decision_date
-    rejection_date = models.DateField(
-        verbose_name=_("Rejection date"), null=True, blank=True
+    decision_date = models.DateField(
+        verbose_name=_("Decision date"), null=True, blank=True
     )
 
 
@@ -562,21 +571,27 @@ class Role(models.Model):
         contact_email (EmailField): Contact email to highest position within committee/working group. This field is required
     """
 
+    ADMIN = "admin"
+    FUM = "fum"
+    BOARD = "board"
+    PRESIDIUM = "presidium"
+    GROUP_LEADER = "group_leader"
+    INVOLVED = "involved"
+
+    TYPE_CHOICES = (
+        (ADMIN, _("Admin")),
+        (FUM, _("FUM")),
+        (BOARD, _("Board")),
+        (PRESIDIUM, _("Presidium")),
+        (GROUP_LEADER, _("Group Leader")),
+        (INVOLVED, _("Involved")),
+    )
+
     team = models.ForeignKey(
         "Team",
         related_name="role",
         on_delete=models.CASCADE,
         blank=False,
-    )
-
-    # TODO: Choices need to be enumerated with string constants
-    TYPE_CHOICES = (
-        ("admin", _("Admin")),
-        ("fum", _("FUM")),
-        ("board", _("Board")),
-        ("presidium", _("Presidium")),
-        ("group_leader", _("Group Leader")),
-        ("involved", _("Involved")),
     )
 
     role_type = models.CharField(
@@ -602,12 +617,12 @@ class Role(models.Model):
 
         # Map of role types to levels
         role_levels = {
-            "admin": 0,
-            "fum": 1,
-            "board": 2,
-            "presidium": 3,
-            "group_leader": 4,
-            "involved": 5,
+            Role.ADMIN: 0,
+            Role.FUM: 1,
+            Role.BOARD: 2,
+            Role.PRESIDIUM: 3,
+            Role.GROUP_LEADER: 4,
+            Role.INVOLVED: 5,
         }
 
         # Return the corresponding level or 6 if the role_type is not in the dictionary

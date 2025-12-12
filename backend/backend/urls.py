@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import ChangeEmailAPIView  # Authentication
 from .views import (
+    ApplicationViewSet,
     ChangePasswordAPIView,
     EmailVerificationAPIView,
     InitiatePasswordResetViewAPIView,
@@ -13,7 +14,6 @@ from .views import (
     PositionViewSet,
     ResendVerificationEmailAPIView,
     SignupAPIView,
-    ApplicationViewSet
 )
 
 router = DefaultRouter()
