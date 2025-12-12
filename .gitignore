@@ -7,3 +7,4 @@ venv
 .idea
 .junie
 .cursor
+node_modules

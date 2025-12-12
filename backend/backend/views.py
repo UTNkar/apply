@@ -10,19 +10,21 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Position
+from .models import Member
 from .serializers import PositionSerializer, MemberSerializer, CreatePositionSerializer
-from .email import send_password_reset_email, send_verification_email
+from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
 
 # Create your views here.
+
 
 class PositionViewSet(ModelViewSet):
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
 
 
-
 #### AUTHENTICATION VIEWS ####
+
 
 class LoginAPIView(APIView):
     """
@@ -49,6 +51,7 @@ class LoginAPIView(APIView):
             When user's email is not verified or account is inactive.
 
     """
+
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -68,18 +71,13 @@ class LoginAPIView(APIView):
                 })
 
             elif not user.verified_email:
-                return Response({
-                    'message': 'Email not verified'
-                }, status=403)
+                return Response({'message': 'Email not verified'}, status=403)
 
             elif not user.is_active:
-                return Response({
-                    'message': 'User is inactive'
-                }, status=403)
+                return Response({'message': 'User is inactive'}, status=403)
 
-        return Response({
-            'message': 'Invalid credentials'
-        }, status=401)
+        return Response({'message': 'Invalid credentials'}, status=401)
+
 
 class SignupAPIView(APIView):
     """
@@ -106,11 +104,13 @@ class SignupAPIView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({
-                    "message": "User created successfully",
-                }, status=201)
-        
+                "message": "User created successfully",
+            },
+                            status=201)
+
         return Response(serializer.errors, status=400)
-    
+
+
 class LogoutAPIView(APIView):
     """
     LogoutAPIView handles user logout through the API.
@@ -131,10 +131,9 @@ class LogoutAPIView(APIView):
 
     def post(self, request):
         logout(request)
-        return Response({
-            'message': 'Logout successful'
-        }, status=200)
-    
+        return Response({'message': 'Logout successful'}, status=200)
+
+
 class InitiatePasswordResetViewAPIView(APIView):
     """
     InitiatePasswordAPIView handles password reset requests through the API.
@@ -160,15 +159,17 @@ class InitiatePasswordResetViewAPIView(APIView):
         try:
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
-            return Response({
-                'message': 'An error occurred while sending the password reset email'
-            }, status=400)
+            return Response(
+                {
+                    'message':
+                    'An error occurred while sending the password reset email'
+                },
+                status=400)
 
         send_password_reset_email(user)
 
-        return Response({
-            'message': 'Password reset email sent'
-        }, status=200)
+        return Response({'message': 'Password reset email sent'}, status=200)
+
 
 class PasswordResetAPIView(APIView):
     """
@@ -205,13 +206,13 @@ class PasswordResetAPIView(APIView):
         if default_token_generator.check_token(user, token):
             user.set_password(new_password)
             user.save()
-            return Response({
-                'message': 'Password reset successfully'
-            }, status=200)
+            return Response({'message': 'Password reset successfully'},
+                            status=200)
 
-        return Response({
-            'message': 'An error occurred while resetting the password'
-        }, status=400)
+        return Response(
+            {'message': 'An error occurred while resetting the password'},
+            status=400)
+
 
 class ChangePasswordAPIView(APIView):
     """
@@ -241,13 +242,13 @@ class ChangePasswordAPIView(APIView):
         if check_password(old_password, user.password):
             user.set_password(new_password)
             user.save()
-            return Response({
-                'message': 'Password changed successfully'
-            }, status=200)
+            return Response({'message': 'Password changed successfully'},
+                            status=200)
 
-        return Response({
-            'message': 'An error occurred while changing the password'
-        }, status=400)
+        return Response(
+            {'message': 'An error occurred while changing the password'},
+            status=400)
+
 
 class EmailVerificationAPIView(APIView):
     """
@@ -283,14 +284,11 @@ class EmailVerificationAPIView(APIView):
         if default_token_generator.check_token(user, token):
             login(request, user)
 
-            return Response({
-                'message': 'Email verified successfully'
-            }, status=200)
-        
-        return Response({
-            'message': 'Invalid verification link'
-        }, status=400)
-    
+            return Response({'message': 'Email verified successfully'},
+                            status=200)
+
+        return Response({'message': 'Invalid verification link'}, status=400)
+
 
 class ResendVerificationEmailAPIView(APIView):
     """
@@ -321,20 +319,20 @@ class ResendVerificationEmailAPIView(APIView):
             user = get_user_model().objects.get(email=email)
             # user = get_user_model().objects.get(ssn=ssn, email=email)
         except get_user_model().DoesNotExist:
-            return Response({
-                'message': 'An error occurred while sending the password reset email'
-            }, status=400)
+            return Response(
+                {
+                    'message':
+                    'An error occurred while sending the password reset email'
+                },
+                status=400)
 
         if user.verified_email:
-            return Response({
-                'message': 'Email already verified'
-            }, status=400)
+            return Response({'message': 'Email already verified'}, status=400)
 
         send_verification_email(user)
 
-        return Response({
-            'message': 'Verification email resent'
-        }, status=200)
+        return Response({'message': 'Verification email resent'}, status=200)
+
 
 class ChangeEmailAPIView(APIView):
     """
@@ -367,15 +365,16 @@ class ChangeEmailAPIView(APIView):
             user.email = new_email
             user.verified_email = False
             user.save()
-            return Response({
-                'message': 'Email changed successfully'
-            }, status=200)
+            return Response({'message': 'Email changed successfully'},
+                            status=200)
 
-        return Response({
-            'message': 'An error occurred while changing the email'
-        }, status=400)
+        return Response(
+            {'message': 'An error occurred while changing the email'},
+            status=400)
+
 
 #### END OF AUTHENTICATION VIEWS ####
+
 
 class CreatePositionAPIView(APIView):
     """
@@ -400,9 +399,53 @@ class CreatePositionAPIView(APIView):
         serializer = CreatePositionSerializer(data=request.data)
         if serializer.is_valid():
             position = serializer.save()
-            return Response({
-                'message': 'Position created successfully',
-                'position': PositionSerializer(position).data
-            }, status=201)
-        
+            return Response(
+                {
+                    'message': 'Position created successfully',
+                    'position': PositionSerializer(position).data
+                },
+                status=201)
+
         return Response(serializer.errors, status=400)
+
+
+class MyAccount(APIView):
+    """
+    MyAccount handles retrieving the authenticated user's account information.
+    
+    Methods
+    -------
+        get(request)
+            Retrieve the authenticated user's account information.
+            
+    Returns
+    -------
+        Responds with HTTP 200
+            When account information is retrieved successfully.
+    """
+
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        print("Hejareee")
+        try:
+            # This might fail because the user already exists
+            Member.objects.create(
+                email='test@example.com',
+                phone_number='123-456-7890',
+                is_superuser=False,
+                is_staff=False,
+                name='Test User',
+                ssn='199001011234',  # Valid format Swedish SSN
+                registration_year='2020',
+                status='member'
+            )
+        except:
+            pass
+        member = Member.find_user_by_ssn('199001011234')
+        print("ÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖ")
+        print(member)
+        print(member.name)
+        print(member.ssn)
+        serializer = MemberSerializer(member)
+        return Response(serializer.data, status=200)

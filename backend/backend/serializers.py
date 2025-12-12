@@ -18,7 +18,7 @@ class MemberSerializer(ModelSerializer):
     
     class Meta:
         model = Member
-        fields = ('ssn', 'email', 'password', 'is_active', 'is_staff', 'verified_email')
+        fields = ('name', 'phone_number', 'study_program', 'registration_year', 'status', 'ssn', 'email', 'password', 'is_active', 'is_staff', 'verified_email')
         extra_kwargs = {
             'password': {'write_only': True},
             # Debateable if we want to expose these fields
@@ -37,7 +37,7 @@ class MemberSerializer(ModelSerializer):
         user.set_password(password)
         user.save()
 
-        # Email verification here
+        # TODO: Email verification here
  
         return user
 
