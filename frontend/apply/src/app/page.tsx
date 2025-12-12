@@ -1,74 +1,44 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styles from './page.module.css'
-import ApplicationCard from '@/components/ApplicationCard'
-import MyPositionCard from '@/components/MyPositionCard'
+import ApplicationCard from './components/ApplicationCard'
+import MyPositionCard from './components/MyPositionCard'
 import OpenPositionCard from './components/OpenPositionCard'
+import { positionAPI, applicationAPI } from '@/lib/api'
+import type { Position, Application } from '@/lib/types'
+
+type Tab = 'Open Positions' | 'My Applications' | 'My Positions'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('Open Positions') 
+  const [activeTab, setActiveTab] = useState<Tab>('Open Positions')
+  const [openPositions, setOpenPositions] = useState<Position[]>([])
+  const [myPositions, setMyPositions] = useState<Position[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const applicationDummies = [
-    {
-      title: 'Head of the Pub Crew 2025',
-      status: 'Appointed',
-      termStart: 'September 2025',
-      termEnd: 'June 2026',
-      applicationId: '1',
-    },
-    {
-      title: 'Binär 2024',
-      status: 'Appointed',
-      termStart: 'September 2024',
-      termEnd: 'June 2025',
-      applicationId: '2',
-    },
-    {
-      title: 'Buddy 2023',
-      status: 'Appointed',
-      termStart: 'September 2023',
-      termEnd: 'June 2024',
-      applicationId: '3',
-    },
-  ]
+  // Fetch all data once on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [positionsData, applicationsData] = await Promise.all([
+          positionAPI.getAll(),
+          applicationAPI.getAll()
+        ])
 
-  const openPositionDummies = [
-    {
-      title: 'Open position 2025',
-      termStart: 'September 2025',
-      termEnd: 'June 2026',
-      applicationId: '4',
-      roleDescription: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      comments: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      deadline: '2025-04-12',
-      group: 'Engineering, Computer Science, and Foundation Year Reception',
-    },
-    {
-      title: 'Cafe Host 2025',
-      termStart: 'September 2024',
-      termEnd: 'June 2025',
-      applicationId: '5',
-      roleDescription: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      comments: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      deadline: '2025-04-12',
-      group: 'Cafe Group',
-    },
-  ]
+        setOpenPositions(positionsData.open_positions)
+        setMyPositions(positionsData.my_positions)
+        setApplications(applicationsData)
+        setError(null)
+      } catch {
+        setError('Failed to load data')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const myPositionDummies = [
-    {
-      title: 'My position 2025',
-      termStart: 'September 2025',
-      termEnd: 'June 2026',
-      applicationId: '4',
-    },
-    {
-      title: 'Another My position 2025',
-      termStart: 'September 2024',
-      termEnd: 'June 2025',
-      applicationId: '5',
-    },
-  ]
+    fetchData()
+  }, [])
 
   return (
     <div className='pageContainer'>
@@ -76,54 +46,80 @@ export default function Home() {
 
       <div className={styles.buttonsContainer}>
         <button
-          className={`button ${
-            activeTab === 'Open Positions' ? 'activeButton' : ''
-          }`}
+          className={`button ${activeTab === 'Open Positions' ? 'activeButton' : ''}`}
           onClick={() => setActiveTab('Open Positions')}
         >
           Open Positions
         </button>
 
         <button
-          className={`button ${
-            activeTab === 'My Applications' ? 'activeButton' : ''
-          }`}
+          className={`button ${activeTab === 'My Applications' ? 'activeButton' : ''}`}
           onClick={() => setActiveTab('My Applications')}
         >
           My Applications
         </button>
 
         <button
-          className={`button ${
-            activeTab === 'My Positions' ? 'activeButton' : ''
-          }`}
+          className={`button ${activeTab === 'My Positions' ? 'activeButton' : ''}`}
           onClick={() => setActiveTab('My Positions')}
         >
           My Positions
         </button>
       </div>
 
-      {activeTab === 'My Applications' && (
+      {loading && <p>Loading...</p>}
+      {error && <p className={styles.error}>{error}</p>}
+
+      {activeTab === 'My Applications' && !loading && (
         <div className={styles.myApplicationsContainer}>
-          {applicationDummies.map((application, index) => (
-            <ApplicationCard key={index} application={application} />
-          ))}
+          {applications.length === 0 ? (
+            <p>No applications yet</p>
+          ) : (
+            applications.map(application => (
+              <ApplicationCard
+                key={application.id}
+                application={{
+                  title: application.position_details.role.title,
+                  status: application.status,
+                  termStart: application.position_details.term_from,
+                  termEnd: application.position_details.term_end,
+                  applicationId: application.id.toString()
+                }}
+              />
+            ))
+          )}
         </div>
       )}
 
-      {activeTab === 'Open Positions' && (
+      {activeTab === 'Open Positions' && !loading && (
         <div className={styles.openPositionsContainer}>
-          {openPositionDummies.map((position, index) => (
-            <OpenPositionCard key={index} position={position} />
-          ))}
+          {openPositions.length === 0 ? (
+            <p>No open positions available</p>
+          ) : (
+            openPositions.map(position => (
+              <OpenPositionCard key={position.id} position={position} />
+            ))
+          )}
         </div>
       )}
 
-      {activeTab === 'My Positions' && (
+      {activeTab === 'My Positions' && !loading && (
         <div className={styles.myPositionsContainer}>
-          {myPositionDummies.map((position, index) => (
-            <MyPositionCard key={index} position={position} />
-          ))}
+          {myPositions.length === 0 ? (
+            <p>No positions yet</p>
+          ) : (
+            myPositions.map(position => (
+              <MyPositionCard
+                key={position.id}
+                position={{
+                  title: position.role.title,
+                  termStart: position.term_from,
+                  termEnd: position.term_end,
+                  applicationId: position.id.toString()
+                }}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

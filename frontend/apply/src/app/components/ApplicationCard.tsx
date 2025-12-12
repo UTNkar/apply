@@ -1,9 +1,5 @@
-/*
-Todo:
-- Navigate to application page when button is clicked, with the id of the application
-- Add logo from model
-*/
-
+'use client'
+import { useRouter } from 'next/navigation'
 import styles from '@/styles/applicationcard.module.css'
 
 type ApplicationType = {
@@ -19,6 +15,8 @@ type Props = {
 }
 
 const ApplicationCard = ({ application }: Props) => {
+  const router = useRouter()
+
   return (
     <div className={styles.card}>
       <div className={styles.cardHeading}>
@@ -35,7 +33,12 @@ const ApplicationCard = ({ application }: Props) => {
       </div>
 
       <div className={styles.cardButton}>
-        <button className={'smallButton'}>View Application</button>
+        <button
+          className={'smallButton'}
+          onClick={() => router.push(`/application/${application.applicationId}`)}
+        >
+          View Application
+        </button>
       </div>
     </div>
   )

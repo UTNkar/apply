@@ -187,7 +187,6 @@ h1:not(.without_decoration):after, h2:not(.without_decoration):after, h3:not(.wi
 
 
 p {
-    max-width: var(--desktop-text-width);
     font-family: var(--text-paragraph);
     text-align: left;
     margin-top: .5em;
@@ -231,7 +230,10 @@ a:active, a:hover {
 }
 
 .pageContainer {
-    padding: 0px 50px 20px 50px !important;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    width: 100%;
 }
 
 
@@ -290,7 +292,8 @@ a:active, a:hover {
 .button{
   border: none;
   height: 40px;
-  width: 200px;
+  min-width: 150px;
+  padding: 0 1.5rem;
   border-radius: var(--button-corner-radius);
   font-family: var(--text);
   font-size: 14px;

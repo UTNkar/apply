@@ -1,29 +1,24 @@
-/*
-Todo:
-- Navigate to application page when button is clicked, with the id of the application
-- Add logo from model
-*/
-
+'use client'
 import styles from '@/styles/openpositioncard.module.css'
 import { useState } from 'react'
-
-type OpenPositionType = {
-  title: string
-  termStart: string
-  termEnd: string
-  applicationId: string
-  roleDescription: string
-  comments: string
-  deadline: string
-  group: string
-}
+import { useRouter } from 'next/navigation'
+import type { Position } from '@/lib/types'
 
 type Props = {
-  position: OpenPositionType
+  position: Position
 }
 
 const OpenPositionCard = ({ position }: Props) => {
+  const router = useRouter()
   const [showInfo, setShowInfo] = useState(false)
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
 
   return (
     <div className={styles.cardContainer}>
@@ -31,17 +26,30 @@ const OpenPositionCard = ({ position }: Props) => {
         className={styles.cardInitial}
         onClick={() => setShowInfo(!showInfo)}
       >
-        <div className={styles.cardLogo}></div>
+        <div className={styles.cardLogo}>
+          {position.role.team_logo && (
+            <img src={position.role.team_logo} alt="Team logo" />
+          )}
+        </div>
 
         <div className={styles.cardLeftSection}>
-          <h3>{position.title}</h3>
-          {position.group}
+          <h3>{position.role.title}</h3>
+          {position.role.team_name}
         </div>
 
         <div className={styles.cardRightSection}>
-          <h4>Deadline: {position.deadline}</h4>
-
-          <button className={'smallButton'}>Apply</button>
+          <h4>Deadline: {formatDate(position.recruitment_end)}</h4>
+            <button
+              type="button"
+              className={`button ${styles.applyButton}`}
+              disabled={position.user_app_status !== ""}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(`/apply/${position.id}`)
+              }}
+            >
+              {position.user_app_status || 'Apply'}
+            </button>
         </div>
       </div>
 
@@ -51,17 +59,19 @@ const OpenPositionCard = ({ position }: Props) => {
         }`}
       >
         <p>
-          Term of Office: {position.termStart} - {position.termEnd}
+          Term of Office: {formatDate(position.term_from)} - {formatDate(position.term_end)}
         </p>
         <p>
           Role Description: <br />
-          {position.roleDescription}
+          {position.role.description}
         </p>
 
-        <p>
-          Comments for this year: <br />
-          {position.comments}
-        </p>
+        {position.comment && (
+          <p>
+            Comments for this year: <br />
+            {position.comment}
+          </p>
+        )}
       </div>
     </div>
   )
