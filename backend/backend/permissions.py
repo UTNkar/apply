@@ -7,6 +7,7 @@ from .serializers import CreatePositionSerializer
 CAN_CREATE_POSITION_ROLES = ["admin", "fum", "board", "presidium", "group_leader"]
 
 
+# TODO: Should be removed if we're considering django-admin for admin functionalities
 class CanCreatePosition(BasePermission):
     """
     Custom permission to check if a user can create a position.

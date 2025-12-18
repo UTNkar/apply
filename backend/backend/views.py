@@ -2,23 +2,25 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.middleware.csrf import get_token
-from django.shortcuts import render
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .email import send_password_reset_email, send_verification_email
-from .models import Position
+from .models import Application, Position
 from .permissions import CanCreatePosition
-from .serializers import CreatePositionSerializer, MemberSerializer, PositionSerializer
+from .serializers import (
+    ApplicationSerializer,
+    CreatePositionSerializer,
+    ListApplicationSerializer,
+    MemberSerializer,
+    PositionSerializer,
+)
 
 # Create your views here.
-
-
-class PositionViewSet(ModelViewSet):
-    queryset = Position.objects.all()
-    serializer_class = PositionSerializer
 
 
 #### AUTHENTICATION VIEWS ####
@@ -367,7 +369,7 @@ class ChangeEmailAPIView(APIView):
 
 #### END OF AUTHENTICATION VIEWS ####
 
-
+# TODO: Should be removed if we're considering django-admin for admin functionalities
 class CreatePositionAPIView(APIView):
     """
     CreatePositionAPIView handles creating new positions.
@@ -401,3 +403,84 @@ class CreatePositionAPIView(APIView):
             )
 
         return Response(serializer.errors, status=400)
+
+
+class ApplicationViewSet(ModelViewSet):
+    """
+    ViewSet for managing applications.
+
+    - List: Get all applications (public)
+    - Create: Create a new application for a position
+    - Retrieve: Get a specific application (public)
+    - Update: Update own application (only draft/submitted status)
+    - Destroy: Delete own application (only if draft status)
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Get all applications with optimized queries"""
+        queryset = Application.objects.select_related(
+            "member", "position", "position__role"
+        )
+
+        # Filter by position if position_id is provided
+        position_id = self.request.query_params.get("position_id", None)
+        if position_id:
+            queryset = queryset.filter(position_id=position_id)
+
+        return queryset.order_by("-id")
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action in ["create", "update", "partial_update"]:
+            return ApplicationSerializer
+        return ListApplicationSerializer
+
+    def perform_update(self, serializer):
+        """Prevent updating finalized applications"""
+        instance = self.get_object()
+
+        # Only allow updates to draft applications
+        if instance.status != Application.DRAFT:
+            raise PermissionDenied(
+                f"Cannot update application with status: {instance.status}"
+            )
+
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        """Only allow deletion of draft applications"""
+        instance = self.get_object()
+
+        if instance.status != Application.DRAFT:
+            raise PermissionDenied("You can only delete draft applications")
+
+        instance.delete()
+        return Response(
+            {"message": "Application deleted successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class PositionViewSet(ReadOnlyModelViewSet):
+    queryset = Position.objects.all()
+    serializer_class = PositionSerializer
+
+    def list(self, request):
+        """Return both open positions and user's positions"""
+
+        my_positions = Position.objects.for_member(request.user).select_related(
+            "role", "role__team"
+        )
+        open_positions = (
+            Position.objects.open_positions()
+            .exclude(id__in=my_positions)
+            .select_related("role", "role__team")
+        )
+
+        return Response(
+            {
+                "open_positions": self.get_serializer(open_positions, many=True).data,
+                "my_positions": self.get_serializer(my_positions, many=True).data,
+            }
+        )
