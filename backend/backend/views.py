@@ -11,7 +11,7 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .email import send_password_reset_email, send_verification_email
 from .models import Application, Position
-from .permissions import CanCreatePosition, IsMemberOwner
+from .permissions import CanCreatePosition
 from .serializers import (
     ApplicationSerializer,
     CreatePositionSerializer,
@@ -416,7 +416,7 @@ class ApplicationViewSet(ModelViewSet):
     - Destroy: Delete own application (only if draft status)
     """
 
-    permission_classes = [IsAuthenticated, IsMemberOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Get all applications with optimized queries"""
@@ -465,7 +465,6 @@ class ApplicationViewSet(ModelViewSet):
 class PositionViewSet(ReadOnlyModelViewSet):
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
-    permission_classes = [IsAuthenticated]
 
     def list(self, request):
         """Return both open positions and user's positions"""
