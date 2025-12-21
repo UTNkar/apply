@@ -22,7 +22,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         is_staff (BooleanField): Indicates if the member can log into the admin site.
         name (CharField): The name of the member.
         ssn (CharField): The social security number of the member.
-        study (ForeignKey): A reference to the member's study program.
+        study_program (ForeignKey): A reference to the member's study program.
         registration_year (CharField): The year the member started studying at the TekNat faculty.
         status (CharField): The membership status of the member, with choices including 'unknown', 'nonmember', 'member', and 'alumnus'.
     """
