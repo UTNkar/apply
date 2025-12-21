@@ -8,3 +8,4 @@ venv
 .junie
 .cursor
 .DS_Store
+node_modules
