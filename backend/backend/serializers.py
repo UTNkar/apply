@@ -1,5 +1,35 @@
-from rest_framework.serializers import ModelSerializer
-from .models import Position, Role, Team, Member
+from rest_framework.serializers import ModelSerializer, ValidationError
+from .models import Position, Role, Team, Member, Section, StudyProgram
+
+class SectionSerializer(ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ['id', 'abbreviation', 'section_en', 'section_sv']
+        read_only_fields = ['id']
+
+class StudyProgramSerializer(ModelSerializer):
+    section = SectionSerializer(read_only=True)
+    
+    class Meta:
+        model = StudyProgram
+        fields = ['id', 'name_en', 'name_sv', 'section']
+        read_only_fields = ['id']
+
+class StudyProgramSerializer(ModelSerializer):
+    """StudyProgram without nested section for use in SectionWithProgramsSerializer"""
+    class Meta:
+        model = StudyProgram
+        fields = ['id', 'name_en', 'name_sv', 'section']
+        read_only_fields = ['id']
+
+class SectionWithProgramsSerializer(ModelSerializer):
+    """Section with nested study programs"""
+    programs = StudyProgramSerializer(source='study_programs', many=True, read_only=True)
+    
+    class Meta:
+        model = Section
+        fields = ['id', 'abbreviation', 'section_en', 'section_sv', 'programs']
+        read_only_fields = ['id']
 
 class MemberSerializer(ModelSerializer):
     """
@@ -13,8 +43,8 @@ class MemberSerializer(ModelSerializer):
         Creates a new member instance, sets the password, and sends a verification email.
         Also invalidates any previous verification tokens for the user.
         Returns the created member instance.
-
     """
+    study_program = StudyProgramSerializer(read_only=True)
     
     class Meta:
         model = Member

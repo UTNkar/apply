@@ -14,7 +14,8 @@ from .views import (
     PasswordResetAPIView,
     ChangePasswordAPIView,
     ChangeEmailAPIView,
-    MyAccount,
+    MyAccountAPIView,
+    SectionsAPIView,
 )
 
 router = DefaultRouter()
@@ -42,5 +43,6 @@ urlpatterns = [
     path('api/auth/change-email',
          ChangeEmailAPIView.as_view(),
          name='change-email'),
-    path('api/account/', MyAccount.as_view(), name='my-account'),
+    path('api/account/', MyAccountAPIView.as_view(), name='my-account'),
+    path('api/sections/', SectionsAPIView.as_view(), name='sections'),
 ]

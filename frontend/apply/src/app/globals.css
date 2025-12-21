@@ -346,3 +346,9 @@ a:hover {
     background-color: var(--blue-100);
     color: var(--text-accent);
 }
+
+.button.disabled {
+    background-color: #bababa;
+    color: #5e6367;
+    cursor: default;
+}

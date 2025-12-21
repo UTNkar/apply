@@ -12,6 +12,7 @@ interface TextInputProps {
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   options?: { value: string; name: string }[];
   placeholder?: string;
+  required?: boolean;
   type?: string;
   value: string;
 }
@@ -25,22 +26,26 @@ export default function TextInput({
   onChange,
   options = [],
   placeholder = "",
+  required,
   type = "text",
   value,
 }: TextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
+  if (type === "select" && options.length === 0) {
+    disabled = true;
+  }
 
   return (
     <div
-      className={`text-input-container ${isFocused ? "focused" : ""} ${
-        disabled ? "disabled" : ""
-      }`}
+      className={`text-input-container ${isFocused ? "focused" : ""}
+      ${disabled ? "disabled" : ""} ${error ? "error" : ""}`}
     >
       {icon && <div className="icon">{icon}</div>}
       <div className="input-wrapper">
         <label className="label">{label}</label>
         {type === "select" ? (
           <select
+            required={required}
             value={value}
             name={name}
             onChange={onChange}
@@ -57,6 +62,7 @@ export default function TextInput({
           </select>
         ) : (
           <input
+            required={required}
             type={type}
             value={value}
             name={name}
@@ -69,7 +75,7 @@ export default function TextInput({
           />
         )}
         <div className="underline" />
-        <span className={`error ${error ? "" : "hidden"}`}>{error}</span>
+        <span className={`error-text ${error ? "" : "hidden"}`}>{error}</span>
       </div>
     </div>
   );

@@ -9,9 +9,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Position
-from .models import Member
-from .serializers import PositionSerializer, MemberSerializer, CreatePositionSerializer
+from .models import Position, Member, Section, StudyProgram
+from .serializers import PositionSerializer, MemberSerializer, CreatePositionSerializer, SectionWithProgramsSerializer
 from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
 
@@ -84,12 +83,12 @@ class SignupAPIView(APIView):
     SignupAPIView handles user registration through the API.
     This view processes signup requests, creating new users with the provided email and password.
     It also handles email verification in the serializer by generating a unique token and sending a verification email i.
-    
+
     Methods
     -------
         post(request)
             Process signup requests and return appropriate responses based on validation status.
-            
+
     Returns
     -------
         Responds with HTTP 201
@@ -138,7 +137,7 @@ class InitiatePasswordResetViewAPIView(APIView):
     """
     InitiatePasswordAPIView handles password reset requests through the API.
     This view processes password reset requests, generating a unique token and sending a reset email to the user.
-    
+
     Methods
     -------
         post(request)
@@ -177,7 +176,7 @@ class PasswordResetAPIView(APIView):
     This view processes password reset requests, allowing users to set a new password using a token, ID and new password.
 
     DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING
-    
+
     Methods
     -------
         post(request)
@@ -380,12 +379,12 @@ class CreatePositionAPIView(APIView):
     """
     CreatePositionAPIView handles creating new positions.
     Only authenticated users with appropriate permissions can create positions.
-    
+
     Methods
     -------
         post(request)
             Process position creation requests and return appropriate responses.
-            
+
     Returns
     -------
         Responds with HTTP 201
@@ -409,43 +408,72 @@ class CreatePositionAPIView(APIView):
         return Response(serializer.errors, status=400)
 
 
-class MyAccount(APIView):
+class MyAccountAPIView(APIView):
     """
     MyAccount handles retrieving the authenticated user's account information.
-    
+
     Methods
     -------
         get(request)
             Retrieve the authenticated user's account information.
-            
+
     Returns
     -------
         Responds with HTTP 200
             When account information is retrieved successfully.
     """
 
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print("Hejareee")
-        try:
-            # This might fail because the user already exists
-            Member.objects.create(
-                email='test@example.com',
-                phone_number='123-456-7890',
-                is_superuser=False,
-                is_staff=False,
-                name='Test User',
-                ssn='199001011234',  # Valid format Swedish SSN
-                registration_year='2020',
-                status='member'
-            )
-        except:
-            pass
-        member = Member.find_user_by_ssn('199001011234')
-        print("ÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖÖ")
-        print(member)
-        print(member.name)
-        print(member.ssn)
-        serializer = MemberSerializer(member)
+        serializer = MemberSerializer(request.user)
+        return Response(serializer.data, status=200)
+
+    def post(self, request):
+        user = request.user
+
+        # Handle study_program update if 'program' is provided in request
+        if 'program' in request.data:
+            program_id = request.data.pop('program')
+            try:
+                program = StudyProgram.objects.get(id=program_id)
+                user.study_program = program
+                user.save()
+            except StudyProgram.DoesNotExist:
+                return Response(
+                    {'program': ['Invalid study program ID']}, 
+                    status=400
+                )
+
+        serializer = MemberSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Account updated successfully',
+                'user': serializer.data
+            }, status=200)
+
+        return Response(serializer.errors, status=400)
+
+
+class SectionsAPIView(APIView):
+    """
+    SectionsAPIView returns all sections with their associated study programs.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all sections with nested study programs.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When sections are retrieved successfully.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        sections = Section.objects.prefetch_related('study_programs').all()
+        serializer = SectionWithProgramsSerializer(sections, many=True)
         return Response(serializer.data, status=200)
