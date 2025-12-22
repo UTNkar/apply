@@ -423,6 +423,8 @@ class ApplicationViewSet(ModelViewSet):
     - Destroy: Delete own application (only if draft status)
     """
 
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         """Get all applications with optimized queries"""
         queryset = Application.objects.select_related(
@@ -571,10 +573,10 @@ class UnicoreDataAPIView(APIView):
         data = unicore.get_user_data(user.ssn)
 
         if data is not None:
-           user.name = "{} {}".format(
-               data["firstname"].strip(), data["lastname"].strip()
-           )
-           user.save()
+            user.name = "{} {}".format(
+                data["firstname"].strip(), data["lastname"].strip()
+            )
+            user.save()
 
         serializer = MemberSerializer(user)
         return Response(serializer.data, status=200)
