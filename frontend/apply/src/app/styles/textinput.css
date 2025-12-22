@@ -1,7 +1,7 @@
 .text-input-container {
     display: flex;
     gap: 16px;
-    padding: 24px 0 0;
+    padding: 12px 0 0;
     background: white;
     width: 100%;
 }
