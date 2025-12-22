@@ -1,10 +1,11 @@
 .loginContainer {
   display: flex;
-  justify-content: center;
+  justify-content: end;
   align-items: center;
-  min-height: calc(100vh - 80px);
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: calc(100vh - 100px);
+  padding: 24px 128px 24px 0;
+  background: url("/Uppsala_University_2023.jpg");
+  background-size: cover;
 }
 
 .loginCard {
@@ -20,21 +21,11 @@
   font-size: 2rem;
   font-weight: 700;
   color: #1a202c;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.subtitle {
-  color: #718096;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 }
 
 .errorMessage {
@@ -45,29 +36,6 @@
   border-radius: 6px;
   font-size: 0.9rem;
   text-align: center;
-}
-
-.loginButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 0.5rem;
-}
-
-.loginButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.loginButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .links {
@@ -92,7 +60,18 @@
   text-decoration: underline;
 }
 
+@media (max-width: 1000px) {
+  .loginContainer {
+    padding-right: 48px;
+  }
+}
+
 @media (max-width: 768px) {
+  .loginContainer {
+    justify-content: center;
+    padding: 24px 0;
+  }
+
   .loginCard {
     padding: 2rem;
   }

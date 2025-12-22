@@ -40,6 +40,10 @@ export function useIsLoggedIn() {
 
     useEffect(() => {
         checkLoginStatus();
+        window.addEventListener('logged-in', checkLoginStatus);
+        return () => {
+            window.removeEventListener('logged-in', checkLoginStatus);
+        };
     }, []);
 
     return { isLoggedIn, loading, recheck: checkLoginStatus };

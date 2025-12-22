@@ -258,7 +258,8 @@ export default function Account() {
 
         <button
           className={`button activeButton`}
-          onClick={() => alert("Not implemented!!!!!!!!!")}
+          onClick={() => alert("#TODO Not implemented!!!!!!!!!")}
+          style={{ marginBottom: 24 }}
         >
           Update information
         </button>

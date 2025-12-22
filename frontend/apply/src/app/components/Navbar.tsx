@@ -10,9 +10,6 @@ const Navbar = () => {
   const pathname = usePathname()
   const { isLoggedIn, loading } = useIsLoggedIn()
 
-  console.log('Current pathname:', pathname)
-  console.log('Is logged in:', isLoggedIn, 'Loading:', loading)
-  
   return (
     <div className={styles.navbar}>
       <a className={styles.logo} href="https://www.utn.se" target="_blank" rel="noopener noreferrer">

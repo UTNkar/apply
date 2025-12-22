@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import styles from "./login.module.css";
-import Mail from "@/icons/mail.jsx";
 import { logIn } from "@/utils/auth";
 
 export default function Login() {
@@ -21,17 +20,13 @@ export default function Login() {
 
     try {
       const response = await logIn(email, password);
-      
+
       if (response.status === 200) {
         const data = await response.json();
-        // Store CSRF token if needed
-        if (data.csrf_token) {
-          localStorage.setItem("csrf_token", data.csrf_token);
-        }
-        // Redirect to account page on successful login
+        window.dispatchEvent(new CustomEvent('logged-in'));
         router.push("/account");
       } else if (response.status === 401) {
-        setError("Invalid email or password");
+        setError("Incorrect email or password");
       } else if (response.status === 403) {
         const data = await response.json();
         setError(data.message || "Email not verified or account inactive");
@@ -55,21 +50,21 @@ export default function Login() {
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
         <h1 className={styles.title}>Login</h1>
-        <p className={styles.subtitle}>Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
+            required
             label="Email"
             value={email}
             onChange={handleChange}
             name="email"
             type="email"
-            icon={<Mail />}
             placeholder="your.email@example.com"
             error={error && email === "" ? "Email is required" : ""}
           />
 
           <TextInput
+            required
             label="Password"
             value={password}
             onChange={handleChange}
@@ -81,9 +76,9 @@ export default function Login() {
 
           {error && <div className={styles.errorMessage}>{error}</div>}
 
-          <button 
-            type="submit" 
-            className={styles.loginButton}
+          <button
+            className="button activeButton"
+            style={{ margin: "12px auto 0" }}
             disabled={loading}
           >
             {loading ? "Signing in..." : "Sign in"}
@@ -92,7 +87,7 @@ export default function Login() {
 
         <div className={styles.links}>
           <a href="/signup" className={styles.link}>
-            Don't have an account? Sign up
+            Don't have an account? Register here
           </a>
           <a href="/forgot-password" className={styles.link}>
             Forgot password?
