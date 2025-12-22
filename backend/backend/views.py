@@ -9,8 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .email import send_password_reset_email, send_verification_email
-from .models import Application, Position, Member, Section, StudyProgram
+from .models import Application, Position, Section, StudyProgram
 from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
 from .serializers import (
@@ -418,6 +417,8 @@ class ApplicationViewSet(ModelViewSet):
     - Destroy: Delete own application (only if draft status)
     """
 
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         """Get all applications with optimized queries"""
         queryset = Application.objects.select_related(
@@ -518,7 +519,7 @@ class MyAccountAPIView(APIView):
                 user.save()
             except StudyProgram.DoesNotExist:
                 return Response(
-                    {'program': ['Invalid study program ID']}, 
+                    {'program': ['Invalid study program ID']},
                     status=400
                 )
 

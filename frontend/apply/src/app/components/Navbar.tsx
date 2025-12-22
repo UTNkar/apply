@@ -12,7 +12,6 @@ const Navbar = () => {
   return (
     <div className={styles.navbar}>
       <a className={styles.logo} href="https://www.utn.se" target="_blank" rel="noopener noreferrer">
- 
         <img src='/utn_standard_bla.png' alt='Logo' width={200} />
       </a>
       <div className={styles.navbarItems}>

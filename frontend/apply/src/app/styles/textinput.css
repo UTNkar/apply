@@ -79,7 +79,7 @@
 .text-input-container .error-text.hidden {
     opacity: 0;
     transform: translateY(-8px);
-} 
+}
 
 .text-input-container .underline {
     display: block;

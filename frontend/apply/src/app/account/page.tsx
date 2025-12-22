@@ -19,6 +19,7 @@ interface FormState {
   program: string;
   registration_year: number;
   section: string;
+  study_program: { id: string; section: string } | null;
 }
 
 type Errors = {
@@ -43,7 +44,7 @@ export default function Account() {
 
   // TODO call this every time the language changes
   const setProgramNames = () => {
-    setSections(prev => 
+    setSections(prev =>
       prev.map(section => {
         return {
           ...section,
@@ -57,7 +58,7 @@ export default function Account() {
     );
   }
 
-  const handleNewUserData = (data) => {
+  const handleNewUserData = (data: FormState) => {
       data.program = data.study_program?.id || "";
       data.section = data.study_program?.section || "";
       setState((prevState: FormState) => ({
@@ -95,21 +96,20 @@ export default function Account() {
     });
   }, []);
 
-  const useDebounce = (callback, delay: number) => {
-    const [debounceValue, setDebounceValue] = useState(callback);
+  const useDebounce = <T,>(value: T, delay: number): T => {
+    const [debounceValue, setDebounceValue] = useState<T>(value);
     useEffect(() => {
       const handler = setTimeout(() => {
-        setDebounceValue(callback);
+        setDebounceValue(value);
       }, delay);
-
       return () => {
         clearTimeout(handler);
       };
-    }, [callback, delay]);
+    }, [value, delay]);
     return debounceValue;
   };
   const debouncedErrors = useDebounce(intermediateErrors, 800);
-  useEffect(() => setErrors(intermediateErrors), [debouncedErrors]);
+  useEffect(() => setErrors(debouncedErrors), [debouncedErrors]);
 
   const onError = (name: keyof FormState, error: string) => {
     setIntermediateErrors((prevErrors: Errors) => ({
@@ -199,8 +199,8 @@ export default function Account() {
       alert("There are errors in the form. Please adjust your inputs.");
       return;
     }
-    state.study_program = state.program;
-    request(Method.POST, "/account/", state).then((resp) => {
+    const payload = { ...state, study_program: state.program };
+    request(Method.POST, "/account/", payload).then((resp) => {
       if (!resp.ok) {
         resp.json().then((err) => {
           setErrors(err);

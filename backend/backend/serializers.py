@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer, ValidationError
-from .models import Position, Role, Team, Member, Section, StudyProgram, Application, Reference
+from rest_framework.serializers import ModelSerializer
+from .models import Position, Role, Member, Section, StudyProgram, Application, Reference
 
 class SectionSerializer(ModelSerializer):
     class Meta:
@@ -11,14 +11,7 @@ class SectionSerializer(ModelSerializer):
 
 class StudyProgramSerializer(ModelSerializer):
     section = SectionSerializer(read_only=True)
-    
-    class Meta:
-        model = StudyProgram
-        fields = ["id", "name_en", "name_sv", "section"]
-        read_only_fields = ["id"]
 
-class StudyProgramSerializer(ModelSerializer):
-    """StudyProgram without nested section for use in SectionWithProgramsSerializer"""
     class Meta:
         model = StudyProgram
         fields = ["id", "name_en", "name_sv", "section"]
@@ -27,7 +20,7 @@ class StudyProgramSerializer(ModelSerializer):
 class SectionWithProgramsSerializer(ModelSerializer):
     """Section with nested study programs"""
     programs = StudyProgramSerializer(source="study_programs", many=True, read_only=True)
-    
+
     class Meta:
         model = Section
         fields = ["id", "abbreviation", "section_en", "section_sv", "programs"]
@@ -70,7 +63,7 @@ class MemberSerializer(ModelSerializer):
         user.save()
 
         # TODO: Email verification here
- 
+
         return user
 
 
