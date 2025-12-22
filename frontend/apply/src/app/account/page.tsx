@@ -95,7 +95,7 @@ export default function Account() {
     });
   }, []);
 
-  const useDebounce = (callback: Function, delay: number) => {
+  const useDebounce = (callback, delay: number) => {
     const [debounceValue, setDebounceValue] = useState(callback);
     useEffect(() => {
       const handler = setTimeout(() => {
@@ -129,7 +129,7 @@ export default function Account() {
     }));
   };
 
-  const validateInput = (name: keyof FormState, value: String, target) => {
+  const validateInput = (name: keyof FormState, value: string, target) => {
     // Validate required fields
     const required = target.required;
     if (required && value.length === 0) {
