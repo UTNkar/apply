@@ -3,12 +3,16 @@ import styles from '@/styles/navbar.module.css'
 import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useIsLoggedIn } from '@/utils/auth';
 
 const Navbar = () => {
   const [lang, setLang] = useState('sv')
   const pathname = usePathname()
+  const { isLoggedIn, loading } = useIsLoggedIn()
 
   console.log('Current pathname:', pathname)
+  console.log('Is logged in:', isLoggedIn, 'Loading:', loading)
+  
   return (
     <div className={styles.navbar}>
       <a className={styles.logo} href="https://www.utn.se" target="_blank" rel="noopener noreferrer">
@@ -31,14 +35,25 @@ const Navbar = () => {
         >
           About
         </Link>
-        <Link
-          href='/account'
-          className={`${styles.navLink} ${
-            pathname === '/account' ? styles.activeNavLink : ''
-          }`}
-        >
-          Account
-        </Link>
+        {isLoggedIn ? (
+          <Link
+            href='/account'
+            className={`${styles.navLink} ${
+              pathname === '/account' ? styles.activeNavLink : ''
+            }`}
+          >
+            Account
+          </Link>
+        ) :
+          <Link
+            href='/login'
+            className={`${styles.navLink} ${
+              pathname === '/login' ? styles.activeNavLink : ''
+            }`}
+          >
+            Log in
+          </Link>
+        }
 
         <div className={styles.langBtns}>
           <button

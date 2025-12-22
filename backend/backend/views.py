@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .email import send_password_reset_email, send_verification_email
+from .send_email import send_password_reset_email, send_verification_email
 from .models import Application, Position, Member, Section, StudyProgram
 from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
