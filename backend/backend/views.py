@@ -59,7 +59,6 @@ class LoginAPIView(APIView):
         password = request.data.get("password")
 
         member = Member.find_user_by_email(email)
-        print(member, flush=True)
         if member is None:
             Response({"message": "Invalid credentials"}, status=401)
 
