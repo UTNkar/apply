@@ -68,7 +68,7 @@ export default function Account() {
         ...prevState,
         ...data,
       }));
-  });
+  };
 
   useEffect(() => {
     request(Method.GET, "/sections/").then(async (res) => {
