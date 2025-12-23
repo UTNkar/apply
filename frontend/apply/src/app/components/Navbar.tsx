@@ -14,7 +14,7 @@ const Navbar = () => {
   return (
     <div className={styles.navbar}>
       <a className={styles.logo} href="https://www.utn.se" target="_blank" rel="noopener noreferrer">
-        <Image src='/utn_standard_bla.png' alt='Logo' width={200} />
+        <Image src='/utn_standard_bla.png' alt='Logo' width={200} height={51.25} />
       </a>
       <div className={styles.navbarItems}>
         <Link
