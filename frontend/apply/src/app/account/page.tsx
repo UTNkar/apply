@@ -109,7 +109,7 @@ export default function Account() {
     return debounceValue;
   };
   const debouncedErrors = useDebounce(intermediateErrors, 800);
-  useEffect(() => setErrors(intermediateErrors), [debouncedErrors]);
+  useEffect(() => setErrors(debouncedErrors), [debouncedErrors]);
 
   const onError = (name: keyof FormState, error: string) => {
     setIntermediateErrors((prevErrors: Errors) => ({

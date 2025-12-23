@@ -22,7 +22,6 @@ export default function Login() {
       const response = await logIn(email, password);
 
       if (response.status === 200) {
-        const data = await response.json();
         window.dispatchEvent(new CustomEvent('logged-in'));
         router.push("/account");
       } else if (response.status === 401) {
@@ -33,7 +32,7 @@ export default function Login() {
       } else {
         setError("An error occurred during login");
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -87,7 +86,7 @@ export default function Login() {
 
         <div className={styles.links}>
           <a href="/signup" className={styles.link}>
-            Don't have an account? Register here
+            Don&apos;t have an account? Register here
           </a>
           <a href="/forgot-password" className={styles.link}>
             Forgot password?
