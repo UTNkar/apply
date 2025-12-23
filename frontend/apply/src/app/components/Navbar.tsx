@@ -1,6 +1,7 @@
 'use client'
 import styles from '@/styles/navbar.module.css'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useIsLoggedIn } from '@/utils/auth';
@@ -13,7 +14,7 @@ const Navbar = () => {
   return (
     <div className={styles.navbar}>
       <a className={styles.logo} href="https://www.utn.se" target="_blank" rel="noopener noreferrer">
-        <img src='/utn_standard_bla.png' alt='Logo' width={200} />
+        <Image src='/utn_standard_bla.png' alt='Logo' width={200} />
       </a>
       <div className={styles.navbarItems}>
         <Link
@@ -32,7 +33,7 @@ const Navbar = () => {
         >
           About
         </Link>
-        {isLoggedIn ? (
+        {loading || isLoggedIn ? (
           <Link
             href='/account'
             className={`${styles.navLink} ${
