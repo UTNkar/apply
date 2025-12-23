@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .send_email import send_password_reset_email, send_verification_email
 from .models import Application, Position, Member, Section, StudyProgram
 from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
@@ -60,7 +59,7 @@ class LoginAPIView(APIView):
 
         member = Member.find_user_by_email(email)
         if member is None:
-            Response({"message": "Invalid credentials"}, status=401)
+            return Response({"message": "Invalid credentials"}, status=401)
 
         user = authenticate(request, username=member.ssn, password=password)
 

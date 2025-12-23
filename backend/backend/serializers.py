@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer, ValidationError
-from .models import Position, Role, Team, Member, Section, StudyProgram, Application, Reference
+from rest_framework.serializers import ModelSerializer
+from .models import Position, Role, Member, Section, StudyProgram, Application, Reference
 
 class SectionSerializer(ModelSerializer):
     class Meta:

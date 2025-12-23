@@ -167,7 +167,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
     @staticmethod
     def find_user_by_ssn(ssn):
         """
-        Checks if a user exists in our db
+        Find a user from our db by ssn
         """
         ssn = ssn.strip()
 
@@ -187,16 +187,13 @@ class Member(AbstractBaseUser, PermissionsMixin):
     @staticmethod
     def find_user_by_email(email):
         """
-        Checks if a user exists in our db by email
+        Find a user from our db by email
         """
         email = email.strip().lower()
 
-        try:
-            user = Member.objects.filter(email__iexact=email).first()
-            if user is not None:
-                return user
-        except Exception:
-            pass
+        user = Member.objects.filter(email__iexact=email).first()
+        if user is not None:
+            return user
 
         return None
 
