@@ -3,6 +3,9 @@ import styles from '@/styles/openpositioncard.module.css'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Position } from '@/lib/types'
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+import { formatDate, formatDateRange } from "@/utils/dateFormat";
 
 type Props = {
   position: Position
@@ -11,6 +14,9 @@ type Props = {
 const OpenPositionCard = ({ position }: Props) => {
   const router = useRouter()
   const [showInfo, setShowInfo] = useState(false)
+  const { t, i18n } = useTranslation();
+  const isSwedish = i18n.language === "sv";
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -38,7 +44,7 @@ const OpenPositionCard = ({ position }: Props) => {
         </div>
 
         <div className={styles.cardRightSection}>
-          <h4>Deadline: {formatDate(position.recruitment_end)}</h4>
+          <h4>{t("deadline")}: {formatDate(position.recruitment_end)}</h4>
             <button
               type="button"
               className={`button ${styles.applyButton}`}
@@ -48,21 +54,21 @@ const OpenPositionCard = ({ position }: Props) => {
                 router.push(`/apply/${position.id}`)
               }}
             >
-              {position.user_app_status || 'Apply'}
+              {position.user_app_status || {t("apply")}}
             </button>
         </div>
       </div>
 
       <div
         className={`${styles.hiddenSection} ${
-          showInfo ? styles.hiddenSectionVisible : ''
+          showInfo ? styles.hiddenSectionVisible : ""
         }`}
       >
         <p>
-          Term of Office: {formatDate(position.term_from)} - {formatDate(position.term_end)}
+          {t("termOfOffice")}: {formatDate(position.term_from)} - {formatDate(position.term_end)}
         </p>
         <p>
-          Role Description: <br />
+          {t("roleDescription")}: <br />
           {position.role.description}
         </p>
 
@@ -74,7 +80,7 @@ const OpenPositionCard = ({ position }: Props) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default OpenPositionCard
+export default OpenPositionCard;

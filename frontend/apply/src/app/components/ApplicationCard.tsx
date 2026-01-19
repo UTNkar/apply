@@ -1,47 +1,62 @@
-'use client'
-import { useRouter } from 'next/navigation'
-import styles from '@/styles/applicationcard.module.css'
+"use client";
+import { useRouter } from "next/navigation";
+import styles from "@/styles/applicationcard.module.css";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+import type { Application } from "@/types/position";
+import { formatDateRange } from "@/utils/dateFormat";
 
 type ApplicationType = {
-  title: string
-  status: string
-  termStart: string
-  termEnd: string
-  applicationId: string
-}
+  title: string;
+  status: string;
+  termStart: string;
+  termEnd: string;
+  applicationId: string;
+};
 
 type Props = {
-  application: ApplicationType
-}
+  application: Application;
+};
 
 const ApplicationCard = ({ application }: Props) => {
-  const router = useRouter()
+  const router = useRouter();
+  const { t, i18n } = useTranslation();
+  const isSwedish = i18n.language === "sv";
+  const title = isSwedish ? application.title_sv : application.title_en;
+  const dateRange = formatDateRange(
+    application.term_start,
+    application.term_end,
+  );
 
   return (
     <div className={styles.card}>
       <div className={styles.cardHeading}>
-        <h3>{application.title}</h3>
+        <h3>{title}</h3>
       </div>
 
       <div className={styles.cardText}>
-        <p>Status: {application.status}</p>
+        <p>
+          {t("status")}: {t(application.status)}
+        </p>
 
         <p>
-          Term of office: <br />
-          {application.termStart} - {application.termEnd}
+          {t("termOfOffice")}: <br />
+          {dateRange}
         </p>
       </div>
 
       <div className={styles.cardButton}>
         <button
-          className={'smallButton'}
-          onClick={() => router.push(`/application/${application.applicationId}`)}
+          className={"smallButton"}
+          onClick={() =>
+            router.push(`/application/${application.applicationId}`)
+          }
         >
-          View Application
+          {t("viewApplication")}
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ApplicationCard
+export default ApplicationCard;
