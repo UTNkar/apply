@@ -16,3 +16,4 @@ python-decouple==3.8
 
 psycopg2
 Pillow>=8.0.0
+requests>=2.25.0

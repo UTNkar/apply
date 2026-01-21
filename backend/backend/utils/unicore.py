@@ -1,9 +1,6 @@
 import requests
 from requests.auth import HTTPBasicAuth
-
-UNICORE_URL = (
-    "https://unicorecustomapi.mecenat.com/utn"  # borde sättas i settings eller liknande
-)
+from django.conf import settings
 
 
 class unicoremember:
@@ -13,10 +10,9 @@ class unicoremember:
         Helper function to make a get request to unicore
         """
         request = requests.get(
-            f"{UNICORE_URL}/{path}",
-            auth=HTTPBasicAuth(
-                "admin", "admin"
-            ),  # admin admin är bara placeholder, ska hämtas från settings eller liknande
+            f"{settings.UNICORE_URL}/{path}",
+            auth=HTTPBasicAuth(settings.UNICORE_USER, settings.UNICORE_PASSWORD),
+            params={"ordId": settings.UNICORE_ORG_ID},
         )
         return request
 
@@ -28,19 +24,20 @@ class unicoremember:
         if request.status_code == 200:
             response = request.json()
 
-            if (
-                response["Personnr"] is None
-            ):  # utbytesstudenter har inget personnummer,unicore lagrar deras personnummer i medlemsnummer i medlemsnummret
+            if response["Personnr"] is None:
+                # utbytesstudenter har inget personnummer,unicore lagrar deras personnummer i medlemsnummer i medlemsnummret
                 response["Personnr"] = response["Medlemsnr"]
 
-                return {
-                    "ssn": response["Personnr"],
-                    "firstname": response["Fornamn"],
-                    "lastname": response["Efternamn"],
-                    "email": response["Epost"],
-                    "phone_number": response["Telefon"],
-                    "unicore_id": response["Id"],
-                }
+            return {
+                "ssn": response["Personnr"],
+                "firstname": response["Fornamn"],
+                "lastname": response["Efternamn"],
+                "email": response["Epost"],
+                "phone_number": response["Tele1"],
+                "unicore_id": response["Id"],
+            }
+        else:
+            return None
 
     def is_member(self, ssn):
         """
@@ -53,3 +50,29 @@ class unicoremember:
             return response["Member"]
         else:
             return False
+
+    def get_member_since(self, ssn):
+        """
+        Get the date a user became a member
+
+        Returns a string in the format YYYY-MM-DD, or True if the user is a
+        member but the date is unknown, or False if the user is not a member.
+        """
+        member_request = self.get_request("is-member/" + str(ssn))
+        if member_request.status_code == 200:
+            member_response = member_request.json()
+            if not member_response["Member"]:
+                # The user is not a member
+                return False
+        else:
+            raise Exception("Failed to get member status from Unicore")
+
+        user_request = self.get_request("user/" + str(ssn))
+        if user_request.status_code == 200 and member_request.status_code == 200:
+            response = user_request.json()
+            if response["Betalningdatum"] is not None:
+                # This is the date the user became a member
+                return response["Betalningdatum"].split("T")[0]
+            else:    
+                # We don't know when the user became a member
+                return True

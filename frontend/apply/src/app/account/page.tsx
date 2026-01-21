@@ -12,6 +12,8 @@ import StudentHat from "@/icons/student-hat.jsx";
 import { request, Method } from "@/utils/request";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
+import Button from "@/components/Button";
+import { formatDate } from "@/utils/dateFormat";
 
 interface Program {
   id: string;
@@ -60,6 +62,8 @@ export default function Account() {
   const [errors, setErrors] = useState<Errors>({});
   const [intermediateErrors, setIntermediateErrors] = useState<Errors>({});
   const [sections, setSections] = useState<Array<Section>>([]);
+  const [unicoreLoading, setUnicoreLoading] = useState<boolean>(false);
+  const [memberSince, setMemberSince] = useState<string>("");
 
   const setProgramNames = () => {
     const isSwedish = i18n.language === "sv";
@@ -91,6 +95,7 @@ export default function Account() {
   };
 
   useEffect(() => {
+    // Fetch sections and programs
     request(Method.GET, "/sections/").then(async (res) => {
       if (res.ok) {
         let data = await res.json();
@@ -106,6 +111,7 @@ export default function Account() {
         console.error(err);
       }
     });
+    // Fetch user account data
     request(Method.GET, "/account/").then(async (res) => {
       if (res.ok) {
         const data = await res.json();
@@ -113,6 +119,18 @@ export default function Account() {
       } else {
         const err = await res.text();
         console.error("Failed to fetch account data");
+        console.error(err);
+      }
+    });
+    // Fetch membership status and join date
+    request(Method.GET, "/membership/").then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Membership data:", data);
+        setMemberSince(data);
+      } else {
+        const err = await res.text();
+        console.error("Failed to fetch membership data");
         console.error(err);
       }
     });
@@ -242,6 +260,30 @@ export default function Account() {
     });
   };
 
+  const update_info_from_unicore = () => {
+    setUnicoreLoading(true);
+    request(Method.POST, "/update-unicore/", { ssn: state.ssn }).then(
+      (resp) => {
+        if (!resp.ok) {
+          resp.text().then((err) => {
+            console.error(err);
+            setTimeout(() => {
+              setUnicoreLoading(false);
+            }, 500);
+          });
+        } else {
+          resp.json().then((data) => {
+            console.log("Unicore data updated:", data);
+            handleNewUserData(data);
+            setTimeout(() => {
+              setUnicoreLoading(false);
+            }, 500);
+          });
+        }
+      },
+    );
+  };
+
   const programs_in_section =
     sections
       .find((s) => s.id == state.section)
@@ -250,6 +292,19 @@ export default function Account() {
   const no_programs = {
     value: "N/A",
     name: t("selectSectionFirst"),
+  };
+
+  const membershipText = (memberSince: string) => {
+    if (memberSince === "Not a member") {
+      return t("notMemberInfo");
+    }
+    if (memberSince === "Member") {
+      return t("isMemberInfo");
+    }
+    if (memberSince.length === 0) {
+      return t("loadingMembershipInfo");
+    }
+    return `${t("memberSince")} ${formatDate(memberSince)}.`;
   };
 
   return (
@@ -280,13 +335,14 @@ export default function Account() {
         </div>
         <p>{t("memberRegistryInfo")}</p>
 
-        <button
-          className={`button activeButton`}
-          onClick={() => alert("#TODO Not implemented!!!!!!!!!")}
+        <Button
+          onClick={update_info_from_unicore}
           style={{ marginBottom: 24 }}
+          disabled={unicoreLoading}
+          loading={unicoreLoading}
         >
           {t("updateInformation")}
-        </button>
+        </Button>
 
         <div className={styles.formRow}>
           <TextInput
@@ -313,7 +369,7 @@ export default function Account() {
 
       <div className={styles.card}>
         <h3>{t("membershipStatus")}</h3>
-        {t("memberSince")} 2022.
+        <p>{membershipText(memberSince)}</p>
       </div>
 
       <div className={styles.card}>

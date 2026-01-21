@@ -319,7 +319,7 @@ a:hover {
     background-color: var(--grey-200);
     cursor: pointer;
     transition: background-color .1s ease;
-
+    position: relative;
 }
 
 .smallButton {
@@ -347,8 +347,40 @@ a:hover {
     color: var(--text-accent);
 }
 
+.button .loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+@keyframes loading-spin {
+    from {
+        stroke-dashoffset: 240;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.button .loading-indicator path {
+    animation: loading-spin 1s linear infinite;
+    fill: none;
+    stroke: var(--text-accent);
+    stroke-width: 0;
+    stroke-dasharray: 30 30;
+    transition: 200ms;
+}
+
+.button.loading .loading-indicator path {
+    stroke-width: 4;
+}
+
 .button.disabled {
+    cursor: default;
+    pointer-events: none;
+}
+
+.button:not(.loading).disabled {
     background-color: #bababa;
     color: #5e6367;
-    cursor: default;
 }

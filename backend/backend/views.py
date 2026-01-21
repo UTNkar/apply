@@ -20,6 +20,7 @@ from .serializers import (
     PositionSerializer,
     SectionWithProgramsSerializer,
 )
+from .utils.unicore import unicoremember
 
 # Create your views here.
 
@@ -374,6 +375,7 @@ class ChangeEmailAPIView(APIView):
 
 #### END OF AUTHENTICATION VIEWS ####
 
+
 # TODO: Should be removed if we're considering django-admin for admin functionalities
 class CreatePositionAPIView(APIView):
     """
@@ -488,6 +490,7 @@ class PositionViewSet(ReadOnlyModelViewSet):
             }
         )
 
+
 class MyAccountAPIView(APIView):
     """
     MyAccount handles retrieving the authenticated user's account information.
@@ -496,6 +499,9 @@ class MyAccountAPIView(APIView):
     -------
         get(request)
             Retrieve the authenticated user's account information.
+
+        post(request)
+            Update the authenticated user's account information.
 
     Returns
     -------
@@ -513,28 +519,65 @@ class MyAccountAPIView(APIView):
         user = request.user
 
         # Handle study_program update if 'program' is provided in request
-        if 'program' in request.data:
-            program_id = request.data.pop('program')
+        if "program" in request.data:
+            program_id = request.data.pop("program")
             try:
                 program = StudyProgram.objects.get(id=program_id)
                 user.study_program = program
                 user.save()
             except StudyProgram.DoesNotExist:
-                return Response(
-                    {'program': ['Invalid study program ID']}, 
-                    status=400
-                )
+                return Response({"program": ["Invalid study program ID"]}, status=400)
 
         serializer = MemberSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()
-            return Response({
-                'message': 'Account updated successfully',
-                'user': serializer.data
-            }, status=200)
+            return Response(
+                {"message": "Account updated successfully", "user": serializer.data},
+                status=200,
+            )
 
         return Response(serializer.errors, status=400)
+
+
+class UnicoreDataAPIView(APIView):
+    def get(self, request):
+        """
+        Get membership status of the logged in user from unicore
+        """
+        req_user = request.user
+        unicore = unicoremember()
+        try:
+            join_date = unicore.get_member_since(req_user.ssn)
+        except Exception as e:
+            return Response({"message": str(e)}, status=500)
+
+        if join_date is False:
+            join_date = "Not a member"
+        elif join_date == True:
+            join_date = "Member"
+        else:
+            # Format date to YYYY-MM-DD
+            join_date = join_date.split("T")[0]
+        return Response(join_date, status=200)
+
+    def post(self, request):
+        """
+        Updates the logged in user's data from unicore
+        """
+        req_user = request.user
+        user = Member.objects.get(ssn=req_user.ssn)
+        unicore = unicoremember()
+        data = unicore.get_user_data(user.ssn)
+
+        if data is not None:
+           user.name = "{} {}".format(
+               data["firstname"].strip(), data["lastname"].strip()
+           )
+           user.save()
+
+        serializer = MemberSerializer(user)
+        return Response(serializer.data, status=200)
 
 
 class SectionsAPIView(APIView):
@@ -551,9 +594,10 @@ class SectionsAPIView(APIView):
         Responds with HTTP 200
             When sections are retrieved successfully.
     """
+
     permission_classes = [AllowAny]
 
     def get(self, request):
-        sections = Section.objects.prefetch_related('study_programs').all()
+        sections = Section.objects.prefetch_related("study_programs").all()
         serializer = SectionWithProgramsSerializer(sections, many=True)
         return Response(serializer.data, status=200)
