@@ -182,6 +182,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
             return None
 
+    def __str__(self):
+        return f"{self.name} ({self.ssn})"
+
 
 class Position(models.Model):
     """
@@ -224,6 +227,9 @@ class Position(models.Model):
     term_end = models.DateField(verbose_name=("End date of the appointment"))
     comment_eng = models.TextField(verbose_name=("Comment in English"), blank=True)
     comment_sv = models.TextField(verbose_name=("Comment in Swedish"), blank=True)
+
+    def __str__(self):
+        return f"{self.role} ({self.term_from} - {self.term_end})"
 
 
 class Appointment(models.Model):
@@ -360,6 +366,9 @@ class Reference(models.Model):
         blank=True,
     )
 
+    def __str__(self):
+        return f"{self.name} - {self.application}"
+
 
 class StudyProgram(models.Model):
     """
@@ -389,6 +398,9 @@ class StudyProgram(models.Model):
         verbose_name=_("Swedish section name"),
         help_text=_("Enter the name of the section in Swedish"),
     )
+
+    def __str__(self):
+        return self.name_en
 
 
 class Section(models.Model):
@@ -420,6 +432,9 @@ class Section(models.Model):
         help_text=_("Enter the name of the section in Swedish"),
         blank=False,
     )
+
+    def __str__(self):
+        return f"{self.abbreviation} - {self.section_en}"
 
 
 class Team(models.Model):
@@ -476,6 +491,9 @@ class Team(models.Model):
     #     FieldPanel('description_en'),
     #     FieldPanel('description_sv'),
     # ])]
+
+    def __str__(self):
+        return self.name_en
 
 
 class Application(models.Model):
@@ -555,6 +573,9 @@ class Application(models.Model):
     decision_date = models.DateField(
         verbose_name=_("Decision date"), null=True, blank=True
     )
+
+    def __str__(self):
+        return f"{self.member.name} - {self.position} ({self.status})"
 
 
 class Role(models.Model):
@@ -683,3 +704,6 @@ class Role(models.Model):
     #     FieldPanel('role_type'),
     #     FieldPanel('teams', widget=CheckboxSelectMultiple),
     # ])]
+
+    def __str__(self):
+        return f"{self.title_en} ({self.team})"
