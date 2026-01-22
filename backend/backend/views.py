@@ -9,8 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .email import send_password_reset_email, send_verification_email
-from .models import Application, Position
+from .models import Application, Position, Section, StudyProgram
+from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
 from .serializers import (
     ApplicationSerializer,
@@ -18,6 +18,7 @@ from .serializers import (
     ListApplicationSerializer,
     MemberSerializer,
     PositionSerializer,
+    SectionWithProgramsSerializer,
 )
 
 # Create your views here.
@@ -484,3 +485,73 @@ class PositionViewSet(ReadOnlyModelViewSet):
                 "my_positions": self.get_serializer(my_positions, many=True).data,
             }
         )
+
+class MyAccountAPIView(APIView):
+    """
+    MyAccount handles retrieving the authenticated user's account information.
+
+    Methods
+    -------
+        get(request)
+            Retrieve the authenticated user's account information.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When account information is retrieved successfully.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = MemberSerializer(request.user)
+        return Response(serializer.data, status=200)
+
+    def post(self, request):
+        user = request.user
+
+        # Handle study_program update if 'program' is provided in request
+        if 'program' in request.data:
+            program_id = request.data.pop('program')
+            try:
+                program = StudyProgram.objects.get(id=program_id)
+                user.study_program = program
+                user.save()
+            except StudyProgram.DoesNotExist:
+                return Response(
+                    {'program': ['Invalid study program ID']},
+                    status=400
+                )
+
+        serializer = MemberSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Account updated successfully',
+                'user': serializer.data
+            }, status=200)
+
+        return Response(serializer.errors, status=400)
+
+
+class SectionsAPIView(APIView):
+    """
+    SectionsAPIView returns all sections with their associated study programs.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all sections with nested study programs.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When sections are retrieved successfully.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        sections = Section.objects.prefetch_related('study_programs').all()
+        serializer = SectionWithProgramsSerializer(sections, many=True)
+        return Response(serializer.data, status=200)

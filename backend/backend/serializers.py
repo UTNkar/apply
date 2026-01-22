@@ -1,9 +1,30 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
+from .models import Position, Role, Member, Section, StudyProgram, Application, Reference
 
-from .models import Application, Member, Position, Reference, Role
+class SectionSerializer(ModelSerializer):
+    class Meta:
+        model = Section
+        fields = ["id", "abbreviation", "section_en", "section_sv"]
+        read_only_fields = ["id"]
 
+class StudyProgramSerializer(ModelSerializer):
+    section = SectionSerializer(read_only=True)
+
+    class Meta:
+        model = StudyProgram
+        fields = ["id", "name_en", "name_sv", "section"]
+        read_only_fields = ["id"]
+
+class SectionWithProgramsSerializer(ModelSerializer):
+    """Section with nested study programs"""
+    programs = StudyProgramSerializer(source="study_programs", many=True, read_only=True)
+
+    class Meta:
+        model = Section
+        fields = ["id", "abbreviation", "section_en", "section_sv", "programs"]
+        read_only_fields = ["id"]
 
 class MemberSerializer(ModelSerializer):
     """
@@ -17,12 +38,12 @@ class MemberSerializer(ModelSerializer):
         Creates a new member instance, sets the password, and sends a verification email.
         Also invalidates any previous verification tokens for the user.
         Returns the created member instance.
-
     """
 
+    study_program = StudyProgramSerializer(read_only=True)
     class Meta:
         model = Member
-        fields = ("ssn", "email", "password", "is_active", "is_staff", "verified_email")
+        fields = ("name", "phone_number", "study_program", "registration_year", "status", "ssn", "email", "password", "is_active", "is_staff", "verified_email")
         extra_kwargs = {
             "password": {"write_only": True},
             # Debateable if we want to expose these fields
@@ -41,7 +62,7 @@ class MemberSerializer(ModelSerializer):
         user.set_password(password)
         user.save()
 
-        # Email verification here
+        # TODO: Email verification here
 
         return user
 

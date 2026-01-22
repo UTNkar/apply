@@ -1,0 +1,11 @@
+.card {
+    border-radius: var(--paper-border-radius);
+    border: 2px solid var(--grey-200);
+    padding: 10px 30px 30px 30px;
+    margin-bottom: 32px;
+}
+
+.formRow {
+    display: flex;
+    gap: 16px;
+}

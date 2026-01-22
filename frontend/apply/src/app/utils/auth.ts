@@ -14,7 +14,7 @@ const URLs = Object.freeze({
 
 /**
  * Sends a sign-in request to the server with the provided email and password.
- * 
+ *
  * @param email - The email address of the user
  * @param password - The password of the user
  * @returns status 200:  When login is successful
@@ -28,7 +28,7 @@ export function logIn(email: string, password: string) {
 
 /**
  * Logs out the user by sending a logout request to the server.
- * 
+ *
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 200:  When logout is successful
  * @throws Error if the request fails
@@ -39,7 +39,7 @@ export function logOut() {
 
 /**
  * Sends a sign-up request to the server with the provided email and password.
- * 
+ *
  * @param email - The email address of the user
  * @param ssn - The national identification number of the user
  * @param password - The password of the user
@@ -54,13 +54,13 @@ export function signUp(email: string, ssn: string, password: string) {
 
 /**
  * Verifies the email address and logs in a user using the provided token and user ID.
- * 
+ *
  * @param id - The ID of the verification, exists in the magic link
  * @param token - The verification token of the magic link sent to the user's email
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 200:  When email verification is successful
  * @returns status 400:  When link is invalid or expired
- * @returns 
+ * @returns
  */
 export function verifyEmail(id: string, token: string) {
     return request(Method.GET, `${URLs.VERIFY_EMAIL}?id=${id}&token=${token}`);
@@ -69,7 +69,7 @@ export function verifyEmail(id: string, token: string) {
 /**
  * UNSTABLE: May change in the future to use or include SSN
  * Resends the verification email to the user.
- * 
+ *
  * @param email - The email address of the user
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 200:  When email is sent successfully
@@ -83,7 +83,7 @@ export function resendVerificationEmail(email: string) {
 /**
  * UNSTABLE: May change in the future to use or include SSN
  * Sends a password reset email to the user.
- * 
+ *
  * @param email - The email address of the user
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 200:  When email is sent successfully
@@ -96,7 +96,7 @@ export function resetPasswordEmail(email: string) {
 
 /**
  * Resets the user's password using the provided token and new password.
- * 
+ *
  * @param id - The ID of the verification, exists in the magic link
  * @param token - The password reset token sent to the user's email, exists in the magic link
  * @param newPassword - The new password for the user
@@ -112,7 +112,7 @@ export function resetPassword(id: string, token: string, newPassword: string) {
 /**
  * Changes the user's password using the provided old and new passwords.
  * Requires the user to be logged in.
- * 
+ *
  * @param oldPassword - The current password of the user
  * @param newPassword - The new password for the user
  * @returns A promise that resolves to the JSON response from the server
@@ -127,7 +127,7 @@ export function changePassword(oldPassword: string, newPassword: string) {
 /**
  * Changes the user's email address using the provided new email.
  * Requires the user to be logged in.
- * 
+ *
  * @param newEmail - The new email address for the user
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 200:  When email change is successful
