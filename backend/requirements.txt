@@ -16,3 +16,6 @@ python-decouple==3.8
 
 psycopg2
 Pillow>=8.0.0
+
+# Admin theme
+django-unfold

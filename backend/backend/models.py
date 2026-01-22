@@ -41,7 +41,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "ssn"
     EMAIL_FIELD = "email"
-    REQUIRED_FIELDS = []  # TODO: add more fields, maybe
+    REQUIRED_FIELDS = ["email", "name", "phone_number"]
 
     objects = MemberManager()
 

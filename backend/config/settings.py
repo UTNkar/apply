@@ -39,6 +39,8 @@ AUTH_USER_MODEL = "backend.Member"
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -165,3 +167,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 MEDIA_ROOT = "../media"
+
+
+# Django Unfold Admin Configuration
+UNFOLD = {
+    "SITE_TITLE": "UTN Apply Admin",
+    "SITE_HEADER": "UTN Apply",
+    "SITE_SYMBOL": "diversity_3",  # Material icon
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+}
