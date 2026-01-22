@@ -421,6 +421,8 @@ class ApplicationViewSet(ModelViewSet):
     - Destroy: Delete own application (only if draft status)
     """
 
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         """Get all applications with optimized queries"""
         queryset = Application.objects.select_related(
@@ -521,7 +523,7 @@ class MyAccountAPIView(APIView):
                 user.save()
             except StudyProgram.DoesNotExist:
                 return Response(
-                    {'program': ['Invalid study program ID']}, 
+                    {'program': ['Invalid study program ID']},
                     status=400
                 )
 

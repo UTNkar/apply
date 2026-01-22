@@ -5,7 +5,7 @@ Table member {
   id integer [primary key]
   unicore_id integer
   email string
-  phone_num string 
+  phone_num string
   superuser bool
   is_staff bool
   name string

@@ -6,7 +6,7 @@ import MyPositionCard from '@/components/MyPositionCard'
 import OpenPositionCard from './components/OpenPositionCard'
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('Open Positions') 
+  const [activeTab, setActiveTab] = useState('Open Positions')
 
   const applicationDummies = [
     {

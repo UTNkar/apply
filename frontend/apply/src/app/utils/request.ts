@@ -19,7 +19,7 @@ function getCsrfTokenFromCookies() {
 /**
  * Sends an HTTP request to the specified URL with the given method and optional body and headers.
  * Automatically includes credentials and handles CSRF tokens for non-GET requests.
- * 
+ *
  * @param method - The HTTP method to use for the request (GET, POST, PUT, DELETE)
  * @param url - The URL endpoint to send the request to (without the base URL), use the URLs object for convenience
  * @param body - Optional request body to send as JSON
@@ -33,7 +33,7 @@ export async function request(method: Method, url: string, body?: object, header
         headers: { ...headers },
         credentials: 'include',
     };
-    
+
     if (body) {
         options.body = JSON.stringify(body);
         options.headers = {
