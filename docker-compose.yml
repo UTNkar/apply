@@ -14,8 +14,8 @@ services:
 
   backend:
     build:
-      context: ./backend  
-      dockerfile: backend.Dockerfile  
+      context: ./backend
+      dockerfile: backend.Dockerfile
     container_name: django_backend
     depends_on:
       - db
@@ -24,9 +24,9 @@ services:
     env_file:
       - .env  # load environment variables from .env
     volumes:
-      - .:/app  
+      - .:/app
     command: >
-      bash -c "python manage.py makemigrations 
+      bash -c "python manage.py makemigrations
       && python manage.py migrate
       && python manage.py runserver 0.0.0.0:8000"
 
