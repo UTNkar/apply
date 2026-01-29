@@ -74,7 +74,7 @@ const Navbar = () => {
                   pathname === "/logout" ? styles.activeNavLink : ""
                 }`}
               >
-                Log out
+                {t("logOut")}
               </Link>
             </>
           ) : (

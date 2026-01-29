@@ -4,9 +4,11 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./logout.module.css";
 import { logOut } from "@/utils/auth";
-
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
 
 export default function LogOut() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [error, setError] = useState("");
 
@@ -28,21 +30,21 @@ export default function LogOut() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>Do you want to log out?</h1>
+      <h1 className={styles.heading}>{t("doYouWantToLogOut")}</h1>
       
       <div className={styles.buttonContainer}>
         <button
           onClick={handleLogout}
           className={styles.confirmButton}
         >
-          Yes, log out
+          {t("yesLogOut")}
         </button>
 
         <button
           onClick={() => router.push("/")}
           className={styles.cancelButton}
         >
-          No, cancel
+          {t("noCancel")}
         </button>
       </div>
     </div>

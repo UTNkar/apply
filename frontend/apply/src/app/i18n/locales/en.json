@@ -55,5 +55,9 @@
   "invalidEmailFormat": "Invalid email format",
   "invalidPhoneFormat": "Invalid phone number format",
   "formHasErrors": "There are errors in the form. Please adjust your inputs.",
-  "thisField": "This field"
+  "thisField": "This field",
+  "logOut": "Log out",
+  "doYouWantToLogOut": "Do you want to log out?",
+  "yesLogOut": "Yes, log out",
+  "noCancel": "No, cancel"
 }
