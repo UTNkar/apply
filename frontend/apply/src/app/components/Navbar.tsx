@@ -45,14 +45,24 @@ const Navbar = () => {
         </Link>
         {!loading &&
           (isLoggedIn ? (
-            <Link
-              href="/account"
-              className={`${styles.navLink} ${
-                pathname === "/account" ? styles.activeNavLink : ""
-              }`}
-            >
-              Account
-            </Link>
+            <>
+              <Link
+                href="/account"
+                className={`${styles.navLink} ${
+                  pathname === "/account" ? styles.activeNavLink : ""
+                }`}
+              >
+                Account
+              </Link>
+              <Link
+                href="/logout"
+                className={`${styles.navLink} ${
+                  pathname === "/logout" ? styles.activeNavLink : ""
+                }`}
+              >
+                Log out
+              </Link>
+            </>
           ) : (
             <Link
               href="/login"

@@ -41,8 +41,10 @@ export function useIsLoggedIn() {
     useEffect(() => {
         checkLoginStatus();
         window.addEventListener('logged-in', checkLoginStatus);
+        window.addEventListener('logged-out', checkLoginStatus);
         return () => {
             window.removeEventListener('logged-in', checkLoginStatus);
+            window.removeEventListener('logged-out', checkLoginStatus);
         };
     }, []);
 
