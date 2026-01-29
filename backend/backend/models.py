@@ -146,20 +146,22 @@ class Member(AbstractBaseUser, PermissionsMixin):
         if not self.verified_email:
             return False
 
-        # Lets superusers and staff do anything
-        if self.is_superuser or self.is_staff:
+        # Only superusers get all permissions
+        if self.is_superuser:
             return True
 
+        # Staff and regular users: check actual permissions
         return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
         if not self.verified_email:
             return False
 
-        # Lets superusers and staff do anything
-        if self.is_superuser or self.is_staff:
+        # Only superusers get all module permissions
+        if self.is_superuser:
             return True
 
+        # Staff and regular users: check actual permissions
         return super().has_module_perms(app_label)
 
     @staticmethod
