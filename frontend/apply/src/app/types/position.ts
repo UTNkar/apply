@@ -1,17 +1,10 @@
-export interface Team {
-  id: number;
-  name_en: string;
-  name_sv: string;
-}
-
 export interface Role {
   id: number;
-  title_en: string;
-  title_sv: string;
-  description_en: string;
-  description_sv: string;
+  title: string;
+  description: string;
   contact_email: string | null;
-  team: Team;
+  team_name: string;
+  team_logo: string;
 }
 
 export interface Position {
@@ -25,9 +18,8 @@ export interface Position {
 }
 
 export interface Application {
-  applicationId: string;
-  title_en: string;
-  title_sv: string;
+  id: number;
+  title: string;
   status: string;
   term_start: string;
   term_end: string;

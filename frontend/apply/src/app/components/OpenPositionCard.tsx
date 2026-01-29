@@ -13,7 +13,7 @@ type Props = {
 
 const OpenPositionCard = ({ position }: Props) => {
   const router = useRouter()
-  const [showInfo, setShowInfo] = useState(false)
+  const [showInfo, setShowInfo] = useState(false);
   const { t } = useTranslation();
 
   console.log("Position data:", position);
