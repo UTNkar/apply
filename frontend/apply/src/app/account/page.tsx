@@ -10,17 +10,24 @@ import Phone from "@/icons/phone.jsx";
 import Section from "@/icons/section.jsx";
 import StudentHat from "@/icons/student-hat.jsx";
 import { request, Method } from "@/utils/request";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+
+interface Program {
+  id: string;
+  name_en: string;
+  name_sv: string;
+  name: string;
+  value: string;
+}
 
 interface Section {
   id: string;
   section_en: string;
+  section_sv: string;
   name: string;
   value: string;
-  programs: Array<{
-    id: string;
-    name_en: string;
-    name: string;
-  }>;
+  programs: Array<Program>;
 }
 
 interface FormState {
@@ -39,6 +46,7 @@ type Errors = {
 };
 
 export default function Account() {
+  const { t, i18n } = useTranslation();
   const default_state = {
     name: "",
     email: "",
@@ -54,19 +62,19 @@ export default function Account() {
   const [intermediateErrors, setIntermediateErrors] = useState<Errors>({});
   const [sections, setSections] = useState<Array<Section>>([]);
 
-  // TODO call this every time the language changes
   const setProgramNames = () => {
+    const isSwedish = i18n.language === "sv";
     setSections((prev: Array<Section>) =>
       prev.map((section: Section) => {
         return {
           ...section,
-          name: section.section_en,
+          name: isSwedish ? section.section_sv : section.section_en,
           programs: section.programs.map((program) => ({
             ...program,
-            name: program.name_en,
+            name: isSwedish ? program.name_sv : program.name_en,
           })),
         };
-      })
+      }),
     );
   };
 
@@ -87,7 +95,10 @@ export default function Account() {
     request(Method.GET, "/sections/").then(async (res) => {
       if (res.ok) {
         let data = await res.json();
-        data = data.map((program) => ({ ...program, value: program.id }));
+        data = data.map((program: Program) => ({
+          ...program,
+          value: program.id,
+        }));
         setSections(data);
         setProgramNames();
       } else {
@@ -106,7 +117,13 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, []);
+  }, [setProgramNames]);
+
+  useEffect(() => {
+    if (sections.length > 0) {
+      setProgramNames();
+    }
+  }, [i18n.language, setProgramNames, sections.length]);
 
   const useDebounce = <T,>(value: T, delay: number): T => {
     const [debounceValue, setDebounceValue] = useState<T>(value);
@@ -147,8 +164,8 @@ export default function Account() {
     if (required && value.length === 0) {
       // Get field label, e.g. "Email"
       const label =
-        target.parentNode.querySelector(".label")?.innerText ?? "This field";
-      onError(name, label + " is required");
+        target.parentNode.querySelector(".label")?.innerText ?? t("thisField");
+      onError(name, label + " " + t("isRequired"));
       return;
     }
 
@@ -158,7 +175,7 @@ export default function Account() {
         // Validate email format (very permissive)
         const email_re = /^.*@.*$/;
         if (value.match(email_re) === null) {
-          onError("email", "Invalid email format");
+          onError("email", t("invalidEmailFormat"));
         }
         break;
       case "phone_number":
@@ -166,7 +183,7 @@ export default function Account() {
         const phone_re =
           /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
         if (value.match(phone_re) === null) {
-          onError("phone_number", "Invalid phone number format");
+          onError("phone_number", t("invalidPhoneFormat"));
         }
         break;
     }
@@ -202,12 +219,12 @@ export default function Account() {
   };
 
   const formHasErrors = Object.values(intermediateErrors).some(
-    (error) => error !== ""
+    (error) => error !== "",
   );
 
   const submitForm = () => {
     if (formHasErrors) {
-      alert("There are errors in the form. Please adjust your inputs.");
+      alert(t("formHasErrors"));
       return;
     }
     const payload = { ...state, study_program: state.program };
@@ -232,19 +249,19 @@ export default function Account() {
 
   const no_programs = {
     value: "N/A",
-    name: "Select a section to see its programs",
+    name: t("selectSectionFirst"),
   };
 
   return (
     <div className="pageContainer">
-      <h2>Account</h2>
+      <h2>{t("accountTitle")}</h2>
 
       <div className={styles.card}>
-        <h3>Contact information</h3>
+        <h3>{t("contactInformation")}</h3>
 
         <div className={styles.formRow}>
           <TextInput
-            label="Name"
+            label={t("name")}
             value={state.name}
             onChange={onChange}
             name="name"
@@ -252,7 +269,7 @@ export default function Account() {
             disabled
           />
           <TextInput
-            label="Personal identity number"
+            label={t("personalIdentityNumber")}
             value={state.ssn}
             onChange={onChange}
             name="ssn"
@@ -261,24 +278,20 @@ export default function Account() {
             disabled
           />
         </div>
-        <p>
-          The information above is collected from our member registry. If the
-          information has changed, but is not updated here, you can update it by
-          pressing the button below.
-        </p>
+        <p>{t("memberRegistryInfo")}</p>
 
         <button
           className={`button activeButton`}
           onClick={() => alert("#TODO Not implemented!!!!!!!!!")}
           style={{ marginBottom: 24 }}
         >
-          Update information
+          {t("updateInformation")}
         </button>
 
         <div className={styles.formRow}>
           <TextInput
             required
-            label="Phone number"
+            label={t("phoneNumber")}
             value={state.phone_number}
             onChange={onChange}
             name="phone_number"
@@ -288,7 +301,7 @@ export default function Account() {
           />
           <TextInput
             required
-            label="Email"
+            label={t("email")}
             value={state.email}
             onChange={onChange}
             name="email"
@@ -299,14 +312,14 @@ export default function Account() {
       </div>
 
       <div className={styles.card}>
-        <h3>Membership status</h3>
-        You are a member since 2022.
+        <h3>{t("membershipStatus")}</h3>
+        {t("memberSince")} 2022.
       </div>
 
       <div className={styles.card}>
-        <h3>Study details</h3>
+        <h3>{t("studyDetails")}</h3>
         <TextInput
-          label="Section"
+          label={t("section")}
           value={state.section}
           onChange={onChange}
           name="section"
@@ -322,7 +335,7 @@ export default function Account() {
           }}
         >
           <TextInput
-            label="Program"
+            label={t("program")}
             value={
               programs_in_section.length === 0
                 ? no_programs.value
@@ -341,7 +354,7 @@ export default function Account() {
           />
           <TextInput
             required
-            label="Registration year"
+            label={t("registrationYear")}
             value={
               state.registration_year === undefined ||
               state.registration_year === 0
@@ -364,10 +377,10 @@ export default function Account() {
           style={{ marginRight: 16 }}
           disabled={formHasErrors}
         >
-          Save
+          {t("save")}
         </button>
         <button className={`button`} onClick={resetForm}>
-          Reset
+          {t("reset")}
         </button>
       </div>
 
