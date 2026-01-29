@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib.auth.models import Group
 from unfold.admin import ModelAdmin
 
 from .models import (
@@ -13,6 +15,14 @@ from .models import (
     Application,
     Role,
 )
+
+admin.site.unregister(Group)
+
+
+@admin.register(Group)
+class GroupAdmin(BaseGroupAdmin, ModelAdmin):
+    """Group admin with Unfold styling for managing roles/permissions."""
+    list_filter_submit = True
 
 
 class MemberAdmin(BaseUserAdmin, ModelAdmin):
@@ -28,13 +38,15 @@ class MemberAdmin(BaseUserAdmin, ModelAdmin):
     search_fields = ("ssn", "email", "name")
     ordering = ("ssn", "email")
     list_filter_submit = True
+    filter_horizontal = ("groups", "user_permissions")
 
     fieldsets = (
         (None, {"fields": ("ssn", "email", "password")}),
         ("Personal info", {"fields": ("name", "phone_number", "study_program", "registration_year")}),
         (
             "Permissions",
-            {"fields": ("is_active", "is_staff", "is_superuser", "verified_email", "status")},
+            {"fields": ("is_active", "is_staff", "is_superuser", "verified_email", "status", "groups",
+                        "user_permissions")},
         ),
     )
     add_fieldsets = (
