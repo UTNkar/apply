@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import styles from "./login.module.css";
 import { logIn } from "@/utils/auth";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
 
 export default function Login() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,18 +25,18 @@ export default function Login() {
       const response = await logIn(email, password);
 
       if (response.status === 200) {
-        window.dispatchEvent(new CustomEvent('logged-in'));
+        window.dispatchEvent(new CustomEvent("logged-in"));
         router.push("/account");
       } else if (response.status === 401) {
-        setError("Incorrect email or password");
+        setError(t("incorrectCredentials"));
       } else if (response.status === 403) {
         const data = await response.json();
-        setError(data.message || "Email not verified or account inactive");
+        setError(data.message || t("emailNotVerified"));
       } else {
-        setError("An error occurred during login");
+        setError(t("loginError"));
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -48,29 +51,29 @@ export default function Login() {
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
-        <h1 className={styles.title}>Login</h1>
+        <h1 className={styles.title}>{t("loginTitle")}</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
             required
-            label="Email"
+            label={t("email")}
             value={email}
             onChange={handleChange}
             name="email"
             type="email"
-            placeholder="your.email@example.com"
-            error={error && email === "" ? "Email is required" : ""}
+            placeholder={t("emailPlaceholder")}
+            error={error && email === "" ? t("emailRequired") : ""}
           />
 
           <TextInput
             required
-            label="Password"
+            label={t("password")}
             value={password}
             onChange={handleChange}
             name="password"
             type="password"
-            placeholder="Enter your password"
-            error={error && password === "" ? "Password is required" : ""}
+            placeholder={t("passwordPlaceholder")}
+            error={error && password === "" ? t("passwordRequired") : ""}
           />
 
           {error && <div className={styles.errorMessage}>{error}</div>}
@@ -80,16 +83,16 @@ export default function Login() {
             style={{ margin: "12px auto 0" }}
             disabled={loading}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
 
         <div className={styles.links}>
           <a href="/signup" className={styles.link}>
-            Don&apos;t have an account? Register here
+            {t("noAccount")}
           </a>
           <a href="/forgot-password" className={styles.link}>
-            Forgot password?
+            {t("forgotPassword")}
           </a>
         </div>
       </div>
