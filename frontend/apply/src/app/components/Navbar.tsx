@@ -2,14 +2,28 @@
 import styles from "@/styles/navbar.module.css";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useIsLoggedIn } from "@/utils/auth";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+import { setLanguageCookie } from "@/utils/language";
 
 const Navbar = () => {
+  const { i18n, t } = useTranslation();
   const [lang, setLang] = useState("sv");
   const pathname = usePathname();
   const { isLoggedIn, loading } = useIsLoggedIn();
+
+  useEffect(() => {
+    setLang(i18n.language);
+  }, [i18n.language]);
+
+  const handleLanguageChange = (newLang: string) => {
+    setLang(newLang);
+    i18n.changeLanguage(newLang);
+    setLanguageCookie(newLang);
+  };
 
   return (
     <div className={styles.navbar}>
@@ -33,7 +47,7 @@ const Navbar = () => {
             pathname === "/" ? styles.activeNavLink : ""
           }`}
         >
-          Home
+          {t("home")}
         </Link>
         <Link
           href="/about"
@@ -41,7 +55,7 @@ const Navbar = () => {
             pathname === "/about" ? styles.activeNavLink : ""
           }`}
         >
-          About
+          {t("about")}
         </Link>
         {!loading &&
           (isLoggedIn ? (
@@ -52,7 +66,7 @@ const Navbar = () => {
                   pathname === "/account" ? styles.activeNavLink : ""
                 }`}
               >
-                Account
+                {t("account")}
               </Link>
               <Link
                 href="/logout"
@@ -70,13 +84,13 @@ const Navbar = () => {
                 pathname === "/login" ? styles.activeNavLink : ""
               }`}
             >
-              Log in
+              {t("login")}
             </Link>
           ))}
 
         <div className={styles.langBtns}>
           <button
-            onClick={() => setLang("sv")}
+            onClick={() => handleLanguageChange("sv")}
             className={`${styles.svLang} smallButton ${
               lang === "sv" ? styles.activeBtn : ""
             }`}
@@ -84,7 +98,7 @@ const Navbar = () => {
             Svenska
           </button>
           <button
-            onClick={() => setLang("en")}
+            onClick={() => handleLanguageChange("en")}
             className={`${styles.engLang} smallButton ${
               lang === "en" ? styles.activeBtn : ""
             }`}
