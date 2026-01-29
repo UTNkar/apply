@@ -20,6 +20,38 @@
   "about": "Om",
   "account": "Konto",
   "login": "Logga in",
+
+
+
+  
+    "registerTitle": "Registrera dig",
+  "creatingAccount": "Skapar konto...",
+  "registerAccount": "Skapa konto",
+
+  "username": "Användarnamn",
+  "usernamePlaceholder": "Ange ditt användarnamn",
+  "usernameRequired": "Användarnamn krävs",
+
+  "passwordConfirmation": "Bekräfta lösenord",
+  "passwordConfirmationPlaceholder": "Ange lösenordet igen",
+  "passwordConfirmationRequired": "Lösenordsbekräftelse krävs",
+  "passwordsDoNotMatch": "Lösenorden matchar inte",
+
+  "PersonNumberPlaceholder": "ÅÅÅÅMMDD-XXXX",
+  "PersonNumberRequired": "Personnummer krävs",
+
+  "sectionPlaceholder": "Välj sektion",
+  "sectionRequired": "Sektion krävs",
+
+  "phoneNumberPlaceholder": "Ange ditt telefonnummer",
+  "phoneNumberRequired": "Telefonnummer krävs",
+
+
+
+
+
+
+
   "loginTitle": "Logga in",
   "email": "E-post",
   "password": "Lösenord",

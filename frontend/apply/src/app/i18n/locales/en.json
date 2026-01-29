@@ -21,6 +21,34 @@
   "account": "Account",
   "login": "Log in",
   "loginTitle": "Login",
+
+
+
+
+
+  "registerTitle": "Register",
+  "creatingAccount": "Creating account...",
+  "registerAccount": "Create account",
+
+  "username": "Username",
+  "usernamePlaceholder": "Enter your username",
+  "usernameRequired": "Username is required",
+
+  "passwordConfirmation": "Confirm password",
+  "passwordConfirmationPlaceholder": "Re-enter your password",
+  "passwordConfirmationRequired": "Password confirmation is required",
+  "passwordsDoNotMatch": "Passwords do not match",
+
+  "PersonNumberPlaceholder": "YYYYMMDD-XXXX",
+  "PersonNumberRequired": "Personal identity number is required",
+
+  "sectionPlaceholder": "Select your section",
+  "sectionRequired": "Section is required",
+
+  "phoneNumberPlaceholder": "Enter your phone number",
+  "phoneNumberRequired": "Phone number is required",
+
+
   "email": "Email",
   "password": "Password",
   "emailRequired": "Email is required",
