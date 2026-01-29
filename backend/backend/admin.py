@@ -93,7 +93,6 @@ class ApplicationAdmin(ModelAdmin):
         "member__email",
     )
     list_filter_submit = True
-    readonly_fields = ("position", "member")
 
 
 @admin.register(Appointment)
