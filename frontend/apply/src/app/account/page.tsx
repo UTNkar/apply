@@ -135,13 +135,13 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, []);
+  }, [setProgramNames]);
 
   useEffect(() => {
     if (sections.length > 0) {
       setProgramNames();
     }
-  }, [i18n.language]);
+  }, [i18n.language, setProgramNames, sections.length]);
 
   const useDebounce = <T,>(value: T, delay: number): T => {
     const [debounceValue, setDebounceValue] = useState<T>(value);
