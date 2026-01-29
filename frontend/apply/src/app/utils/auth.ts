@@ -1,4 +1,5 @@
-import { request, Method } from "@/app/utils/request";
+import { request, Method } from "@/utils/request";
+import { useState, useEffect } from "react";
 
 const URLs = Object.freeze({
     LOGIN: "/auth/login",
@@ -11,6 +12,42 @@ const URLs = Object.freeze({
     CHANGE_PASSWORD: "/auth/change-password",
     CHANGE_EMAIL: "/auth/change-email",
 });
+
+/**
+ * React hook that checks if the user is logged in.
+ * Automatically checks on mount and provides loading state.
+ * 
+ * @returns Object containing:
+ *   - isLoggedIn: boolean indicating if user is logged in
+ *   - loading: boolean indicating if the check is in progress
+ *   - recheck: function to manually trigger a recheck
+ */
+export function useIsLoggedIn() {
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    const checkLoginStatus = async () => {
+        setLoading(true);
+        try {
+            const response = await request(Method.GET, "/account");
+            setIsLoggedIn(response.status === 200);
+        } catch {
+            setIsLoggedIn(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        checkLoginStatus();
+        window.addEventListener('logged-in', checkLoginStatus);
+        return () => {
+            window.removeEventListener('logged-in', checkLoginStatus);
+        };
+    }, []);
+
+    return { isLoggedIn, loading, recheck: checkLoginStatus };
+}
 
 /**
  * Sends a sign-in request to the server with the provided email and password.

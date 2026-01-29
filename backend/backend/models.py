@@ -64,7 +64,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         max_length=255,
         verbose_name=_("Email"),
-        help_text=_("Enter an email address that you want to connect to this account."),
+        help_text=_(
+            "Enter an email address that you want to connect to this account."
+        ),
     )
 
     verified_email = models.BooleanField(default=False)
@@ -72,17 +74,18 @@ class Member(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(
         max_length=20,
         verbose_name=_("Phone number"),
-        help_text=_("Enter a phone number that you want to connect to this account."),
+        help_text=_(
+            "Enter a phone number that you want to connect to this account."),
     )
 
     is_superuser = models.BooleanField(
-        help_text=("Designates whether the user is a superuser")
-    )
+        help_text=("Designates whether the user is a superuser"))
 
     is_staff = models.BooleanField(
         _("Staff status"),
         default=False,
-        help_text=_("Designates whether the user can log into the admin site."),
+        help_text=_(
+            "Designates whether the user can log into the admin site."),
     )
 
     # Required by AbstractBaseUser
@@ -91,8 +94,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         default=True,
         help_text=_(
             "Designates whether this user should be treated as active. "
-            "Unselect this instead of deleting accounts."
-        ),
+            "Unselect this instead of deleting accounts."),
     )
 
     name = models.CharField(
@@ -117,11 +119,11 @@ class Member(AbstractBaseUser, PermissionsMixin):
     registration_year = models.CharField(
         max_length=4,
         verbose_name=_("Registration year"),
-        help_text=_("Enter the year you started studying at the TekNat " "faculty"),
+        help_text=_("Enter the year you started studying at the TekNat "
+                    "faculty"),
         validators=[
-            validators.RegexValidator(
-                regex=r"^20\d{2}$", message=_("Please enter a valid year")
-            )
+            validators.RegexValidator(regex=r"^20\d{2}$",
+                                      message=_("Please enter a valid year"))
         ],
         blank=True,
     )
@@ -165,7 +167,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
     @staticmethod
     def find_user_by_ssn(ssn):
         """
-        Checks if a user exists in our db
+        Find a user from our db by ssn
         """
         ssn = ssn.strip()
 
@@ -181,6 +183,19 @@ class Member(AbstractBaseUser, PermissionsMixin):
                 pass
 
             return None
+
+    @staticmethod
+    def find_user_by_email(email):
+        """
+        Find a user from our db by email
+        """
+        email = email.strip().lower()
+
+        user = Member.objects.filter(email__iexact=email).first()
+        if user is not None:
+            return user
+
+        return None
 
 
 class Position(models.Model):
@@ -222,8 +237,10 @@ class Position(models.Model):
 
     term_from = models.DateField(verbose_name=("Date of appointment"))
     term_end = models.DateField(verbose_name=("End date of the appointment"))
-    comment_eng = models.TextField(verbose_name=("Comment in English"), blank=True)
-    comment_sv = models.TextField(verbose_name=("Comment in Swedish"), blank=True)
+    comment_eng = models.TextField(verbose_name=("Comment in English"),
+                                   blank=True)
+    comment_sv = models.TextField(verbose_name=("Comment in Swedish"),
+                                  blank=True)
 
 
 class Appointment(models.Model):
@@ -332,7 +349,9 @@ class Reference(models.Model):
         blank=False,
     )
 
-    name = models.CharField(max_length=255, verbose_name=_("Name"), blank=False)
+    name = models.CharField(max_length=255,
+                            verbose_name=_("Name"),
+                            blank=False)
 
     phone_num = models.CharField(
         max_length=20,
@@ -531,10 +550,8 @@ class Application(models.Model):
     # ---- Application Information ------
     cover_letter = models.TextField(
         verbose_name=_("Cover Letter"),
-        help_text=_(
-            """Present yourself and state why you are
-         who we are looking for"""
-        ),
+        help_text=_("""Present yourself and state why you are
+         who we are looking for"""),
     )
     qualifications = models.TextField(
         verbose_name=_("Qualifications"),
@@ -543,18 +560,16 @@ class Application(models.Model):
     gdpr = models.BooleanField(
         default=False,
         verbose_name=("GDPR"),
-        help_text=_(
-            """
+        help_text=_("""
             I accept that my data is saved in accordance
             with Uppsala Union of Engineering and Science Students integrity
             policy that can be found within the link:
-        """
-        ),
+        """),
     )
 
-    decision_date = models.DateField(
-        verbose_name=_("Decision date"), null=True, blank=True
-    )
+    decision_date = models.DateField(verbose_name=_("Decision date"),
+                                     null=True,
+                                     blank=True)
 
 
 class Role(models.Model):

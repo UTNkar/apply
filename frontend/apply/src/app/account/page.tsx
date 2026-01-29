@@ -11,6 +11,18 @@ import Section from "@/icons/section.jsx";
 import StudentHat from "@/icons/student-hat.jsx";
 import { request, Method } from "@/utils/request";
 
+interface Section {
+  id: string;
+  section_en: string;
+  name: string;
+  value: string;
+  programs: Array<{
+    id: string;
+    name_en: string;
+    name: string;
+  }>;
+}
+
 interface FormState {
   email: string;
   name: string;
@@ -40,23 +52,23 @@ export default function Account() {
   const [originalState, setOriginalState] = useState<FormState>(default_state);
   const [errors, setErrors] = useState<Errors>({});
   const [intermediateErrors, setIntermediateErrors] = useState<Errors>({});
-  const [sections, setSections] = useState([]);
+  const [sections, setSections] = useState<Array<Section>>([]);
 
   // TODO call this every time the language changes
   const setProgramNames = () => {
-    setSections(prev =>
-      prev.map(section => {
+    setSections((prev: Array<Section>) =>
+      prev.map((section: Section) => {
         return {
           ...section,
           name: section.section_en,
-          programs: section.programs.map(program => ({
+          programs: section.programs.map((program) => ({
             ...program,
             name: program.name_en,
           })),
         };
       })
     );
-  }
+  };
 
   const handleNewUserData = (data: FormState) => {
       data.program = data.study_program?.id || "";
@@ -147,7 +159,6 @@ export default function Account() {
         const email_re = /^.*@.*$/;
         if (value.match(email_re) === null) {
           onError("email", "Invalid email format");
-          break;
         }
         break;
       case "phone_number":
@@ -156,8 +167,8 @@ export default function Account() {
           /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
         if (value.match(phone_re) === null) {
           onError("phone_number", "Invalid phone number format");
-          break;
         }
+        break;
     }
   };
 
@@ -258,7 +269,8 @@ export default function Account() {
 
         <button
           className={`button activeButton`}
-          onClick={() => alert("Not implemented!!!!!!!!!")}
+          onClick={() => alert("#TODO Not implemented!!!!!!!!!")}
+          style={{ marginBottom: 24 }}
         >
           Update information
         </button>
