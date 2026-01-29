@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import styles from "./page.module.css";
 import ApplicationCard from "@/components/ApplicationCard";
 import MyPositionCard from "@/components/MyPositionCard";
 import OpenPositionCard from "./components/OpenPositionCard";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import { title } from "process";
 import { Application, Position } from "@/types/position";
 
 export default function Home() {
