@@ -491,6 +491,31 @@ class PositionViewSet(ReadOnlyModelViewSet):
         )
 
 
+class OpenPositionsAPIView(APIView):
+    """
+    OpenPositionsAPIView handles retrieving all open positions.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all open positions.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When open positions are retrieved successfully.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        open_positions = Position.objects.open_positions().select_related(
+            "role", "role__team"
+        )
+        serializer = PositionSerializer(open_positions, many=True, context={"request": request})
+        return Response(serializer.data, status=200)
+
+
 class MyAccountAPIView(APIView):
     """
     MyAccount handles retrieving the authenticated user's account information.
@@ -601,3 +626,5 @@ class SectionsAPIView(APIView):
         sections = Section.objects.prefetch_related("study_programs").all()
         serializer = SectionWithProgramsSerializer(sections, many=True)
         return Response(serializer.data, status=200)
+
+

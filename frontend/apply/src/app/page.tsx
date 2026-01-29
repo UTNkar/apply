@@ -8,32 +8,45 @@ import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { title } from "process";
 import { Application, Position } from "@/types/position";
+import { request, Method } from "@/utils/request";
 
 export default function Home() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Open Positions");
+  const [openPositions, setOpenPositions] = useState<Position[]>([]);
+
+  useEffect(() => {
+    const fetchOpenPositions = async () => {
+      try {
+        const response = await request(Method.GET, "/open-positions/");
+        const data = await response.json();
+        setOpenPositions(data);
+      } catch (error) {
+        console.error("Failed to fetch open positions:", error);
+      }
+    };
+
+    fetchOpenPositions();
+  }, []);
 
   const applicationDummies: Application[] = [
     {
       id: 1,
-      title_en: "Head of the Pub Crew 2025",
-      title_sv: "Pubmästare 2025",
+      title: "Head of the Pub Crew 2025",
       status: "appointed",
       term_start: "2025-09-01",
       term_end: "2026-06-30",
     },
     {
       id: 2,
-      title_en: "Binär 2024",
-      title_sv: "Binär 2024",
+      title: "Binär 2024",
       status: "turnedDown",
       term_start: "2024-09-01",
       term_end: "2025-06-30",
     },
     {
       id: 3,
-      title_en: "Buddy 2023",
-      title_sv: "Fadder 2023",
+      title: "Buddy 2023",
       status: "appointed",
       term_start: "2023-09-01",
       term_end: "2024-06-30",
@@ -44,16 +57,12 @@ export default function Home() {
     {
       id: 4,
       role: {
-        title_en: "Open position 2025",
-        title_sv: "Öppen post 2025",
-        description_en: "You will be responsible for creating positions :)",
-        description_sv: "Du kommer att vara ansvarig för att skapa poster :)",
+        title: "Open position 2025",
+        description: "You will be responsible for creating positions :)",
         contact_email: null,
         team: {
           id: 1,
-          name_en:
-            "Engineering, Computer Science, and Foundation Year Reception",
-          name_sv: "Teknolog-, datavetar- och basårsmottagningen",
+          name: "Engineering, Computer Science, and Foundation Year Reception",
         },
       },
       recruitment_start: "2026-03-01",
@@ -74,8 +83,7 @@ export default function Home() {
         contact_email: "cafe@utn.se",
         team: {
           id: 2,
-          name_en: "Cafe Group",
-          name_sv: "Cafégruppen",
+          name: "Cafe Group",
         },
       },
       recruitment_start: "2026-03-01",
@@ -89,8 +97,7 @@ export default function Home() {
   const myPositionDummies: Position[] = [
     {
       role: {
-        title_en: "My position 2025",
-        title_sv: "Min post 2025",
+        title: "My position 2025",
       },
       term_start: "2026-09-01",
       term_end: "2027-06-30",
@@ -98,8 +105,7 @@ export default function Home() {
     },
     {
       role: {
-        title_en: "Another position 2025",
-        title_sv: "Ytterligare en post 2025",
+        title: "Another position 2025",
       },
       term_start: "2026-10-01",
       term_end: "2027-05-25",
@@ -156,7 +162,7 @@ export default function Home() {
 
       {activeTab === "Open Positions" && (
         <div className={styles.openPositionsContainer}>
-          {openPositionDummies.map((position, index) => (
+          {openPositions.map((position, index) => (
             <OpenPositionCard key={index} position={position} />
           ))}
         </div>

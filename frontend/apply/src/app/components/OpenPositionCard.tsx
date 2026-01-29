@@ -19,15 +19,11 @@ type Props = {
 const OpenPositionCard = ({ position }: Props) => {
   const [showInfo, setShowInfo] = useState(false);
   const { t, i18n } = useTranslation();
-  const isSwedish = i18n.language === "sv";
 
-  const title = isSwedish ? position.role.title_sv : position.role.title_en;
-  const description = isSwedish
-    ? position.role.description_sv
-    : position.role.description_en;
-  const teamName = isSwedish
-    ? position.role.team.name_sv
-    : position.role.team.name_en;
+  const title = position.role.title;
+  const description = position.role.description;
+  const teamName = position.role.team_name;
+  const logo = position.role.team_logo;
 
   const deadline = formatDate(position.recruitment_end);
   const dateRange = formatDateRange(position.term_start, position.term_end);
@@ -38,7 +34,9 @@ const OpenPositionCard = ({ position }: Props) => {
         className={styles.cardInitial}
         onClick={() => setShowInfo(!showInfo)}
       >
-        <div className={styles.cardLogo}></div>
+        <div className={styles.cardLogo}>
+          <img src={logo} alt={`${teamName} logo`} />
+        </div>
 
         <div className={styles.cardLeftSection}>
           <h3>{title}</h3>
