@@ -127,7 +127,6 @@ export default function Account() {
     request(Method.GET, "/membership/").then(async (res) => {
       if (res.ok) {
         const data = await res.json();
-        console.log("Membership data:", data);
         setMemberSince(data);
       } else {
         const err = await res.text();
