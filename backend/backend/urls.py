@@ -16,6 +16,7 @@ from .views import (
     ResendVerificationEmailAPIView,
     SectionsAPIView,
     SignupAPIView,
+    UnicoreDataAPIView,
 )
 
 router = DefaultRouter()
@@ -51,6 +52,8 @@ urlpatterns = [
     path("api/auth/change-email",
          ChangeEmailAPIView.as_view(),
          name="change-email"),
-    path('api/account/', MyAccountAPIView.as_view(), name='my-account'),
-    path('api/sections/', SectionsAPIView.as_view(), name='sections'),
+    path("api/account/", MyAccountAPIView.as_view(), name="my-account"),
+    path("api/sections/", SectionsAPIView.as_view(), name="sections"),
+    path("api/update-unicore/", UnicoreDataAPIView.as_view(), name="update-unicore"),
+    path("api/membership/", UnicoreDataAPIView.as_view(), name="update-unicore"),
 ]
