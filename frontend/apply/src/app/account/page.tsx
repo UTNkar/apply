@@ -176,7 +176,7 @@ export default function Account() {
     }));
   };
 
-  const validateInput = (name: keyof FormState, value: string, target: any) => {
+  const validateInput = (name: keyof FormState, value: string, target) => {
     // Validate required fields
     const required = target.required;
     if (required && value.length === 0) {

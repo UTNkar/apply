@@ -6,7 +6,6 @@ import styles from "./logout.module.css";
 import { logOut } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import { stringify } from "querystring";
 
 export default function LogOut() {
   const { t } = useTranslation();
