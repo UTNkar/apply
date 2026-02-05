@@ -10,33 +10,34 @@ class MemberManager(BaseUserManager):
 
     Methods
     -------
-    create_user(email, password=None, **extra_fields)
-        Creates and returns a user with an email, password and other fields.
-    create_superuser(email, password=None, **extra_fields)
-        Creates and returns a superuser with an email, password and other fields.
+    create_user(ssn, email, password=None, **extra_fields)
+        Creates and returns a user with ssn, email, password and other fields.
+    create_superuser(ssn, email, password=None, **extra_fields)
+        Creates and returns a superuser with ssn, email, password and other fields.
     """
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, ssn, email, password=None, **extra_fields):
+        if not ssn:
+            raise ValueError("The SSN field must be set")
         if not email:
             raise ValueError("The Email field must be set")
 
-        user = self.model(email=self.normalize_email(email), **extra_fields)
-
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
         user = self.model(
+            ssn=ssn,
             email=self.normalize_email(email),
-            is_staff=True,
-            is_superuser=True,
             **extra_fields,
         )
         user.set_password(password)
         user.save(using=self._db)
-
         return user
+
+    def create_superuser(self, ssn, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("verified_email", True)
+
+        return self.create_user(ssn, email, password, **extra_fields)
 
 
 class PositionManager(Manager):
