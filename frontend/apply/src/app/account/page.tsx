@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import TextInput from "../components/TextInput";
 import styles from "@/account/account.module.css";
 import Person from "@/icons/person.jsx";
@@ -57,7 +57,8 @@ export default function Account() {
     registration_year: 0,
     section: "",
     program: "",
-  };
+    study_program: null,
+  } as FormState;
   const [state, setState] = useState<FormState>(default_state);
   const [originalState, setOriginalState] = useState<FormState>(default_state);
   const [errors, setErrors] = useState<Errors>({});
@@ -66,7 +67,7 @@ export default function Account() {
   const [unicoreLoading, setUnicoreLoading] = useState<boolean>(false);
   const [memberSince, setMemberSince] = useState<string>("");
 
-  const setProgramNames = () => {
+  const setProgramNames = useCallback(() => {
     const isSwedish = i18n.language === "sv";
     setSections((prev: Array<Section>) =>
       prev.map((section: Section) => {
@@ -80,7 +81,7 @@ export default function Account() {
         };
       }),
     );
-  };
+  }, [i18n.language]);
 
   const handleNewUserData = (data: FormState) => {
       data.program = data.study_program?.id || "";
@@ -175,7 +176,7 @@ export default function Account() {
     }));
   };
 
-  const validateInput = (name: keyof FormState, value: string, target) => {
+  const validateInput = (name: keyof FormState, value: string, target: any) => {
     // Validate required fields
     const required = target.required;
     if (required && value.length === 0) {
