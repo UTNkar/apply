@@ -2,6 +2,8 @@ from django.contrib.auth.models import BaseUserManager
 from django.db.models import Count, F, Manager, Q
 from django.utils import timezone
 
+from .utils.unicore import unicoremember
+
 
 class MemberManager(BaseUserManager):
     """
@@ -27,6 +29,7 @@ class MemberManager(BaseUserManager):
             email=self.normalize_email(email),
             **extra_fields,
         )
+
         user.set_password(password)
         user.save(using=self._db)
         return user
