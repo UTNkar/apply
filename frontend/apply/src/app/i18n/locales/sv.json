@@ -62,5 +62,7 @@
   "logOut": "Logga ut",
   "doYouWantToLogOut": "Vill du logga ut?",
   "yesLogOut": "Ja, logga ut",
-  "noCancel": "Nej, avbryt"
+  "noCancel": "Nej, avbryt",
+  "menu": "meny",
+  "close": "stäng"
 }

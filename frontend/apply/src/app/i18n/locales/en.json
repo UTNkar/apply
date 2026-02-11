@@ -62,5 +62,7 @@
   "logOut": "Log out",
   "doYouWantToLogOut": "Do you want to log out?",
   "yesLogOut": "Yes, log out",
-  "noCancel": "No, cancel"
+  "noCancel": "No, cancel",
+  "menu": "menu",
+  "close": "close"
 }

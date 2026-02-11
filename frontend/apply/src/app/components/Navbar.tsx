@@ -12,12 +12,27 @@ import { setLanguageCookie } from "@/utils/language";
 const Navbar = () => {
   const { i18n, t } = useTranslation();
   const [lang, setLang] = useState("sv");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { isLoggedIn, loading } = useIsLoggedIn();
 
   useEffect(() => {
+    setMounted(true);
     setLang(i18n.language);
   }, [i18n.language]);
+
+  useEffect(() => {
+    // Prevent body scroll when menu is open
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [menuOpen]);
 
   const handleLanguageChange = (newLang: string) => {
     setLang(newLang);
@@ -25,89 +40,185 @@ const Navbar = () => {
     setLanguageCookie(newLang);
   };
 
-  return (
-    <div className={styles.navbar}>
-      <a
-        className={styles.logo}
-        href="https://www.utn.se"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/utn_standard_bla.png"
-          alt="Logo"
-          width={200}
-          height={51.25}
-        />
-      </a>
-      <div className={styles.navbarItems}>
-        <Link
-          href="/"
-          className={`${styles.navLink} ${
-            pathname === "/" ? styles.activeNavLink : ""
-          }`}
-        >
-          {t("home")}
-        </Link>
-        <Link
-          href="/about"
-          className={`${styles.navLink} ${
-            pathname === "/about" ? styles.activeNavLink : ""
-          }`}
-        >
-          {t("about")}
-        </Link>
-        {!loading &&
-          (isLoggedIn ? (
-            <>
-              <Link
-                href="/account"
-                className={`${styles.navLink} ${
-                  pathname === "/account" ? styles.activeNavLink : ""
-                }`}
-              >
-                {t("account")}
-              </Link>
-              <Link
-                href="/logout"
-                className={`${styles.navLink} ${
-                  pathname === "/logout" ? styles.activeNavLink : ""
-                }`}
-              >
-                {t("logOut")}
-              </Link>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className={`${styles.navLink} ${
-                pathname === "/login" ? styles.activeNavLink : ""
-              }`}
-            >
-              {t("login")}
-            </Link>
-          ))}
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
 
-        <div className={styles.langBtns}>
-          <button
-            onClick={() => handleLanguageChange("sv")}
-            className={`${styles.svLang} smallButton ${
-              lang === "sv" ? styles.activeBtn : ""
-            }`}
-          >
-            Svenska
-          </button>
-          <button
-            onClick={() => handleLanguageChange("en")}
-            className={`${styles.engLang} smallButton ${
-              lang === "en" ? styles.activeBtn : ""
-            }`}
-          >
-            English
-          </button>
-        </div>
+  return (
+    <>
+      <div className={styles.navbar}>
+        <a
+          className={styles.logo}
+          href="https://www.utn.se"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            src="/utn_standard_bla.png"
+            alt="Logo"
+            width={200}
+            height={51.25}
+          />
+        </a>
+
+        {mounted && (
+          <>
+            {/* Hamburger Button - Mobile Only */}
+            <button
+              className={styles.hamburger}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              <div className={`${styles.hamburgerIcon} ${menuOpen ? styles.open : ""}`}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span className={styles.hamburgerText}>
+                {menuOpen ? t("close") : t("menu")}
+              </span>
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className={styles.navbarItems}>
+              <Link
+                href="/"
+                className={`${styles.navLink} ${
+                  pathname === "/" ? styles.activeNavLink : ""
+                }`}
+              >
+                {t("home")}
+              </Link>
+              <Link
+                href="/about"
+                className={`${styles.navLink} ${
+                  pathname === "/about" ? styles.activeNavLink : ""
+                }`}
+              >
+                {t("about")}
+              </Link>
+              {!loading &&
+                (isLoggedIn ? (
+                  <Link
+                    href="/account"
+                    className={`${styles.navLink} ${
+                      pathname === "/account" ? styles.activeNavLink : ""
+                    }`}
+                  >
+                    {t("account")}
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className={`${styles.navLink} ${
+                      pathname === "/login" ? styles.activeNavLink : ""
+                    }`}
+                  >
+                    {t("login")}
+                  </Link>
+                ))}
+
+              <div className={styles.langBtns}>
+                <button
+                  onClick={() => handleLanguageChange("sv")}
+                  className={`${styles.svLang} smallButton ${
+                    lang === "sv" ? styles.activeBtn : ""
+                  }`}
+                >
+                  Svenska
+                </button>
+                <button
+                  onClick={() => handleLanguageChange("en")}
+                  className={`${styles.engLang} smallButton ${
+                    lang === "en" ? styles.activeBtn : ""
+                  }`}
+                >
+                  English
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </div>
+
+      {/* Mobile Menu Overlay */}
+      {mounted && menuOpen && (
+        <div className={styles.overlay} onClick={closeMenu}></div>
+      )}
+
+      {/* Mobile Menu Drawer */}
+      {mounted && (
+        <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}>
+          <div className={styles.mobileMenuContent}>
+            <Link
+              href="/"
+              className={`${styles.mobileNavLink} ${
+                pathname === "/" ? styles.activeMobileNavLink : ""
+              }`}
+              onClick={closeMenu}
+            >
+              {t("home")}
+            </Link>
+            <Link
+              href="/about"
+              className={`${styles.mobileNavLink} ${
+                pathname === "/about" ? styles.activeMobileNavLink : ""
+              }`}
+              onClick={closeMenu}
+            >
+              {t("about")}
+            </Link>
+            {!loading &&
+              (isLoggedIn ? (
+                <Link
+                  href="/account"
+                  className={`${styles.mobileNavLink} ${
+                    pathname === "/account" ? styles.activeMobileNavLink : ""
+                  }`}
+                  onClick={closeMenu}
+                >
+                  {t("account")}
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className={`${styles.mobileNavLink} ${
+                    pathname === "/login" ? styles.activeMobileNavLink : ""
+                  }`}
+                  onClick={closeMenu}
+                >
+                  {t("login")}
+                </Link>
+              ))}
+
+            <div className={styles.mobileLangBtns}>
+              <button
+                onClick={() => {
+                  handleLanguageChange("sv");
+                  closeMenu();
+                }}
+                className={`${styles.svLang} smallButton ${
+                  lang === "sv" ? styles.activeBtn : ""
+                }`}
+              >
+                Svenska
+              </button>
+              <button
+                onClick={() => {
+                  handleLanguageChange("en");
+                  closeMenu();
+                }}
+                className={`${styles.engLang} smallButton ${
+                  lang === "en" ? styles.activeBtn : ""
+                }`}
+              >
+                English
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
