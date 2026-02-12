@@ -2,7 +2,7 @@
 import styles from "@/styles/navbar.module.css";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useIsLoggedIn } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,6 @@ const Navbar = () => {
   }, [i18n.language]);
 
   useEffect(() => {
-    // Prevent body scroll when menu is open
     if (menuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -34,6 +33,27 @@ const Navbar = () => {
     };
   }, [menuOpen]);
 
+  // Generate navigation links based on auth state
+  const navLinks = useMemo(() => {
+    const links = [
+      { href: "/", label: t("home") },
+      { href: "/about", label: t("about") },
+    ];
+
+    if (!loading) {
+      if (isLoggedIn) {
+        links.push(
+          { href: "/account", label: t("account") },
+          { href: "/logout", label: t("logOut") }
+        );
+      } else {
+        links.push({ href: "/login", label: t("login") });
+      }
+    }
+
+    return links;
+  }, [isLoggedIn, loading, t]);
+
   const handleLanguageChange = (newLang: string) => {
     setLang(newLang);
     i18n.changeLanguage(newLang);
@@ -43,6 +63,28 @@ const Navbar = () => {
   const closeMenu = () => {
     setMenuOpen(false);
   };
+
+  // Language buttons component to avoid duplication
+  const LanguageButtons = ({ mobile = false }: { mobile?: boolean }) => (
+    <div className={mobile ? styles.mobileLangBtns : styles.langBtns}>
+      <button
+        onClick={() => handleLanguageChange("sv")}
+        className={`${styles.svLang} smallButton ${
+          lang === "sv" ? styles.activeBtn : ""
+        }`}
+      >
+        Svenska
+      </button>
+      <button
+        onClick={() => handleLanguageChange("en")}
+        className={`${styles.engLang} smallButton ${
+          lang === "en" ? styles.activeBtn : ""
+        }`}
+      >
+        English
+      </button>
+    </div>
+  );
 
   return (
     <>
@@ -63,13 +105,16 @@ const Navbar = () => {
 
         {mounted && (
           <>
-            {/* Hamburger Button - Mobile Only */}
             <button
               className={styles.hamburger}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
             >
-              <div className={`${styles.hamburgerIcon} ${menuOpen ? styles.open : ""}`}>
+              <div
+                className={`${styles.hamburgerIcon} ${
+                  menuOpen ? styles.open : ""
+                }`}
+              >
                 <span></span>
                 <span></span>
                 <span></span>
@@ -81,61 +126,18 @@ const Navbar = () => {
 
             {/* Desktop Navigation */}
             <div className={styles.navbarItems}>
-              <Link
-                href="/"
-                className={`${styles.navLink} ${
-                  pathname === "/" ? styles.activeNavLink : ""
-                }`}
-              >
-                {t("home")}
-              </Link>
-              <Link
-                href="/about"
-                className={`${styles.navLink} ${
-                  pathname === "/about" ? styles.activeNavLink : ""
-                }`}
-              >
-                {t("about")}
-              </Link>
-              {!loading &&
-                (isLoggedIn ? (
-                  <Link
-                    href="/account"
-                    className={`${styles.navLink} ${
-                      pathname === "/account" ? styles.activeNavLink : ""
-                    }`}
-                  >
-                    {t("account")}
-                  </Link>
-                ) : (
-                  <Link
-                    href="/login"
-                    className={`${styles.navLink} ${
-                      pathname === "/login" ? styles.activeNavLink : ""
-                    }`}
-                  >
-                    {t("login")}
-                  </Link>
-                ))}
-
-              <div className={styles.langBtns}>
-                <button
-                  onClick={() => handleLanguageChange("sv")}
-                  className={`${styles.svLang} smallButton ${
-                    lang === "sv" ? styles.activeBtn : ""
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`${styles.navLink} ${
+                    pathname === link.href ? styles.activeNavLink : ""
                   }`}
                 >
-                  Svenska
-                </button>
-                <button
-                  onClick={() => handleLanguageChange("en")}
-                  className={`${styles.engLang} smallButton ${
-                    lang === "en" ? styles.activeBtn : ""
-                  }`}
-                >
-                  English
-                </button>
-              </div>
+                  {link.label}
+                </Link>
+              ))}
+              <LanguageButtons />
             </div>
           </>
         )}
@@ -148,73 +150,25 @@ const Navbar = () => {
 
       {/* Mobile Menu Drawer */}
       {mounted && (
-        <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}>
+        <div
+          className={`${styles.mobileMenu} ${
+            menuOpen ? styles.mobileMenuOpen : ""
+          }`}
+        >
           <div className={styles.mobileMenuContent}>
-            <Link
-              href="/"
-              className={`${styles.mobileNavLink} ${
-                pathname === "/" ? styles.activeMobileNavLink : ""
-              }`}
-              onClick={closeMenu}
-            >
-              {t("home")}
-            </Link>
-            <Link
-              href="/about"
-              className={`${styles.mobileNavLink} ${
-                pathname === "/about" ? styles.activeMobileNavLink : ""
-              }`}
-              onClick={closeMenu}
-            >
-              {t("about")}
-            </Link>
-            {!loading &&
-              (isLoggedIn ? (
-                <Link
-                  href="/account"
-                  className={`${styles.mobileNavLink} ${
-                    pathname === "/account" ? styles.activeMobileNavLink : ""
-                  }`}
-                  onClick={closeMenu}
-                >
-                  {t("account")}
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  className={`${styles.mobileNavLink} ${
-                    pathname === "/login" ? styles.activeMobileNavLink : ""
-                  }`}
-                  onClick={closeMenu}
-                >
-                  {t("login")}
-                </Link>
-              ))}
-
-            <div className={styles.mobileLangBtns}>
-              <button
-                onClick={() => {
-                  handleLanguageChange("sv");
-                  closeMenu();
-                }}
-                className={`${styles.svLang} smallButton ${
-                  lang === "sv" ? styles.activeBtn : ""
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${styles.mobileNavLink} ${
+                  pathname === link.href ? styles.activeMobileNavLink : ""
                 }`}
+                onClick={closeMenu}
               >
-                Svenska
-              </button>
-              <button
-                onClick={() => {
-                  handleLanguageChange("en");
-                  closeMenu();
-                }}
-                className={`${styles.engLang} smallButton ${
-                  lang === "en" ? styles.activeBtn : ""
-                }`}
-              >
-                English
-              </button>
-            </div>
+                {link.label}
+              </Link>
+            ))}
+            <LanguageButtons mobile />
           </div>
         </div>
       )}
