@@ -1,10 +1,5 @@
-/*
-Todo:
-- Navigate to application page when button is clicked, with the id of the application
-- Add logo from model
-*/
-
 "use client";
+import { useRouter } from "next/navigation";
 import styles from "@/styles/applicationcard.module.css";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -16,10 +11,14 @@ type Props = {
 };
 
 const ApplicationCard = ({ application }: Props) => {
+  const router = useRouter();
   const { t, i18n } = useTranslation();
   const isSwedish = i18n.language === "sv";
   const title = isSwedish ? application.title_sv : application.title_en;
-  const dateRange = formatDateRange(application.term_start, application.term_end);
+  const dateRange = formatDateRange(
+    application.term_start,
+    application.term_end,
+  );
 
   return (
     <div className={styles.card}>
@@ -39,7 +38,14 @@ const ApplicationCard = ({ application }: Props) => {
       </div>
 
       <div className={styles.cardButton}>
-        <button className={"smallButton"}>{t("viewApplication")}</button>
+        <button
+          className={"smallButton"}
+          onClick={() =>
+            router.push(`/application/${application.applicationId}`)
+          }
+        >
+          {t("viewApplication")}
+        </button>
       </div>
     </div>
   );

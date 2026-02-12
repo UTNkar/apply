@@ -153,19 +153,71 @@ class ReferenceNestedSerializer(ModelSerializer):
     class Meta:
         model = Reference
         fields = ["name", "title", "phone_num", "email", "comment"]
+        extra_kwargs = {
+            "name": {"required": False, "allow_blank": True},
+            "title": {"required": False, "allow_blank": True},
+            "phone_num": {"required": False, "allow_blank": True},
+            "email": {"required": False, "allow_blank": True},
+            "comment": {"required": False, "allow_blank": True},
+        }
 
     def validate(self, data):
-        """Validate that email OR phone are required"""
-        phone_num = data.get("phone_num", "")
-        email = data.get("email", "")
+        """Validate that if any field is filled, name and (email OR phone) are required"""
+        name = (data.get("name") or "").strip()
+        title = (data.get("title") or "").strip()
+        phone_num = (data.get("phone_num") or "").strip()
+        email = (data.get("email") or "").strip()
+        comment = (data.get("comment") or "").strip()
 
-        # At least email OR phone is required
-        if not email and not phone_num:
-            raise serializers.ValidationError(
-                {"email_or_phone_num": "Either email or phone number is required for a reference"}
-            )
+        # Check if any field has data
+        has_any_field = any([name, title, phone_num, email, comment])
+
+        if has_any_field:
+            # name is required
+            if not name:
+                raise serializers.ValidationError(
+                    {"name": "Name is required when providing reference information"}
+                )
+
+            # At least email OR phone is required
+            if not email and not phone_num:
+                raise serializers.ValidationError(
+                    "Either email or phone number is required for a reference"
+                )
 
         return data
+
+
+class ListApplicationSerializer(ModelSerializer):
+    """Serializer for Application model with nested position details (read-only)"""
+
+    position_details = PositionSerializer(source="position", read_only=True)
+    phone_number = serializers.CharField(source="member.phone_number", read_only=True)
+    email = serializers.CharField(source="member.email", read_only=True)
+    study_program = serializers.CharField(source="member.study_program", read_only=True)
+    references = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Application
+        fields = [
+            "id",
+            "position_details",
+            "email",
+            "phone_number",
+            "study_program",
+            "status",
+            "cover_letter",
+            "qualifications",
+            "gdpr",
+            "decision_date",
+            "references",
+        ]
+        read_only_fields = ["id", "status"]
+
+    def get_references(self, obj):
+        """Get references for the application"""
+        references = Reference.objects.filter(application=obj)
+        return ReferenceNestedSerializer(references, many=True).data
 
 
 class ListApplicationSerializer(ModelSerializer):

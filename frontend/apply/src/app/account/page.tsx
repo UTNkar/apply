@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import TextInput from "../components/TextInput";
 import styles from "@/account/account.module.css";
 import Person from "@/icons/person.jsx";
@@ -66,7 +66,7 @@ export default function Account() {
   const [unicoreLoading, setUnicoreLoading] = useState<boolean>(false);
   const [memberSince, setMemberSince] = useState<string>("");
 
-  const setProgramNames = () => {
+  const setProgramNames = useCallback(() => {
     const isSwedish = i18n.language === "sv";
     setSections((prev: Array<Section>) =>
       prev.map((section: Section) => {
@@ -78,21 +78,21 @@ export default function Account() {
             name: isSwedish ? program.name_sv : program.name_en,
           })),
         };
-      }),
+      })
     );
-  };
+  }, [i18n.language]);
 
-  const handleNewUserData = (data: FormState) => {
-      data.program = data.study_program?.id || "";
-      data.section = data.study_program?.section || "";
-      setState((prevState: FormState) => ({
-        ...prevState,
-        ...data,
-      }));
-      setOriginalState((prevState: FormState) => ({
-        ...prevState,
-        ...data,
-      }));
+  const handleNewUserData = (data) => {
+    data.program = data.study_program?.id || "";
+    data.section = data.study_program?.section || "";
+    setState((prevState: FormState) => ({
+      ...prevState,
+      ...data,
+    }));
+    setOriginalState((prevState: FormState) => ({
+      ...prevState,
+      ...data,
+    }));
   };
 
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, []);
+  }, [setProgramNames]);
 
   useEffect(() => {
     if (sections.length > 0) {

@@ -1,15 +1,16 @@
 .card {
     border-radius: var(--paper-border-radius);
-    height: 220px;
-    width: 350px;
+    max-width: 350px;
+    width: 100%;
     border: 2px solid var(--grey-200);
-    padding: 10px 30px 30px 30px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .cardHeading {
     max-width: 160px;
-    min-height: 70px;
-    max-height: 70px;
+    min-height: 4rem;
 }
 
 .cardButton {

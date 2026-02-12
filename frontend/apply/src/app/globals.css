@@ -196,7 +196,6 @@ h6:not(.without_decoration):after {
 
 
 p {
-    max-width: var(--desktop-text-width);
     font-family: var(--text-paragraph);
     text-align: left;
     margin-top: .5em;
@@ -245,7 +244,6 @@ a:hover {
     max-width: 1200px;
     margin: auto;
 }
-
 
 /*put over_dark on parent elements*/
 .over_dark {
@@ -311,7 +309,8 @@ a:hover {
 .button {
     border: none;
     height: 40px;
-    width: 200px;
+    min-width: 150px;
+    padding: 0 1.5rem;
     border-radius: var(--button-corner-radius);
     font-family: var(--text);
     font-size: 14px;
