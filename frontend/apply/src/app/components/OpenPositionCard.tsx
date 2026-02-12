@@ -54,7 +54,7 @@ const OpenPositionCard = ({ position }: Props) => {
                 router.push(`/apply/${position.id}`)
               }}
             >
-              {position.user_app_status || {t("apply")}}
+              {position.user_app_status || t("apply")}
             </button>
         </div>
       </div>
