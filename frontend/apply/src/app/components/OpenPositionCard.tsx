@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import type { Position } from '@/lib/types'
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import { formatDate, formatDateRange } from "@/utils/dateFormat";
+import { formatDate } from "@/utils/dateFormat";
+import Image from 'next/image'
 
 type Props = {
   position: Position
@@ -14,17 +15,7 @@ type Props = {
 const OpenPositionCard = ({ position }: Props) => {
   const router = useRouter()
   const [showInfo, setShowInfo] = useState(false)
-  const { t, i18n } = useTranslation();
-  const isSwedish = i18n.language === "sv";
-
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  const { t } = useTranslation();
 
   return (
     <div className={styles.cardContainer}>

@@ -6,14 +6,6 @@ import "@/i18n/config";
 import type { Application } from "@/types/position";
 import { formatDateRange } from "@/utils/dateFormat";
 
-type ApplicationType = {
-  title: string;
-  status: string;
-  termStart: string;
-  termEnd: string;
-  applicationId: string;
-};
-
 type Props = {
   application: Application;
 };
