@@ -16,6 +16,8 @@ const OpenPositionCard = ({ position }: Props) => {
   const [showInfo, setShowInfo] = useState(false)
   const { t } = useTranslation();
 
+  console.log("Position data:", position);
+
   return (
     <div className={styles.cardContainer}>
       <div
@@ -38,13 +40,12 @@ const OpenPositionCard = ({ position }: Props) => {
             <button
               type="button"
               className={`button ${styles.applyButton}`}
-              disabled={position.user_app_status !== ""}
               onClick={(e) => {
                 e.stopPropagation()
                 router.push(`/apply/${position.id}`)
               }}
             >
-              {position.user_app_status || t("apply")}
+              {position.user_app_status === "Already Applied" ? t("viewApplication") : t("apply")}
             </button>
         </div>
       </div>
