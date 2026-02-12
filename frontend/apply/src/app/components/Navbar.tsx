@@ -7,10 +7,11 @@ import { usePathname } from "next/navigation";
 import { useIsLoggedIn } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
+import { setLanguageCookie } from "@/utils/language";
 
 const Navbar = () => {
   const { i18n, t } = useTranslation();
-  const [lang, setLang] = useState("sv");
+  const [lang, setLang] = useState(i18n.language);
   const pathname = usePathname();
   const { isLoggedIn, loading } = useIsLoggedIn();
 
@@ -21,6 +22,7 @@ const Navbar = () => {
   const handleLanguageChange = (newLang: string) => {
     setLang(newLang);
     i18n.changeLanguage(newLang);
+    setLanguageCookie(newLang);
   };
 
   return (

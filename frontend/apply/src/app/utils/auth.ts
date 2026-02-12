@@ -1,3 +1,4 @@
+"use client";
 import { request, Method } from "@/utils/request";
 import { useState, useEffect } from "react";
 
