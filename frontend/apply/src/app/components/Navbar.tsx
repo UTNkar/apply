@@ -11,7 +11,7 @@ import { setLanguageCookie } from "@/utils/language";
 
 const Navbar = () => {
   const { i18n, t } = useTranslation();
-  const [lang, setLang] = useState("sv");
+  const [lang, setLang] = useState(i18n.language);
   const pathname = usePathname();
   const { isLoggedIn, loading } = useIsLoggedIn();
 
