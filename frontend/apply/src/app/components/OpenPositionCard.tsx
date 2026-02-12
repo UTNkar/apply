@@ -6,7 +6,6 @@ import type { Position } from '@/lib/types'
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { formatDate } from "@/utils/dateFormat";
-import Image from 'next/image'
 
 type Props = {
   position: Position
