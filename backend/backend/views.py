@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.tokens import default_token_generator
 from django.middleware.csrf import get_token
+from .managers import MemberManager
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -423,6 +424,8 @@ class ApplicationViewSet(ModelViewSet):
     - Destroy: Delete own application (only if draft status)
     """
 
+    permission_classes = [IsAuthenticated]
+
     def get_queryset(self):
         """Get all applications with optimized queries"""
         queryset = Application.objects.select_related(
@@ -554,7 +557,7 @@ class UnicoreDataAPIView(APIView):
 
         if join_date is False:
             join_date = "Not a member"
-        elif join_date == True:
+        elif join_date is True:
             join_date = "Member"
         else:
             # Format date to YYYY-MM-DD

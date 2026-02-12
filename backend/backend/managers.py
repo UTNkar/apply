@@ -2,6 +2,8 @@ from django.contrib.auth.models import BaseUserManager
 from django.db.models import Count, F, Manager, Q
 from django.utils import timezone
 
+from .utils.unicore import unicoremember
+
 
 class MemberManager(BaseUserManager):
     """
@@ -12,30 +14,31 @@ class MemberManager(BaseUserManager):
     -------
     create_user(email, password=None, **extra_fields)
         Creates and returns a user with an email, password and other fields.
-    create_superuser(email, password=None, **extra_fields)
-        Creates and returns a superuser with an email, password and other fields.
     """
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email, ssn, password, phone_number, study_program, registration_year, is_staff=False, is_superuser=False):
         if not email:
             raise ValueError("The Email field must be set")
 
-        user = self.model(email=self.normalize_email(email), **extra_fields)
-
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
+        unicore = unicoremember()
+        data = unicore.get_user_data(ssn)
+        if data is None:
+            raise ValueError("You don't appear to be registered as a member in Unicore. Please go to https://utn.se/en/bli-medlem to become a member before signing up.")
+        name = "{} {}".format(data["firstname"].strip(), data["lastname"].strip())
         user = self.model(
-            email=self.normalize_email(email),
-            is_staff=True,
-            is_superuser=True,
-            **extra_fields,
+            email=email.lower().strip(),
+            is_staff=is_staff,
+            is_superuser=is_superuser,
+            name=name,
+            phone_number=phone_number.strip(),
+            registration_year=registration_year,
+            ssn=data["ssn"].strip(),
+            study_program=study_program,
+            unicore_id=data["unicore_id"]
         )
+
         user.set_password(password)
         user.save(using=self._db)
-
         return user
 
 

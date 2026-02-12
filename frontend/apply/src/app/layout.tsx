@@ -4,7 +4,6 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import TranslationProvider from "./i18n/TranslationProvider";
 
-
 export const metadata: Metadata = {
   title: "Apply",
   description: "Application page for engagements in UTN",

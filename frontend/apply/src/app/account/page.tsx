@@ -40,6 +40,7 @@ interface FormState {
   program: string;
   registration_year: number;
   section: string;
+  study_program: { id: string; section: string } | null;
 }
 
 type Errors = {
@@ -81,17 +82,17 @@ export default function Account() {
     );
   };
 
-  const handleNewUserData = (data) => {
-    data.program = data.study_program?.id || "";
-    data.section = data.study_program?.section || "";
-    setState((prevState: FormState) => ({
-      ...prevState,
-      ...data,
-    }));
-    setOriginalState((prevState: FormState) => ({
-      ...prevState,
-      ...data,
-    }));
+  const handleNewUserData = (data: FormState) => {
+      data.program = data.study_program?.id || "";
+      data.section = data.study_program?.section || "";
+      setState((prevState: FormState) => ({
+        ...prevState,
+        ...data,
+      }));
+      setOriginalState((prevState: FormState) => ({
+        ...prevState,
+        ...data,
+      }));
   };
 
   useEffect(() => {
@@ -126,7 +127,6 @@ export default function Account() {
     request(Method.GET, "/membership/").then(async (res) => {
       if (res.ok) {
         const data = await res.json();
-        console.log("Membership data:", data);
         setMemberSince(data);
       } else {
         const err = await res.text();
@@ -140,19 +140,18 @@ export default function Account() {
     if (sections.length > 0) {
       setProgramNames();
     }
-  }, [i18n.language]);
+  }, [i18n.language, setProgramNames, sections.length]);
 
-  const useDebounce = (callback, delay: number) => {
-    const [debounceValue, setDebounceValue] = useState(callback);
+  const useDebounce = <T,>(value: T, delay: number): T => {
+    const [debounceValue, setDebounceValue] = useState<T>(value);
     useEffect(() => {
       const handler = setTimeout(() => {
-        setDebounceValue(callback);
+        setDebounceValue(value);
       }, delay);
-
       return () => {
         clearTimeout(handler);
       };
-    }, [callback, delay]);
+    }, [value, delay]);
     return debounceValue;
   };
   const debouncedErrors = useDebounce(intermediateErrors, 800);
@@ -245,8 +244,8 @@ export default function Account() {
       alert(t("formHasErrors"));
       return;
     }
-    state.study_program = state.program;
-    request(Method.POST, "/account/", state).then((resp) => {
+    const payload = { ...state, study_program: state.program };
+    request(Method.POST, "/account/", payload).then((resp) => {
       if (!resp.ok) {
         resp.json().then((err) => {
           setErrors(err);
