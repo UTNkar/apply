@@ -13,22 +13,28 @@ type Props = {
 const ApplicationCard = ({ application }: Props) => {
   const router = useRouter();
   const { t, i18n } = useTranslation();
-  const isSwedish = i18n.language === "sv";
-  const title = isSwedish ? application.title_sv : application.title_en;
-  const dateRange = formatDateRange(
-    application.term_start,
-    application.term_end,
+  const dateRange = formatDateRange(application.termStart, application.termEnd);
+
+  const status = t(
+    {
+      draft: "draft",
+      submitted: "submitted",
+      approved: "approved",
+      disapproved: "disapproved",
+      appointed: "appointed",
+      turned_down: "turnedDown",
+    }[application.status] || application.status,
   );
 
   return (
     <div className={styles.card}>
       <div className={styles.cardHeading}>
-        <h3>{title}</h3>
+        <h3>{application.title}</h3>
       </div>
 
       <div className={styles.cardText}>
         <p>
-          {t("status")}: {t(application.status)}
+          {t("status")}: {status}
         </p>
 
         <p>
@@ -38,14 +44,9 @@ const ApplicationCard = ({ application }: Props) => {
       </div>
 
       <div className={styles.cardButton}>
-        <button
-          className={"smallButton"}
-          onClick={() =>
-            router.push(`/application/${application.applicationId}`)
-          }
-        >
+        <a className={"smallButton"} href={`/apply/${application.id}`}>
           {t("viewApplication")}
-        </button>
+        </a>
       </div>
     </div>
   );

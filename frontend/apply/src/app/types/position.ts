@@ -10,17 +10,17 @@ export interface Role {
 export interface Position {
   id: number;
   role: Role;
-  recruitment_start: string;
-  recruitment_end: string;
-  term_start: string;
-  term_end: string;
-  slots_available: number;
+  recruitmentStart: string;
+  recruitmentEnd: string;
+  termStart: string;
+  termEnd: string;
+  slotsAvailable: number;
 }
 
 export interface Application {
-  id: number;
+  id: string;
   title: string;
   status: string;
-  term_start: string;
-  term_end: string;
+  termStart: string;
+  termEnd: string;
 }

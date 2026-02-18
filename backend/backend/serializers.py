@@ -1,13 +1,28 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
-from .models import Position, Role, Member, Section, StudyProgram, Application, Reference
+from .models import (
+    Position,
+    Role,
+    Member,
+    Section,
+    StudyProgram,
+    Application,
+    Reference,
+)
+
+
+def get_language_from_request(request):
+    """Get language from cookie defaulting to 'en'"""
+    return request.COOKIES.get("language", "en")
+
 
 class SectionSerializer(ModelSerializer):
     class Meta:
         model = Section
         fields = ["id", "abbreviation", "section_en", "section_sv"]
         read_only_fields = ["id"]
+
 
 class StudyProgramSerializer(ModelSerializer):
     section = SectionSerializer(read_only=True)
@@ -17,14 +32,19 @@ class StudyProgramSerializer(ModelSerializer):
         fields = ["id", "name_en", "name_sv", "section"]
         read_only_fields = ["id"]
 
+
 class SectionWithProgramsSerializer(ModelSerializer):
     """Section with nested study programs"""
-    programs = StudyProgramSerializer(source="study_programs", many=True, read_only=True)
+
+    programs = StudyProgramSerializer(
+        source="study_programs", many=True, read_only=True
+    )
 
     class Meta:
         model = Section
         fields = ["id", "abbreviation", "section_en", "section_sv", "programs"]
         read_only_fields = ["id"]
+
 
 class MemberSerializer(ModelSerializer):
     """
@@ -41,9 +61,22 @@ class MemberSerializer(ModelSerializer):
     """
 
     study_program = StudyProgramSerializer(read_only=True)
+
     class Meta:
         model = Member
-        fields = ("name", "phone_number", "study_program", "registration_year", "status", "ssn", "email", "password", "is_active", "is_staff", "verified_email")
+        fields = (
+            "name",
+            "phone_number",
+            "study_program",
+            "registration_year",
+            "status",
+            "ssn",
+            "email",
+            "password",
+            "is_active",
+            "is_staff",
+            "verified_email",
+        )
         extra_kwargs = {
             "password": {"write_only": True},
             # Debateable if we want to expose these fields
@@ -84,15 +117,15 @@ class RoleDetailSerializer(ModelSerializer):
         ]
 
     def get_team_name(self, obj):
-        lang = self.context.get("request").query_params.get("lang", "en")
+        lang = get_language_from_request(self.context.get("request"))
         return obj.team.name_sv if lang == "sv" else obj.team.name_en
 
     def get_title(self, obj):
-        lang = self.context.get("request").query_params.get("lang", "en")
+        lang = get_language_from_request(self.context.get("request"))
         return obj.title_sv if lang == "sv" else obj.title_en
 
     def get_description(self, obj):
-        lang = self.context.get("request").query_params.get("lang", "en")
+        lang = get_language_from_request(self.context.get("request"))
         return obj.description_sv if lang == "sv" else obj.description_en
 
 
@@ -115,7 +148,7 @@ class PositionSerializer(ModelSerializer):
         ]
 
     def get_comment(self, obj):
-        lang = self.context.get("request").query_params.get("lang", "en")
+        lang = get_language_from_request(self.context.get("request"))
         return obj.comment_sv if lang == "sv" else obj.comment_eng
 
     def get_user_app_status(self, obj):
@@ -124,9 +157,9 @@ class PositionSerializer(ModelSerializer):
         status = ""
         if application:
             status = (
-                _("In Progress")
+                _("In draft")
                 if application.status == Application.DRAFT
-                else _("Already Applied")
+                else _("Already applied")
             )
         return status
 
@@ -284,18 +317,12 @@ class ApplicationSerializer(ModelSerializer):
         if self.instance and self.instance.status == Application.SUBMITTED:
             raise serializers.ValidationError("Cannot edit a submitted application")
 
-        # Check if GDPR is accepted only when the user has decided to submit the application
-        status = data.get(
-            "status", self.instance.status if self.instance else Application.DRAFT
-        )
-        if status == Application.SUBMITTED:
-            gdpr_value = data.get(
-                "gdpr", self.instance.gdpr if self.instance else False
+        # Check if GDPR is accepted
+        gdpr_value = data.get("gdpr", self.instance.gdpr if self.instance else False)
+        if not gdpr_value:
+            raise serializers.ValidationError(
+                {"gdpr": "You must accept the GDPR policy to submit an application"}
             )
-            if not gdpr_value:
-                raise serializers.ValidationError(
-                    {"gdpr": "You must accept the GDPR policy to submit an application"}
-                )
 
         # Limit references to 3 for now
         references = data.get("references", [])

@@ -35,7 +35,7 @@ const Navbar = () => {
       >
         <Image
           src="/utn_standard_bla.png"
-          alt="Logo"
+          alt={t("utnLogoAlt")}
           width={200}
           height={51.25}
         />

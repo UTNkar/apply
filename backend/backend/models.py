@@ -470,7 +470,7 @@ class Team(models.Model):
         verbose_name=_("Logo"),
         help_text=_("Upload a logo for the team"),
         blank=True,
-        upload_to="../media/",
+        upload_to="team_logos/",
     )
 
     desc_en = models.TextField(

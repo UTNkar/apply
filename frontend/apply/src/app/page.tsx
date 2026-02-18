@@ -12,36 +12,46 @@ import "@/i18n/config";
 type Tab = "Open Positions" | "My Applications" | "My Positions";
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>("Open Positions");
   const [openPositions, setOpenPositions] = useState<Position[]>([]);
   const [myPositions, setMyPositions] = useState<Position[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [positionsError, setPositionsError] = useState<string | null>(null);
+  const [applicationsError, setApplicationsError] = useState<string | null>(
+    null,
+  );
 
   // Fetch all data once on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchPositions = async () => {
       try {
-        const [positionsData, applicationsData] = await Promise.all([
-          positionAPI.getAll(),
-          applicationAPI.getAll(),
-        ]);
-
+        const positionsData = await positionAPI.getAll();
         setOpenPositions(positionsData.open_positions);
         setMyPositions(positionsData.my_positions);
-        setApplications(applicationsData);
-        setError(null);
+        setPositionsError(null);
       } catch {
-        setError("Failed to load data");
+        setPositionsError("failedToLoadPositions");
+      }
+    };
+
+    const fetchApplications = async () => {
+      try {
+        const applicationsData = await applicationAPI.getAll();
+        setApplications(applicationsData);
+        console.log("Fetched applications:", applicationsData);
+        setApplicationsError(null);
+      } catch {
+        setApplicationsError("failedToLoadApplications");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchPositions();
+    fetchApplications();
+  }, [i18n.language]);
 
   return (
     <div className="pageContainer">
@@ -76,60 +86,74 @@ export default function Home() {
         </button>
       </div>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className={styles.error}>{error}</p>}
+      {loading && <p>{t("loading")}</p>}
 
       {activeTab === "My Applications" && !loading && (
-        <div className={styles.myApplicationsContainer}>
-          {applications.length === 0 ? (
-            <p>No applications yet</p>
-          ) : (
-            applications.map((application) => (
-              <ApplicationCard
-                key={application.id}
-                application={{
-                  title: application.position_details.role.title,
-                  status: application.status,
-                  termStart: application.position_details.term_from,
-                  termEnd: application.position_details.term_end,
-                  applicationId: application.id.toString(),
-                }}
-              />
-            ))
+        <>
+          {applicationsError && (
+            <p className={styles.error}>{t(applicationsError)}</p>
           )}
-        </div>
+          <div className={styles.myApplicationsContainer}>
+            {applications.length === 0 ? (
+              <p>{t("noApplicationsYet")}</p>
+            ) : (
+              applications.map((application) => (
+                <ApplicationCard
+                  key={application.id}
+                  application={{
+                    title: application.position_details.role.title,
+                    status: application.status,
+                    termStart: application.position_details.term_from,
+                    termEnd: application.position_details.term_end,
+                    id: application.id.toString(),
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === "Open Positions" && !loading && (
-        <div className={styles.openPositionsContainer}>
-          {openPositions.length === 0 ? (
-            <p>No open positions available</p>
-          ) : (
-            openPositions.map((position) => (
-              <OpenPositionCard key={position.id} position={position} />
-            ))
+        <>
+          {positionsError && (
+            <p className={styles.error}>{t(positionsError)}</p>
           )}
-        </div>
+          <div className={styles.openPositionsContainer}>
+            {openPositions.length === 0 ? (
+              <p>{t("noOpenPositions")}</p>
+            ) : (
+              openPositions.map((position) => (
+                <OpenPositionCard key={position.id} position={position} />
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === "My Positions" && !loading && (
-        <div className={styles.myPositionsContainer}>
-          {myPositions.length === 0 ? (
-            <p>No positions yet</p>
-          ) : (
-            myPositions.map((position) => (
-              <MyPositionCard
-                key={position.id}
-                position={{
-                  title: position.role.title,
-                  termStart: position.term_from,
-                  termEnd: position.term_end,
-                  applicationId: position.id.toString(),
-                }}
-              />
-            ))
+        <>
+          {positionsError && (
+            <p className={styles.error}>{t(positionsError)}</p>
           )}
-        </div>
+          <div className={styles.myPositionsContainer}>
+            {myPositions.length === 0 ? (
+              <p>{t("noPositionsYet")}</p>
+            ) : (
+              myPositions.map((position) => (
+                <MyPositionCard
+                  key={position.id}
+                  position={{
+                    termStart: position.term_from,
+                    termEnd: position.term_end,
+                    id: position.id.toString(),
+                    role: position.role
+                  }}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );

@@ -58,4 +58,5 @@ urlpatterns = [
     path("api/open-positions/", OpenPositionsAPIView.as_view(), name="open-positions"),
     path("api/update-unicore/", UnicoreDataAPIView.as_view(), name="update-unicore"),
     path("api/membership/", UnicoreDataAPIView.as_view(), name="update-unicore"),
+    path("api/applications/by-position/<int:position_id>/", ApplicationViewSet.as_view({"get": "by_position"}), name="application-by-position"),
 ]

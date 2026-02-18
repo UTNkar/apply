@@ -186,6 +186,16 @@
   margin-bottom: 0;
 }
 
+.inputError,
+.textareaError {
+  border-color: var(--error-500);
+}
+
+.inputError:focus,
+.textareaError:focus {
+  border-color: var(--error-500);
+}
+
 .addReferenceButton {
   margin-top: 1rem;
   background-color: var(--blue-100);

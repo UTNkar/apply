@@ -324,6 +324,7 @@ a:hover {
 .smallButton {
     border: none;
     height: 35px;
+    line-height: 35px;
     min-width: 100px;
     padding: 0 30px;
     border-radius: var(--button-corner-radius);

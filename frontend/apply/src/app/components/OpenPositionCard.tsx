@@ -1,22 +1,20 @@
-'use client'
-import styles from '@/styles/openpositioncard.module.css'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import type { Position } from '@/lib/types'
+"use client";
+import styles from "@/styles/openpositioncard.module.css";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Position } from "@/lib/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { formatDate } from "@/utils/dateFormat";
 
 type Props = {
-  position: Position
-}
+  position: Position;
+};
 
 const OpenPositionCard = ({ position }: Props) => {
-  const router = useRouter()
+  const router = useRouter();
   const [showInfo, setShowInfo] = useState(false);
   const { t } = useTranslation();
-
-  console.log("Position data:", position);
 
   return (
     <div className={styles.cardContainer}>
@@ -26,7 +24,7 @@ const OpenPositionCard = ({ position }: Props) => {
       >
         <div className={styles.cardLogo}>
           {position.role.team_logo && (
-            <img src={position.role.team_logo} alt="Team logo" />
+            <img src={position.role.team_logo} alt={t("teamLogoAlt")} />
           )}
         </div>
 
@@ -36,17 +34,20 @@ const OpenPositionCard = ({ position }: Props) => {
         </div>
 
         <div className={styles.cardRightSection}>
-          <h4>{t("deadline")}: {formatDate(position.recruitment_end)}</h4>
-            <button
-              type="button"
-              className={`button ${styles.applyButton}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/apply/${position.id}`)
-              }}
-            >
-              {position.user_app_status === "Already Applied" ? t("viewApplication") : t("apply")}
-            </button>
+          <h4>
+            {t("deadline")}: {formatDate(position.recruitment_end)}
+          </h4>
+          <a
+            className="smallButton"
+            onClick={(e) => e.stopPropagation()}
+            href={`/apply/${position.id}`}
+          >
+            {position.user_app_status === "Already applied"
+              ? t("viewApplication")
+              : position.user_app_status === "In draft"
+                ? t("openDraft")
+                : t("apply")}
+          </a>
         </div>
       </div>
 
@@ -56,7 +57,8 @@ const OpenPositionCard = ({ position }: Props) => {
         }`}
       >
         <p>
-          {t("termOfOffice")}: {formatDate(position.term_from)} - {formatDate(position.term_end)}
+          {t("termOfOffice")}: {formatDate(position.term_from)} -{" "}
+          {formatDate(position.term_end)}
         </p>
         <p>
           {t("roleDescription")}: <br />
@@ -65,7 +67,7 @@ const OpenPositionCard = ({ position }: Props) => {
 
         {position.comment && (
           <p>
-            Comments for this year: <br />
+            {t("commentsForThisYear")}: <br />
             {position.comment}
           </p>
         )}

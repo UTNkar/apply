@@ -31,7 +31,7 @@ if DEBUG:
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    ALLOWED_HOSTS = ["localhost"]
+    ALLOWED_HOSTS = ["localhost", "backend"]
 
 
 AUTH_USER_MODEL = "backend.Member"

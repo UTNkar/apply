@@ -1,29 +1,37 @@
-/*
-Todo:
-- Add logo from model
-*/
-
 "use client";
-import styles from "@/styles/mypositioncard.module.css";
-import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import type { Position } from "@/types/position";
+import Image from "next/image";
+import styles from "@/styles/mypositioncard.module.css";
+import type { Role } from "@/types/position";
 import { formatDateRange } from "@/utils/dateFormat";
+import { getImageUrl } from "@/utils/imageUrl";
+import { useTranslation } from "react-i18next";
 
 type Props = {
-  position: Position;
+  position: {
+    id: string;
+    termEnd: string;
+    termStart: string;
+    role: Role;
+  };
 };
 
 const MyPositionCard = ({ position }: Props) => {
-  const { t, i18n } = useTranslation();
-  const isSwedish = i18n.language === "sv";
-  const title = isSwedish ? position.role.title_sv : position.role.title_en;
-  const dateRange = formatDateRange(position.term_start, position.term_end);
+  const { t } = useTranslation();
+  const title = position.role.title;
+  const dateRange = formatDateRange(position.termStart, position.termEnd);
 
   return (
     <div className={styles.card}>
+      <Image
+        src={getImageUrl(position.role.team_logo)}
+        alt={t("teamLogoAlt")}
+        height={80}
+        width={80}
+        className={styles.logo}
+      />
       <div className={styles.cardHeading}>
-        <h3>{title}</h3>
+        <h3 style={{ marginTop: 0 }}>{title}</h3>
       </div>
 
       <div className={styles.cardText}>

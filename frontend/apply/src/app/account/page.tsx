@@ -33,14 +33,14 @@ interface Section {
 }
 
 interface FormState {
+  ssn: string;
   email: string;
   name: string;
-  ssn: string;
   phone_number: string;
-  program: string;
   registration_year: number;
-  section: string;
   study_program: { id: string; section: string } | null;
+  section: string;
+  program: string;
 }
 
 type Errors = {
@@ -50,11 +50,12 @@ type Errors = {
 export default function Account() {
   const { t, i18n } = useTranslation();
   const default_state = {
-    name: "",
-    email: "",
     ssn: "",
+    email: "",
+    name: "",
     phone_number: "",
     registration_year: 0,
+    study_program: null,
     section: "",
     program: "",
   };
