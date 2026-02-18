@@ -4,8 +4,8 @@ import styles from "./page.module.css";
 import ApplicationCard from "./components/ApplicationCard";
 import MyPositionCard from "./components/MyPositionCard";
 import OpenPositionCard from "./components/OpenPositionCard";
-import { positionAPI, applicationAPI } from "@/lib/api";
-import type { Position, Application } from "@/lib/types";
+import { positionAPI, applicationAPI } from "@/utils/api";
+import type { Position, Application } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 
@@ -100,13 +100,7 @@ export default function Home() {
               applications.map((application) => (
                 <ApplicationCard
                   key={application.id}
-                  application={{
-                    title: application.position_details.role.title,
-                    status: application.status,
-                    termStart: application.position_details.term_from,
-                    termEnd: application.position_details.term_end,
-                    id: application.id.toString(),
-                  }}
+                  application={application}
                 />
               ))
             )}
@@ -143,12 +137,7 @@ export default function Home() {
               myPositions.map((position) => (
                 <MyPositionCard
                   key={position.id}
-                  position={{
-                    termStart: position.term_from,
-                    termEnd: position.term_end,
-                    id: position.id.toString(),
-                    role: position.role
-                  }}
+                  position={position}
                 />
               ))
             )}

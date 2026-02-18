@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { applicationAPI } from "@/lib/api";
-import type { Position, Application, Reference } from "@/lib/types";
+import { applicationAPI } from "@/utils/api";
+import type { Position, Application, Reference } from "@/utils/types";
 import styles from "@/styles/application.module.css";
+import cardStyles from "@/styles/card.module.css";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import FormInput from "./FormInput";
@@ -156,7 +157,7 @@ export default function ApplicationForm({
         <h2>{position.role.title}</h2>
       </div>
 
-      <div className={styles.infoCard}>
+      <div className={cardStyles.cardDark}>
         <p>
           <strong>{t("teamLabel")}:</strong> {position.role.team_name}
         </p>
@@ -200,7 +201,7 @@ export default function ApplicationForm({
       </div>
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <div className={styles.formSection}>
+        <div className={cardStyles.cardSection}>
           <h2>{t("coverLetterTitle")}</h2>
           <FormTextarea
             label={t("coverLetterPrompt")}
@@ -212,7 +213,7 @@ export default function ApplicationForm({
           />
         </div>
 
-        <div className={styles.formSection}>
+        <div className={cardStyles.cardSection}>
           <h2>{t("qualificationsTitle")}</h2>
           <FormTextarea
             label={t("qualificationsPrompt")}
@@ -224,7 +225,7 @@ export default function ApplicationForm({
           />
         </div>
 
-        <div className={styles.formSection}>
+        <div className={cardStyles.cardSection}>
           <h2>{t("referencesTitle")}</h2>
 
           {references.length === 0 && isEditable && (
@@ -339,7 +340,7 @@ export default function ApplicationForm({
           )}
         </div>
 
-        <div className={styles.formSection}>
+        <div className={cardStyles.cardSection}>
           <h2>{t("gdprTitle")}</h2>
           <div className={styles.checkboxContainer}>
             <input

@@ -1,8 +1,7 @@
 "use client";
-import styles from "@/styles/openpositioncard.module.css";
+import styles from "@/styles/card.module.css";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { Position } from "@/lib/types";
+import type { Position } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { formatDate } from "@/utils/dateFormat";
@@ -12,17 +11,16 @@ type Props = {
 };
 
 const OpenPositionCard = ({ position }: Props) => {
-  const router = useRouter();
   const [showInfo, setShowInfo] = useState(false);
   const { t } = useTranslation();
 
   return (
-    <div className={styles.cardContainer}>
+    <div className={styles.card}>
       <div
-        className={styles.cardInitial}
+        className={styles.cardClickable}
         onClick={() => setShowInfo(!showInfo)}
       >
-        <div className={styles.cardLogo}>
+        <div className={styles.logoContainer}>
           {position.role.team_logo && (
             <img src={position.role.team_logo} alt={t("teamLogoAlt")} />
           )}

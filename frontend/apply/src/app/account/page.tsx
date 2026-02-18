@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import TextInput from "../components/TextInput";
-import styles from "@/account/account.module.css";
+import styles from "@/styles/account.module.css";
 import Person from "@/icons/person.jsx";
 import Number from "@/icons/number.jsx";
 import Mail from "@/icons/mail.jsx";

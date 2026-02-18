@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { applicationAPI, positionAPI } from "@/lib/api";
-import type { Application, Position } from "@/lib/types";
+import { applicationAPI, positionAPI } from "@/utils/api";
+import type { Application, Position } from "@/utils/types";
 import ApplicationForm from "@/components/ApplicationForm";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -33,7 +33,7 @@ export default function ApplyPage() {
         setPosition(positionData);
         setApplication(applicationData);
         setError(null);
-      } catch (error) {
+      } catch {
         setError("failedToLoadPosition");
       } finally {
         setLoading(false);
