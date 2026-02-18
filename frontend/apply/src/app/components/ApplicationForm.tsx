@@ -25,7 +25,7 @@ export default function ApplicationForm({
   position,
   existingApplication,
 }: ApplicationFormProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

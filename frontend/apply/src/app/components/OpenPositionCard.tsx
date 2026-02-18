@@ -5,6 +5,8 @@ import type { Position } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { formatDate } from "@/utils/dateFormat";
+import Image from "next/image";
+import { getImageUrl } from "@/utils/imageUrl";
 
 type Props = {
   position: Position;
@@ -22,7 +24,12 @@ const OpenPositionCard = ({ position }: Props) => {
       >
         <div className={styles.logoContainer}>
           {position.role.team_logo && (
-            <img src={position.role.team_logo} alt={t("teamLogoAlt")} />
+            <Image
+              src={getImageUrl(position.role.team_logo)}
+              alt={t("teamLogoAlt")}
+              width={80}
+              height={80}
+            />
           )}
         </div>
 
