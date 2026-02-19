@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import TextInput from "../components/TextInput";
 import styles from "@/styles/account.module.css";
+import cardStyles from "@/styles/card.module.css";
 import Person from "@/icons/person.jsx";
 import Number from "@/icons/number.jsx";
 import Mail from "@/icons/mail.jsx";
@@ -312,7 +313,7 @@ export default function Account() {
     <div className="pageContainer">
       <h2>{t("accountTitle")}</h2>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("contactInformation")}</h3>
 
         <div className={styles.formRow}>
@@ -368,12 +369,12 @@ export default function Account() {
         </div>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("membershipStatus")}</h3>
         <p>{membershipText(memberSince)}</p>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("studyDetails")}</h3>
         <TextInput
           label={t("section")}

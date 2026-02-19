@@ -498,8 +498,6 @@ class PositionViewSet(ReadOnlyModelViewSet):
         open_positions = Position.objects.open_positions().select_related(
             "role", "role__team"
         )
-        print(open_positions.query, flush=True)
-        print(self.get_serializer(open_positions, many=True).data, flush=True)
 
         return Response(
             {

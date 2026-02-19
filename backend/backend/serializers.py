@@ -86,8 +86,6 @@ class MemberSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
-        print("Creating user")
-
         password = validated_data.pop("password", None)
         if password is None:
             raise ValueError("Password must be set")
