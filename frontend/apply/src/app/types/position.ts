@@ -25,7 +25,7 @@ export interface Position {
 }
 
 export interface Application {
-  id: number;
+  applicationId: string;
   title_en: string;
   title_sv: string;
   status: string;

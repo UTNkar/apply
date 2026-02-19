@@ -1,36 +1,22 @@
-/*
-Todo:
-- Navigate to application page when button is clicked, with the id of the application
-- Add logo from model
-*/
-
-"use client";
-import styles from "@/styles/openpositioncard.module.css";
-import { useState } from "react";
+'use client'
+import styles from '@/styles/openpositioncard.module.css'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import type { Position } from '@/lib/types'
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import type { Position } from "@/types/position";
-import { formatDate, formatDateRange } from "@/utils/dateFormat";
+import { formatDate } from "@/utils/dateFormat";
 
 type Props = {
-  position: Position;
-};
+  position: Position
+}
 
 const OpenPositionCard = ({ position }: Props) => {
-  const [showInfo, setShowInfo] = useState(false);
-  const { t, i18n } = useTranslation();
-  const isSwedish = i18n.language === "sv";
+  const router = useRouter()
+  const [showInfo, setShowInfo] = useState(false)
+  const { t } = useTranslation();
 
-  const title = isSwedish ? position.role.title_sv : position.role.title_en;
-  const description = isSwedish
-    ? position.role.description_sv
-    : position.role.description_en;
-  const teamName = isSwedish
-    ? position.role.team.name_sv
-    : position.role.team.name_en;
-
-  const deadline = formatDate(position.recruitment_end);
-  const dateRange = formatDateRange(position.term_start, position.term_end);
+  console.log("Position data:", position);
 
   return (
     <div className={styles.cardContainer}>
@@ -38,19 +24,29 @@ const OpenPositionCard = ({ position }: Props) => {
         className={styles.cardInitial}
         onClick={() => setShowInfo(!showInfo)}
       >
-        <div className={styles.cardLogo}></div>
+        <div className={styles.cardLogo}>
+          {position.role.team_logo && (
+            <img src={position.role.team_logo} alt="Team logo" />
+          )}
+        </div>
 
         <div className={styles.cardLeftSection}>
-          <h3>{title}</h3>
-          {teamName}
+          <h3>{position.role.title}</h3>
+          {position.role.team_name}
         </div>
 
         <div className={styles.cardRightSection}>
-          <h4>
-            {t("deadline")}: {deadline}
-          </h4>
-
-          <button className={"smallButton"}>{t("apply")}</button>
+          <h4>{t("deadline")}: {formatDate(position.recruitment_end)}</h4>
+            <button
+              type="button"
+              className={`button ${styles.applyButton}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(`/apply/${position.id}`)
+              }}
+            >
+              {position.user_app_status === "Already Applied" ? t("viewApplication") : t("apply")}
+            </button>
         </div>
       </div>
 
@@ -60,12 +56,19 @@ const OpenPositionCard = ({ position }: Props) => {
         }`}
       >
         <p>
-          {t("termOfOffice")}: {dateRange}
+          {t("termOfOffice")}: {formatDate(position.term_from)} - {formatDate(position.term_end)}
         </p>
         <p>
           {t("roleDescription")}: <br />
-          {description}
+          {position.role.description}
         </p>
+
+        {position.comment && (
+          <p>
+            Comments for this year: <br />
+            {position.comment}
+          </p>
+        )}
       </div>
     </div>
   );

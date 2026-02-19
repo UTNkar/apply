@@ -574,10 +574,10 @@ class UnicoreDataAPIView(APIView):
         data = unicore.get_user_data(user.ssn)
 
         if data is not None:
-           user.name = "{} {}".format(
-               data["firstname"].strip(), data["lastname"].strip()
-           )
-           user.save()
+            user.name = "{} {}".format(
+                data["firstname"].strip(), data["lastname"].strip()
+            )
+            user.save()
 
         serializer = MemberSerializer(user)
         return Response(serializer.data, status=200)
