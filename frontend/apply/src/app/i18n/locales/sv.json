@@ -58,5 +58,11 @@
   "invalidEmailFormat": "Ogiltigt e-postformat",
   "invalidPhoneFormat": "Ogiltigt telefonnummerformat",
   "formHasErrors": "Det finns fel i formuläret. Vad god justera dina inmatningar.",
-  "thisField": "Detta fält"
+  "thisField": "Detta fält",
+  "logOut": "Logga ut",
+  "doYouWantToLogOut": "Vill du logga ut?",
+  "yesLogOut": "Ja, logga ut",
+  "noCancel": "Nej, avbryt",
+  "menu": "meny",
+  "close": "stäng"
 }
