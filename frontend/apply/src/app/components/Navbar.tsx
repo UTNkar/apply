@@ -102,6 +102,7 @@ const Navbar = () => {
             alt="Logo"
             width={200}
             height={51.25}
+            style={{ height: "auto" }}
           />
         </a>
 
