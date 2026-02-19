@@ -89,6 +89,8 @@ class MemberSerializer(ModelSerializer):
         password = validated_data.pop("password", None)
         if password is None:
             raise ValueError("Password must be set")
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
         user = Member(**validated_data)
         user.set_password(password)
         user.save()

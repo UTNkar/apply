@@ -1,0 +1,110 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  position: relative;
+  background-color: var(--white);
+  border-radius: var(--paper-border-radius);
+  padding: 24px;
+  max-width: 450px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modalHeader {
+  margin-bottom: 20px;
+  padding-right: 32px;
+}
+
+.modalHeader h3 {
+  margin: 0;
+}
+
+.modalHeader h3::after {
+  display: none;
+}
+
+.closeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--grey-600);
+  padding: 8px;
+  line-height: 1;
+}
+
+.closeButton:hover {
+  color: var(--text-primary);
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.formGroup input {
+  padding: 10px 12px;
+  border: 1px solid var(--grey-300);
+  border-radius: var(--form-field-border-radius);
+  font-family: var(--text);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: var(--blue-500);
+}
+
+.errorMessage {
+  color: var(--error-500);
+  font-size: 14px;
+  padding: 10px;
+  background-color: #ffebee;
+  border-radius: var(--form-field-border-radius);
+}
+
+.successMessage {
+  color: #2e7d32;
+  font-size: 14px;
+  padding: 16px;
+  background-color: #e8f5e9;
+  border-radius: var(--form-field-border-radius);
+  text-align: center;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
