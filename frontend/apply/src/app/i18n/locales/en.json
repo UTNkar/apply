@@ -100,5 +100,11 @@
   "teamLogoAlt": "Team logo",
   "utnLogoAlt": "UTN's Logo",
   "openDraft": "Open draft",
-  "confirmSubmitApplication": "Are you sure you want to submit this application? Once submitted, you will not be able to edit it anymore."
+  "confirmSubmitApplication": "Are you sure you want to submit this application? Once submitted, you will not be able to edit it anymore.",
+  "logOut": "Log out",
+  "doYouWantToLogOut": "Do you want to log out?",
+  "yesLogOut": "Yes, log out",
+  "noCancel": "No, cancel",
+  "menu": "menu",
+  "close": "close"
 }

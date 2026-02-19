@@ -100,5 +100,11 @@
   "teamLogoAlt": "Grupplogotyp",
   "utnLogoAlt": "UTN:s logotyp",
   "openDraft": "Öppna utkast",
-  "confirmSubmitApplication": "Är du säker på att du vill skicka in denna ansökan? När den väl är inskickad kommer du inte kunna redigera den längre."
+  "confirmSubmitApplication": "Är du säker på att du vill skicka in denna ansökan? När den väl är inskickad kommer du inte kunna redigera den längre.",
+  "logOut": "Logga ut",
+  "doYouWantToLogOut": "Vill du logga ut?",
+  "yesLogOut": "Ja, logga ut",
+  "noCancel": "Nej, avbryt",
+  "menu": "meny",
+  "close": "stäng"
 }

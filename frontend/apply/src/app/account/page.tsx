@@ -58,7 +58,8 @@ export default function Account() {
     study_program: null,
     section: "",
     program: "",
-  };
+    study_program: null,
+  } as FormState;
   const [state, setState] = useState<FormState>(default_state);
   const [originalState, setOriginalState] = useState<FormState>(default_state);
   const [errors, setErrors] = useState<Errors>({});

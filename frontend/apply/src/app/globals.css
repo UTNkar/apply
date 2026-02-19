@@ -382,3 +382,8 @@ a:hover {
     background-color: #bababa;
     color: #5e6367;
 }
+
+.error {
+    color: var(--error-500);
+    margin-top: 15px;
+}

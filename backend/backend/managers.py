@@ -16,14 +16,25 @@ class MemberManager(BaseUserManager):
         Creates and returns a user with an email, password and other fields.
     """
 
-    def create_user(self, email, ssn, password, phone_number, study_program, registration_year, is_staff=False, is_superuser=False):
+    def create_user(
+        self,
+        email,
+        ssn,
+        password,
+        phone_number,
+        study_program,
+        is_staff=False,
+        is_superuser=False,
+    ):
         if not email:
             raise ValueError("The Email field must be set")
 
         unicore = unicoremember()
         data = unicore.get_user_data(ssn)
         if data is None:
-            raise ValueError("You don't appear to be registered as a member in Unicore. Please go to https://utn.se/en/bli-medlem to become a member before signing up.")
+            raise ValueError(
+                "You don't appear to be registered as a member in Unicore. Please go to https://utn.se/en/bli-medlem to become a member before signing up."
+            )
         name = "{} {}".format(data["firstname"].strip(), data["lastname"].strip())
         user = self.model(
             email=email.lower().strip(),
@@ -31,10 +42,9 @@ class MemberManager(BaseUserManager):
             is_superuser=is_superuser,
             name=name,
             phone_number=phone_number.strip(),
-            registration_year=registration_year,
             ssn=data["ssn"].strip(),
             study_program=study_program,
-            unicore_id=data["unicore_id"]
+            unicore_id=data["unicore_id"],
         )
 
         user.set_password(password)
