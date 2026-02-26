@@ -1,21 +1,38 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import styles from "@/styles/modal.module.css";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   title?: string;
   children: React.ReactNode;
+  primaryButtonDisabled?: boolean;
+  primaryButtonText: string;
+  secondaryButtonDisabled?: boolean;
+  secondaryButtonText?: string;
+  passwordLoading?: boolean;
 }
 
 export default function Modal({
   isOpen,
   onClose,
+  onSubmit,
   title,
   children,
+  primaryButtonDisabled,
+  primaryButtonText,
+  secondaryButtonDisabled,
+  secondaryButtonText = "",
+  passwordLoading,
 }: ModalProps) {
+  const { t } = useTranslation();
+
   if (!isOpen) return null;
+
+  if (secondaryButtonText === "") secondaryButtonText = t("cancel");
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -28,7 +45,22 @@ export default function Modal({
             <h3>{title}</h3>
           </div>
         )}
-        {children}
+
+        <form onSubmit={onSubmit} className={styles.modalForm}>
+          {children}
+          <div className={styles.modalActions}>
+            <button type="button" className="button" onClick={onClose}>
+              {secondaryButtonText}
+            </button>
+            <button
+              type="submit"
+              className="button activeButton"
+              disabled={primaryButtonDisabled}
+            >
+              {primaryButtonText}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

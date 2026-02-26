@@ -117,5 +117,10 @@
   "passwordTooShort": "Lösenordet måste vara minst 8 tecken",
   "passwordChanged": "Lösenordet har ändrats! Du kommer nu att loggas ut.",
   "passwordChangeError": "Det gick inte att byta lösenord. Kontrollera ditt nuvarande lösenord.",
-  "cancel": "Avbryt"
+  "cancel": "Avbryt",
+  "deleteDraftConfirmation": "Är du säker på att du vill radera detta utkast? Denna åtgärd kan inte ångras.",
+  "delete": "Radera",
+  "submitApplication": "Skicka ansökan",
+  "submitApplicationConfirmation": "Är du säker på att du vill skicka in denna ansökan? När den väl är inskickad kommer du inte kunna redigera den längre.",
+  "submit": "Skicka"
 }

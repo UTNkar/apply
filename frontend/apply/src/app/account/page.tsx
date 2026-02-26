@@ -299,6 +299,7 @@ export default function Account() {
 
   const submitForm = () => {
     if (formHasErrors) {
+      // Normally unreachable since the button should be disabled, but just in case
       alert(t("formHasErrors"));
       return;
     }
@@ -443,17 +444,18 @@ export default function Account() {
       <Modal
         isOpen={isPasswordModalOpen}
         onClose={handlePasswordModalClose}
+        onSubmit={handlePasswordSubmit}
         title={t("changePassword")}
+        primaryButtonDisabled={passwordLoading}
+        primaryButtonText={passwordLoading ? t("saving") : t("changePassword")}
+        secondaryButtonDisabled={passwordLoading}
       >
         {passwordSuccess ? (
           <div className={modalStyles.successMessage}>
             {t("passwordChanged")}
           </div>
         ) : (
-          <form
-            onSubmit={handlePasswordSubmit}
-            className={modalStyles.modalForm}
-          >
+          <>
             <div className={modalStyles.formGroup}>
               <label htmlFor="currentPassword">{t("currentPassword")}</label>
               <input
@@ -490,25 +492,7 @@ export default function Account() {
             {passwordError && (
               <div className={modalStyles.errorMessage}>{passwordError}</div>
             )}
-
-            <div className={modalStyles.modalActions}>
-              <button
-                type="button"
-                className="button"
-                onClick={handlePasswordModalClose}
-                disabled={passwordLoading}
-              >
-                {t("cancel")}
-              </button>
-              <button
-                type="submit"
-                className="button activeButton"
-                disabled={passwordLoading}
-              >
-                {passwordLoading ? t("saving") : t("changePassword")}
-              </button>
-            </div>
-          </form>
+          </>
         )}
       </Modal>
 
