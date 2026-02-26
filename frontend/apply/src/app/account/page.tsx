@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import TextInput from "../components/TextInput";
-import styles from "@/account/account.module.css";
+import styles from "@/styles/account.module.css";
+import cardStyles from "@/styles/card.module.css";
 import Person from "@/icons/person.jsx";
 import Number from "@/icons/number.jsx";
 import Mail from "@/icons/mail.jsx";
@@ -33,14 +34,14 @@ interface Section {
 }
 
 interface FormState {
+  ssn: string;
   email: string;
   name: string;
-  ssn: string;
   phone_number: string;
-  program: string;
   registration_year: number;
-  section: string;
   study_program: { id: string; section: string } | null;
+  section: string;
+  program: string;
 }
 
 type Errors = {
@@ -50,14 +51,14 @@ type Errors = {
 export default function Account() {
   const { t, i18n } = useTranslation();
   const default_state = {
-    name: "",
-    email: "",
     ssn: "",
+    email: "",
+    name: "",
     phone_number: "",
     registration_year: 0,
+    study_program: null,
     section: "",
     program: "",
-    study_program: null,
   } as FormState;
   const [state, setState] = useState<FormState>(default_state);
   const [originalState, setOriginalState] = useState<FormState>(default_state);
@@ -311,7 +312,7 @@ export default function Account() {
     <div className="pageContainer">
       <h2>{t("accountTitle")}</h2>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("contactInformation")}</h3>
 
         <div className={styles.formRow}>
@@ -367,12 +368,12 @@ export default function Account() {
         </div>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("membershipStatus")}</h3>
         <p>{membershipText(memberSince)}</p>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("studyDetails")}</h3>
         <TextInput
           label={t("section")}

@@ -1,31 +1,35 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { applicationAPI } from "@/lib/api";
-import type { Position, Application, Reference } from "@/lib/types";
+import { applicationAPI } from "@/utils/api";
+import type { Position, Application, Reference } from "@/utils/types";
 import styles from "@/styles/application.module.css";
+import cardStyles from "@/styles/card.module.css";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+import FormInput from "./FormInput";
+import FormTextarea from "./FormTextarea";
+import { formatDate } from "@/utils/dateFormat";
 
 type ApplicationFormProps = {
-  mode: "create" | "edit";
   position: Position;
   existingApplication?: Application;
 };
 
 type ReferenceErrors = {
-  name?: string[];
-  email_or_phone_num?: string[];
+  email?: string;
+  phone_num?: string;
 };
 
 export default function ApplicationForm({
-  mode,
   position,
   existingApplication,
 }: ApplicationFormProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referenceErrors, setReferenceErrors] = useState<ReferenceErrors[]>([]);
-
   const [coverLetter, setCoverLetter] = useState(
     existingApplication?.cover_letter || "",
   );
@@ -36,7 +40,7 @@ export default function ApplicationForm({
   const [references, setReferences] = useState<Reference[]>([]);
 
   const isEditable =
-    mode === "create" || existingApplication?.status === "draft";
+    !existingApplication || existingApplication?.status === "draft";
 
   // Load existing references when editing
   useEffect(() => {
@@ -73,12 +77,19 @@ export default function ApplicationForm({
   };
 
   const handleSubmit = async (status: "draft" | "submitted") => {
+    if (
+      status === "submitted" &&
+      !window.confirm(t("confirmSubmitApplication"))
+    ) {
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setReferenceErrors([]);
 
     try {
-      if (mode === "create") {
+      if (!existingApplication) {
+        // Create new application
         await applicationAPI.create({
           position: position.id,
           cover_letter: coverLetter,
@@ -87,7 +98,8 @@ export default function ApplicationForm({
           status,
           references: references,
         });
-      } else if (existingApplication) {
+      } else {
+        // Edit existing application draft
         await applicationAPI.update(existingApplication.id, {
           cover_letter: coverLetter,
           qualifications,
@@ -97,19 +109,23 @@ export default function ApplicationForm({
         });
       }
 
-      router.push("/");
+      if (status === "submitted") {
+        router.push("/");
+      }
     } catch (err: unknown) {
       const error = err as {
         message?: string;
         fieldErrors?: { references?: ReferenceErrors[] };
+        non_field_errors?: string[];
       };
 
-      // Check for reference validation errors
-      if (error.fieldErrors?.references) {
+      if (error.non_field_errors) {
+        setError(error.non_field_errors.join(" "));
+      } else if (error.fieldErrors?.references) {
         setReferenceErrors(error.fieldErrors.references);
-        setError("Please fix the validation errors in the reference fields");
+        setError(t("validationErrorsInReferences"));
       } else {
-        setError(error.message || "Failed to submit application");
+        setError(error.message || t("failedToSubmitApplication"));
       }
     } finally {
       setSubmitting(false);
@@ -118,8 +134,7 @@ export default function ApplicationForm({
 
   const handleDelete = async () => {
     if (!existingApplication) return;
-    if (!confirm("Are you sure you want to delete this draft application?"))
-      return;
+    if (!confirm(t("confirmDeleteDraft"))) return;
 
     setSubmitting(true);
     setError(null);
@@ -129,19 +144,12 @@ export default function ApplicationForm({
       router.push("/");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to delete application",
+        err instanceof Error ? err.message : t("failedToDeleteApplication"),
       );
       setSubmitting(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
 
   return (
     <div className="pageContainer">
@@ -149,26 +157,26 @@ export default function ApplicationForm({
         <h2>{position.role.title}</h2>
       </div>
 
-      <div className={styles.infoCard}>
+      <div className={cardStyles.cardDark}>
         <p>
-          <strong>Team:</strong> {position.role.team_name}
+          <strong>{t("teamLabel")}:</strong> {position.role.team_name}
         </p>
         <p>
-          <strong>Application Deadline:</strong>{" "}
+          <strong>{t("applicationDeadline")}:</strong>{" "}
           {formatDate(position.recruitment_end)}
         </p>
         <p>
-          <strong>Term of office:</strong> {formatDate(position.term_from)} —{" "}
-          {formatDate(position.term_end)}
+          <strong>{t("termOfOffice")}:</strong> {formatDate(position.term_from)}{" "}
+          — {formatDate(position.term_end)}
         </p>
 
-        {mode === "edit" && existingApplication && (
+        {existingApplication && (
           <p>
-            <strong>Status:</strong>{" "}
+            <strong>{t("status")}:</strong>{" "}
             <span
               className={`${styles.statusBadge} ${existingApplication.status === "draft" ? styles.draft : styles.submitted}`}
             >
-              {existingApplication.status}
+              {t(existingApplication.status)}
             </span>
           </p>
         )}
@@ -176,7 +184,7 @@ export default function ApplicationForm({
         {position.role.description && (
           <>
             <p style={{ marginTop: "1rem" }}>
-              <strong>Role Description:</strong>
+              <strong>{t("roleDescription")}:</strong>
             </p>
             <p>{position.role.description}</p>
           </>
@@ -185,7 +193,7 @@ export default function ApplicationForm({
         {position.comment && (
           <>
             <p style={{ marginTop: "1rem" }}>
-              <strong>Comments for this year:</strong>
+              <strong>{t("commentsForThisYear")}:</strong>
             </p>
             <p>{position.comment}</p>
           </>
@@ -193,162 +201,119 @@ export default function ApplicationForm({
       </div>
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <div className={styles.formSection}>
-          <h2>Cover letter</h2>
-          <label className={styles.formLabel}>
-            Present yourself and state why you are who we are looking for
-          </label>
-          <textarea
+        <div className={cardStyles.cardSection}>
+          <h2>{t("coverLetterTitle")}</h2>
+          <FormTextarea
+            label={t("coverLetterPrompt")}
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
-            placeholder="Cover letter"
             rows={6}
             required
             disabled={!isEditable}
-            className={styles.formTextarea}
           />
         </div>
 
-        <div className={styles.formSection}>
-          <h2>Qualifications</h2>
-          <label className={styles.formLabel}>
-            Give a summary of relevant qualifications
-          </label>
-          <textarea
+        <div className={cardStyles.cardSection}>
+          <h2>{t("qualificationsTitle")}</h2>
+          <FormTextarea
+            label={t("qualificationsPrompt")}
             value={qualifications}
             onChange={(e) => setQualifications(e.target.value)}
-            placeholder="Qualifications"
             rows={6}
             required
             disabled={!isEditable}
-            className={styles.formTextarea}
           />
         </div>
 
-        <div className={styles.formSection}>
-          <h2>References</h2>
+        <div className={cardStyles.cardSection}>
+          <h2>{t("referencesTitle")}</h2>
 
           {references.length === 0 && isEditable && (
-            <p className={styles.formDescription}>Optional, max 3</p>
+            <p className={styles.formDescription}>
+              {t("referencesOptionalMax")}
+            </p>
           )}
 
           {references.map((ref, index) => (
             <div key={index} className={styles.referenceCard}>
-              <h4>Reference {index + 1}</h4>
+              <h4>{`${t("referenceLabel")} ${index + 1}`}</h4>
 
               <div className={styles.formFieldRow}>
-                <div className={styles.formFieldWithIcon}>
-                  <label className={styles.formLabel}>Name</label>
-                  <div style={{ position: "relative" }}>
-                    <span className={styles.inputIcon}>
-                      <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      value={ref.name}
-                      onChange={(e) =>
-                        updateReference(index, "name", e.target.value)
-                      }
-                      placeholder="Bert Bertsson"
-                      disabled={!isEditable}
-                      className={styles.inputWithIcon}
-                    />
-                  </div>
-                  {referenceErrors[index]?.name && (
-                    <p className={styles.fieldError}>
-                      {referenceErrors[index].name[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className={styles.formFieldWithIcon}>
-                  <label className={styles.formLabel}>
-                    Title/role e.g. Boss
-                  </label>
-                  <div style={{ position: "relative" }}>
-                    <span className={styles.inputIcon}>
-                      <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      value={ref.title}
-                      onChange={(e) =>
-                        updateReference(index, "title", e.target.value)
-                      }
-                      placeholder="Boss"
-                      disabled={!isEditable}
-                      className={styles.inputWithIcon}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.formFieldRow}>
-                <div className={styles.formFieldWithIcon}>
-                  <label className={styles.formLabel}>Phone Number</label>
-                  <div style={{ position: "relative" }}>
-                    <span className={styles.inputIcon}>
-                      <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="tel"
-                      value={ref.phone_num}
-                      onChange={(e) =>
-                        updateReference(index, "phone_num", e.target.value)
-                      }
-                      placeholder="070-222 77 22"
-                      disabled={!isEditable}
-                      className={styles.inputWithIcon}
-                    />
-                  </div>
-                  {referenceErrors[index]?.email_or_phone_num && (
-                    <p className={styles.fieldError}>
-                      {referenceErrors[index].email_or_phone_num![0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className={styles.formFieldWithIcon}>
-                  <label className={styles.formLabel}>Email</label>
-                  <div style={{ position: "relative" }}>
-                    <span className={styles.inputIcon}>
-                      <svg fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="email"
-                      value={ref.email}
-                      onChange={(e) =>
-                        updateReference(index, "email", e.target.value)
-                      }
-                      placeholder="bert.bertsson@student.uu.se"
-                      disabled={!isEditable}
-                      className={styles.inputWithIcon}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.formField}>
-                <label className={styles.formLabel}>Comment</label>
-                <textarea
-                  value={ref.comment}
+                <FormInput
+                  label={t("name")}
+                  type="text"
+                  value={ref.name}
                   onChange={(e) =>
-                    updateReference(index, "comment", e.target.value)
+                    updateReference(index, "name", e.target.value)
                   }
-                  placeholder="Additional comments"
-                  rows={3}
                   disabled={!isEditable}
-                  className={styles.formTextarea}
+                  error={referenceErrors[index]?.name?.[0]}
+                  icon={
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                  }
+                />
+
+                <FormInput
+                  label={t("titleRoleLabel")}
+                  type="text"
+                  value={ref.title}
+                  onChange={(e) =>
+                    updateReference(index, "title", e.target.value)
+                  }
+                  disabled={!isEditable}
+                  icon={
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
+                    </svg>
+                  }
                 />
               </div>
+
+              <div className={styles.formFieldRow}>
+                <FormInput
+                  label={t("phoneNumber")}
+                  type="tel"
+                  value={ref.phone_num}
+                  onChange={(e) =>
+                    updateReference(index, "phone_num", e.target.value)
+                  }
+                  disabled={!isEditable}
+                  error={referenceErrors[index]?.phone_num?.[0]}
+                  icon={
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                    </svg>
+                  }
+                />
+
+                <FormInput
+                  label={t("email")}
+                  type="email"
+                  value={ref.email}
+                  onChange={(e) =>
+                    updateReference(index, "email", e.target.value)
+                  }
+                  disabled={!isEditable}
+                  error={referenceErrors[index]?.email?.[0]}
+                  icon={
+                    <svg fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+                    </svg>
+                  }
+                />
+              </div>
+
+              <FormTextarea
+                label={t("commentLabel")}
+                value={ref.comment}
+                onChange={(e) =>
+                  updateReference(index, "comment", e.target.value)
+                }
+                rows={3}
+                disabled={!isEditable}
+              />
 
               {isEditable && (
                 <div className={styles.removeButtonContainer}>
@@ -357,7 +322,7 @@ export default function ApplicationForm({
                     onClick={() => removeReference(index)}
                     className={styles.removeButton}
                   >
-                    Remove Reference
+                    {t("removeReference")}
                   </button>
                 </div>
               )}
@@ -370,13 +335,13 @@ export default function ApplicationForm({
               onClick={addReference}
               className={`button ${styles.addReferenceButton}`}
             >
-              Add reference
+              {t("addReference")}
             </button>
           )}
         </div>
 
-        <div className={styles.formSection}>
-          <h2>GDPR</h2>
+        <div className={cardStyles.cardSection}>
+          <h2>{t("gdprTitle")}</h2>
           <div className={styles.checkboxContainer}>
             <input
               type="checkbox"
@@ -386,9 +351,7 @@ export default function ApplicationForm({
               disabled={!isEditable}
             />
             <span className={styles.checkboxLabel}>
-              I accept that my data is saved in accordance with Uppsala Union of
-              Engineering and Science Students integrity policy that can be
-              found within the link:{" "}
+              {t("gdprConsentText")}{" "}
               <a
                 href="https://utn.se/dokumentarkiv"
                 target="_blank"
@@ -413,7 +376,7 @@ export default function ApplicationForm({
                 }
                 className={`button ${styles.draftButton}`}
               >
-                {submitting ? "Saving..." : "Save as draft"}
+                {submitting ? t("saving") : t("saveDraft")}
               </button>
 
               <button
@@ -424,19 +387,20 @@ export default function ApplicationForm({
                 }
                 className={`button ${styles.submitButton}`}
               >
-                {submitting ? "Submitting..." : "Apply"}
+                {submitting ? t("submitting") : t("apply")}
               </button>
 
-              {mode === "edit" && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={submitting}
-                  className={`button ${styles.deleteButton}`}
-                >
-                  Delete Draft
-                </button>
-              )}
+              {existingApplication &&
+                existingApplication.status === "draft" && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={submitting}
+                    className={`button ${styles.deleteButton}`}
+                  >
+                    {t("deleteDraft")}
+                  </button>
+                )}
             </>
           ) : (
             <button
@@ -444,7 +408,7 @@ export default function ApplicationForm({
               onClick={() => router.push("/")}
               className={`button ${styles.backButton}`}
             >
-              Back to Home
+              {t("backToHome")}
             </button>
           )}
         </div>

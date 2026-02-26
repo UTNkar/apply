@@ -137,7 +137,6 @@ h3 {
     font-weight: 500;
     line-height: 26px;
     display: block;
-    margin-block-start: 1em;
     margin-block-end: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
@@ -151,7 +150,6 @@ h4 {
     font-weight: 500;
     line-height: 24px;
     display: block;
-    margin-block-start: 1.33em;
     margin-block-end: 1.33em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
@@ -324,6 +322,7 @@ a:hover {
 .smallButton {
     border: none;
     height: 35px;
+    line-height: 35px;
     min-width: 100px;
     padding: 0 30px;
     border-radius: var(--button-corner-radius);
