@@ -28,6 +28,8 @@ class MemberManager(BaseUserManager):
     ):
         if not email:
             raise ValueError("The Email field must be set")
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
 
         unicore = unicoremember()
         data = unicore.get_user_data(ssn)

@@ -106,5 +106,16 @@
   "yesLogOut": "Yes, log out",
   "noCancel": "No, cancel",
   "menu": "menu",
-  "close": "close"
+  "close": "close",
+  "accountSecurity": "Account Security",
+  "changePassword": "Change Password",
+  "changePasswordDescription": "Update your password to keep your account secure.",
+  "currentPassword": "Current Password",
+  "newPassword": "New Password",
+  "confirmNewPassword": "Confirm New Password",
+  "passwordsDoNotMatch": "New passwords do not match",
+  "passwordTooShort": "Password must be at least 8 characters",
+  "passwordChanged": "Password changed successfully! You will now be logged out.",
+  "passwordChangeError": "Failed to change password. Please check your current password.",
+  "cancel": "Cancel"
 }
