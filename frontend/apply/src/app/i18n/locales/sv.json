@@ -63,6 +63,28 @@
   "doYouWantToLogOut": "Vill du logga ut?",
   "yesLogOut": "Ja, logga ut",
   "noCancel": "Nej, avbryt",
-  "menu": "meny",
-  "close": "stäng"
+  "menu": "meny", 
+  "close": "stäng",
+  
+  "forgotPasswordPage": {
+    "title": "Glömt lösenord",
+    "description": "Skriv din mejl så skickar vi en återställningslänk.",
+    "submit": "Skicka återställningslänk",
+    "link": "Glömt lösenord?",
+    "checkEmail": "Kolla din mejl",
+    "emailSent": "Om ett konto finns för denna mejl så har en återställningslänk skickats..",
+    "backToLogin": "Tillbaka till logga in",
+    "error": "Något gick fel, var snäll prova igen."
+  },
+  "resetPasswordPage": {
+    "title": "Ange nytt lösenord",
+    "newPassword": "Nytt lösenord",
+    "confirmPassword": "Bekräfta lösenord",
+    "submit": "Återställ lösenord",
+    "passwordMismatch": "Lösenord överensstämmer inte.",
+    "invalidOrExpired": "Denna länk är ogiltig eller har utgått.",
+    "invalidLink": "Ogiltig återställningslänk.",
+    "requestNewLink": "Request a new link",
+    "error": "Något gick fel, var snäll prova igen."
+  }
 }

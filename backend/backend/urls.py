@@ -26,7 +26,6 @@ router.register("applications", ApplicationViewSet, basename="application")
 
 urlpatterns = [
     path("api/", include(router.urls)),
-    path("api/", include(router.urls)),
     path("api/auth/login", LoginAPIView.as_view(), name="login"),
     path("api/auth/logout", LogoutAPIView.as_view(), name="logout"),
     path("api/auth/signup", SignupAPIView.as_view(), name="signup"),
