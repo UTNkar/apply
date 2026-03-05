@@ -73,11 +73,34 @@ export default function Account() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] =
     useState<boolean>(false);
   const [passwordError, setPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  const validateNewPassword = (password: string) => {
+    if (password.length < 8) {
+      return t("passwordTooShort");
+    }
+
+    return "";
+  };
+
+  const handleNewPasswordChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const password = e.target.value;
+
+    if (password.length === 0) {
+      setNewPasswordError("");
+      return;
+    }
+
+    setNewPasswordError(validateNewPassword(password));
+  };
+
   const handlePasswordModalClose = () => {
     setPasswordError("");
+    setNewPasswordError("");
     setPasswordSuccess(false);
     setIsPasswordModalOpen(false);
   };
@@ -96,10 +119,12 @@ export default function Account() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setPasswordError(t("passwordTooShort"));
+    const passwordValidationError = validateNewPassword(newPassword);
+    if (passwordValidationError) {
+      setNewPasswordError(passwordValidationError);
       return;
     }
+    setNewPasswordError("");
 
     setPasswordLoading(true);
 
@@ -473,7 +498,15 @@ export default function Account() {
                 name="newPassword"
                 required
                 autoComplete="new-password"
+                onChange={handleNewPasswordChange}
+                aria-invalid={newPasswordError.length > 0}
+                aria-describedby={
+                  newPasswordError.length > 0 ? "newPasswordError" : undefined
+                }
               />
+                <div id="newPasswordError" className={modalStyles.fieldError}>
+                  {newPasswordError}
+                </div>
             </div>
 
             <div className={modalStyles.formGroup}>
