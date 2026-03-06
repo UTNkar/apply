@@ -206,6 +206,12 @@ class PasswordResetAPIView(APIView):
         token = request.data.get("token")
         new_password = request.data.get("new_password")
 
+        if len(new_password) < 8:
+            return Response(
+                {"message": "New password must be at least 8 characters long"},
+                status=400,
+            )
+
         try:
             user = get_user_model().objects.get(pk=user_id)
         except get_user_model().DoesNotExist:
@@ -246,14 +252,18 @@ class ChangePasswordAPIView(APIView):
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
+        if len(new_password) < 8:
+            return Response(
+                {"message": "New password must be at least 8 characters long"},
+                status=400,
+            )
+
         if check_password(old_password, user.password):
             user.set_password(new_password)
             user.save()
             return Response({"message": "Password changed successfully"}, status=200)
-
-        return Response(
-            {"message": "An error occurred while changing the password"}, status=400
-        )
+        else:
+            return Response({"message": "Current password is incorrect"}, status=400)
 
 
 class EmailVerificationAPIView(APIView):
@@ -476,7 +486,9 @@ class ApplicationViewSet(ModelViewSet):
             application = Application.objects.select_related(
                 "member", "position", "position__role"
             ).get(position_id=position_id, member=request.user)
-            serializer = ListApplicationSerializer(application, context={"request": request})
+            serializer = ListApplicationSerializer(
+                application, context={"request": request}
+            )
             return Response(serializer.data)
         except Application.DoesNotExist:
             return Response(

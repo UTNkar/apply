@@ -126,5 +126,16 @@
     "moreInfoUrl": "https://utn.se/engagera-dig/att-engagera-sig",
     "moreInfoContinuationText": ", där vi också har svar på vanliga frågor om att engagera sig.",
     "contactText": "Om du undrar något kan du också maila till"
-  }
+  },
+  "accountSecurity": "Kontosäkerhet",
+  "changePassword": "Byt lösenord",
+  "changePasswordDescription": "Uppdatera ditt lösenord för att hålla ditt konto säkert.",
+  "currentPassword": "Nuvarande lösenord",
+  "newPassword": "Nytt lösenord",
+  "confirmNewPassword": "Bekräfta nytt lösenord",
+  "passwordsDoNotMatch": "De nya lösenorden matchar inte",
+  "passwordTooShort": "Lösenordet måste vara minst 8 tecken",
+  "passwordChanged": "Lösenordet har ändrats! Du kommer nu att loggas ut.",
+  "passwordChangeError": "Det gick inte att byta lösenord. Kontrollera ditt nuvarande lösenord.",
+  "cancel": "Avbryt"
 }

@@ -126,5 +126,16 @@
     "moreInfoUrl": "https://utn.se/en/engagera-dig/att-engagera-sig",
     "moreInfoContinuationText": ", where we also have answers to frequently asked questions about getting involved.",
     "contactText": "If you have any questions you can also email"
-  }
+  },
+  "accountSecurity": "Account Security",
+  "changePassword": "Change Password",
+  "changePasswordDescription": "Update your password to keep your account secure.",
+  "currentPassword": "Current Password",
+  "newPassword": "New Password",
+  "confirmNewPassword": "Confirm New Password",
+  "passwordsDoNotMatch": "New passwords do not match",
+  "passwordTooShort": "Password must be at least 8 characters",
+  "passwordChanged": "Password changed successfully! You will now be logged out.",
+  "passwordChangeError": "Failed to change password. Please check your current password.",
+  "cancel": "Cancel"
 }
