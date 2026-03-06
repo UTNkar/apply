@@ -11,7 +11,6 @@ import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
 import { formatDate } from "@/utils/dateFormat";
 import Modal from "./Modal";
-import modalStyles from "@/styles/modal.module.css";
 
 type ApplicationFormProps = {
   position: Position;
