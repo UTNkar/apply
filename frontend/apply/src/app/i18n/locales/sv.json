@@ -71,6 +71,8 @@
   "noOpenPositions": "Inga öppna poster tillgängliga",
   "teamLabel": "Grupp",
   "applicationDeadline": "Sista ansökningsdag",
+  "viewRoleDescription": "Visa hela postbeskrivningen",
+  "contactEmail": "Kontakt e-post",
   "coverLetterTitle": "Personligt brev",
   "coverLetterPrompt": "Presentera dig och berätta varför just du är rätt för uppdraget",
   "qualificationsTitle": "Kvalifikationer",

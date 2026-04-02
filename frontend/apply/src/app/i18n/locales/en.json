@@ -71,6 +71,8 @@
   "noOpenPositions": "No open positions available",
   "teamLabel": "Team",
   "applicationDeadline": "Application Deadline",
+  "viewRoleDescription": "View full role description",
+  "contactEmail": "Contact email",
   "coverLetterTitle": "Cover letter",
   "coverLetterPrompt": "Present yourself and state why you are who we are looking for",
   "qualificationsTitle": "Qualifications",

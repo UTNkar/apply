@@ -202,6 +202,15 @@ export default function ApplicationForm({
           — {formatDate(position.term_end)}
         </p>
 
+        {position.role.contact_email && (
+          <p>
+            <strong>{t("contactEmail")}:</strong>{" "}
+            <a href={`mailto:${position.role.contact_email}`}>
+              {position.role.contact_email}
+            </a>
+          </p>
+        )}
+
         {isDraft && (
           <p>
             <strong>{t("status")}:</strong>{" "}
@@ -215,19 +224,31 @@ export default function ApplicationForm({
 
         {position.role.description && (
           <>
-            <p style={{ marginTop: "1rem" }}>
+            <p>
               <strong>{t("roleDescription")}:</strong>
             </p>
-            <p>{position.role.description}</p>
+            <p style={{ whiteSpace: "pre-line" }}>{position.role.description}</p>
           </>
+        )}
+
+        {position.role.role_description_url && (
+          <p>
+            <a
+              href={position.role.role_description_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("viewRoleDescription")}
+            </a>
+          </p>
         )}
 
         {position.comment && (
           <>
-            <p style={{ marginTop: "1rem" }}>
+            <p>
               <strong>{t("commentsForThisYear")}:</strong>
             </p>
-            <p>{position.comment}</p>
+            <p style={{ whiteSpace: "pre-line" }}>{position.comment}</p>
           </>
         )}
       </div>
