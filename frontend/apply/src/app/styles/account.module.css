@@ -2,3 +2,18 @@
     display: flex;
     gap: 16px;
 }
+
+.deleteButton {
+    background-color: var(--error-500);
+    color: var(--white);
+}
+
+.deleteButton:hover {
+    background-color: color-mix(in srgb, var(--error-500) 80%, var(--black));
+}
+
+.deleteButton:disabled {
+    background-color: var(--error-500);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
