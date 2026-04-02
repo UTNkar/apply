@@ -175,11 +175,11 @@ h6 {
 }
 
 /* This works for the gray lines under the headings */
-h1:not(.without_decoration):after,
-h2:not(.without_decoration):after,
-h3:not(.without_decoration):after,
-h5:not(.without_decoration):after,
-h6:not(.without_decoration):after {
+h1:not(.without_decoration)::after,
+h2:not(.without_decoration)::after,
+h3:not(.without_decoration)::after,
+h5:not(.without_decoration)::after,
+h6:not(.without_decoration)::after {
     height: 0.3ch;
     margin-top: 0.75em;
     margin-bottom: 1em;

@@ -503,10 +503,13 @@ class PositionViewSet(ReadOnlyModelViewSet):
 
     def list(self, request):
         """Return both open positions and user's positions"""
+        if request.user.is_authenticated:
+            my_positions = Position.objects.for_member(request.user).select_related(
+                "role", "role__team"
+            )
+        else:
+            my_positions = Position.objects.none()
 
-        my_positions = Position.objects.for_member(request.user).select_related(
-            "role", "role__team"
-        )
         open_positions = Position.objects.open_positions().select_related(
             "role", "role__team"
         )

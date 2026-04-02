@@ -5,6 +5,7 @@ import ApplicationCard from "./components/ApplicationCard";
 import MyPositionCard from "./components/MyPositionCard";
 import OpenPositionCard from "./components/OpenPositionCard";
 import { positionAPI, applicationAPI } from "@/utils/api";
+import { useIsLoggedIn } from "@/utils/auth";
 import type { Position, Application } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
@@ -13,6 +14,7 @@ type Tab = "Open Positions" | "My Applications" | "My Positions";
 
 export default function Home() {
   const { t, i18n } = useTranslation();
+  const { isLoggedIn, loading: authLoading } = useIsLoggedIn();
   const [activeTab, setActiveTab] = useState<Tab>("Open Positions");
   const [openPositions, setOpenPositions] = useState<Position[]>([]);
   const [myPositions, setMyPositions] = useState<Position[]>([]);
@@ -23,68 +25,85 @@ export default function Home() {
     null,
   );
 
-  // Fetch all data once on mount
   useEffect(() => {
-    const fetchPositions = async () => {
-      try {
-        const positionsData = await positionAPI.getAll();
-        setOpenPositions(positionsData.open_positions);
-        setMyPositions(positionsData.my_positions);
-        setPositionsError(null);
-      } catch {
-        setPositionsError("failedToLoadPositions");
-      }
-    };
+    if (!isLoggedIn) {
+      setActiveTab("Open Positions");
+    }
+  }, [isLoggedIn]);
 
-    const fetchApplications = async () => {
+  // Fetch data whenever auth state or language changes
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    const fetchData = async () => {
+      setLoading(true);
+
       try {
-        const applicationsData = await applicationAPI.getAll();
-        setApplications(applicationsData);
-        console.log("Fetched applications:", applicationsData);
+        if (isLoggedIn) {
+          const [positionsData, applicationsData] = await Promise.all([
+            positionAPI.getAll(),
+            applicationAPI.getAll(),
+          ]);
+
+          setOpenPositions(positionsData.open_positions);
+          setMyPositions(positionsData.my_positions);
+          setApplications(applicationsData);
+          setPositionsError(null);
+          setApplicationsError(null);
+          return;
+        }
+
+        const openPositionsData = await positionAPI.getOpen();
+        setOpenPositions(openPositionsData);
+        setMyPositions([]);
+        setApplications([]);
+        setPositionsError(null);
         setApplicationsError(null);
       } catch {
-        setApplicationsError("failedToLoadApplications");
+        setPositionsError("failedToLoadPositions");
+        if (isLoggedIn) {
+          setApplicationsError("failedToLoadApplications");
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPositions();
-    fetchApplications();
-  }, [i18n.language]);
+    fetchData();
+  }, [authLoading, isLoggedIn, i18n.language]);
 
   return (
     <div className="pageContainer">
-      <h2>
-        {activeTab === "Open Positions"
-          ? t("openPositions")
-          : activeTab === "My Applications"
-            ? t("myApplications")
-            : t("myPositions")}
-      </h2>
+      {!isLoggedIn && (
+        <h2 style={{ marginBottom: -32 }}>{t("openPositions")}</h2>
+      )}
 
-      <div className={styles.buttonsContainer}>
-        <button
-          className={`button ${activeTab === "Open Positions" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("Open Positions")}
-        >
-          {t("openPositions")}
-        </button>
+      {isLoggedIn && (
+        <div className={styles.buttonsContainer}>
+          <button
+            className={`button ${activeTab === "Open Positions" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("Open Positions")}
+          >
+            {t("openPositions")}
+          </button>
 
-        <button
-          className={`button ${activeTab === "My Applications" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("My Applications")}
-        >
-          {t("myApplications")}
-        </button>
+          <button
+            className={`button ${activeTab === "My Applications" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("My Applications")}
+          >
+            {t("myApplications")}
+          </button>
 
-        <button
-          className={`button ${activeTab === "My Positions" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("My Positions")}
-        >
-          {t("myPositions")}
-        </button>
-      </div>
+          <button
+            className={`button ${activeTab === "My Positions" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("My Positions")}
+          >
+            {t("myPositions")}
+          </button>
+        </div>
+      )}
 
       {loading && <p>{t("loading")}</p>}
 
@@ -135,10 +154,7 @@ export default function Home() {
               <p>{t("noPositionsYet")}</p>
             ) : (
               myPositions.map((position) => (
-                <MyPositionCard
-                  key={position.id}
-                  position={position}
-                />
+                <MyPositionCard key={position.id} position={position} />
               ))
             )}
           </div>

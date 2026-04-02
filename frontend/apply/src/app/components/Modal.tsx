@@ -13,6 +13,7 @@ interface ModalProps {
   primaryButtonText: string;
   secondaryButtonDisabled?: boolean;
   secondaryButtonText?: string;
+  showSecondaryButton?: boolean;
 }
 
 export default function Modal({
@@ -25,6 +26,7 @@ export default function Modal({
   primaryButtonText,
   secondaryButtonDisabled,
   secondaryButtonText = "",
+  showSecondaryButton = true,
 }: ModalProps) {
   const { t } = useTranslation();
 
@@ -44,17 +46,25 @@ export default function Modal({
           </div>
         )}
 
-        <form onSubmit={onSubmit} className={styles.modalForm}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit(event);
+          }}
+          className={styles.modalForm}
+        >
           {children}
           <div className={styles.modalActions}>
-            <button
-              type="button"
-              className="button"
-              onClick={onClose}
-              disabled={secondaryButtonDisabled}
-            >
-              {secondaryButtonText}
-            </button>
+            {showSecondaryButton && (
+              <button
+                type="button"
+                className="button"
+                onClick={onClose}
+                disabled={secondaryButtonDisabled}
+              >
+                {secondaryButtonText}
+              </button>
+            )}
             <button
               type="submit"
               className="button activeButton"
