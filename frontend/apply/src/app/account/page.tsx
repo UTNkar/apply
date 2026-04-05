@@ -69,10 +69,6 @@ interface FormState {
   program: string;
 }
 
-type AccountResponseData = Partial<FormState> & {
-  study_program?: { id: string; section: string } | null;
-};
-
 type Errors = {
   [key in keyof FormState]?: string;
 };
@@ -197,23 +193,10 @@ export default function Account() {
     );
   }, [i18n.language]);
 
-  const normalizeSections = (data: Section[]): Section[] => {
-    return data.map((section) => ({
-      ...section,
-      id: section.id,
-      value: section.id,
-      name: i18n.language === "sv" ? section.section_sv : section.section_en,
-      programs: section.programs.map((program) => ({
-        ...program,
-        id: program.id,
-        value: program.id,
-        name: i18n.language === "sv" ? program.name_sv : program.name_en,
-      })),
-    }));
-  };
-
   const handleNewUserData = (data: AccountResponse) => {
-    const programId = data.study_program?.id ? String(data.study_program.id) : "";
+    const programId = data.study_program?.id
+      ? String(data.study_program.id)
+      : "";
     const sectionId = data.study_program?.section?.id
       ? String(data.study_program.section.id)
       : "";
@@ -247,6 +230,21 @@ export default function Account() {
   };
 
   useEffect(() => {
+    const normalizeSections = (data: Section[]): Section[] => {
+      return data.map((section) => ({
+        ...section,
+        id: section.id,
+        value: section.id,
+        name: i18n.language === "sv" ? section.section_sv : section.section_en,
+        programs: section.programs.map((program) => ({
+          ...program,
+          id: program.id,
+          value: program.id,
+          name: i18n.language === "sv" ? program.name_sv : program.name_en,
+        })),
+      }));
+    };
+
     // Fetch sections and programs
     request(Method.GET, "/sections/").then(async (res) => {
       if (res.ok) {
@@ -280,7 +278,7 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, [setProgramNames]);
+  }, [setProgramNames, i18n.language]);
 
   useEffect(() => {
     if (sections.length > 0) {
@@ -666,7 +664,10 @@ export default function Account() {
             className={`${styles.draftSavedMessage} ${showSaveMessage ? styles.draftSavedMessageVisible : ""}`}
             aria-live="polite"
           >
-            <span className={styles.draftSavedIconWrap} aria-hidden={!showSaveMessage}>
+            <span
+              className={styles.draftSavedIconWrap}
+              aria-hidden={!showSaveMessage}
+            >
               <Image
                 src="/icons/check-blue.svg"
                 alt=""
