@@ -1,6 +1,16 @@
 import type { Position, Application, CreateApplicationData } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export function getAPIURL() {
+  const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envApiUrl) return envApiUrl;
+
+  // During SSR, `window` is not available; use a relative fallback.
+  if (typeof window === "undefined") return "/api";
+
+  return window.location.hostname === "localhost"
+    ? "http://localhost:8000/api"
+    : "/api";
+}
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -11,6 +21,7 @@ function getCookie(name: string): string | null {
 }
 
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+  const API_URL = getAPIURL();
   const url = `${API_URL}${endpoint}`;
 
   const headers: Record<string, string> = {
