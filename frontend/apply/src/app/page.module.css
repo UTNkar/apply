@@ -3,6 +3,7 @@
     flex-direction: row;
     gap: 1.25rem;
     flex-wrap: wrap;
+    margin-top: 32px;
 }
 
 .myApplicationsContainer, .myPositionsContainer{

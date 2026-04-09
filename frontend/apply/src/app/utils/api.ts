@@ -63,6 +63,10 @@ export const positionAPI = {
     }>;
   },
 
+  async getOpen() {
+    return fetchAPI("/open-positions/") as Promise<Position[]>;
+  },
+
   async getById(id: number) {
     return fetchAPI(`/positions/${id}/`) as Promise<Position>;
   },

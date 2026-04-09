@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { applicationAPI } from "@/utils/api";
 import type { Position, Application, Reference } from "@/utils/types";
 import styles from "@/styles/application.module.css";
@@ -18,8 +19,9 @@ type ApplicationFormProps = {
 };
 
 type ReferenceErrors = {
-  email?: string;
-  phone_num?: string;
+  name?: string[];
+  email?: string[];
+  phone_num?: string[];
 };
 
 export default function ApplicationForm({
@@ -28,7 +30,9 @@ export default function ApplicationForm({
 }: ApplicationFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingApplication, setSubmittingApplication] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [deletingDraft, setDeletingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referenceErrors, setReferenceErrors] = useState<ReferenceErrors[]>([]);
   const [coverLetter, setCoverLetter] = useState(
@@ -41,9 +45,15 @@ export default function ApplicationForm({
   const [references, setReferences] = useState<Reference[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-
-  const isEditable =
-    !existingApplication || existingApplication?.status === "draft";
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isDraft, setIsDraft] = useState(
+    existingApplication?.status === "draft",
+  );
+  const [showDraftSavedMessage, setShowDraftSavedMessage] = useState(false);
+  const [draftId, setDraftId] = useState<number | null>(
+    existingApplication?.id ?? null,
+  );
+  const [editable, setEditable] = useState(!existingApplication || isDraft);
 
   // Load existing references when editing
   useEffect(() => {
@@ -80,14 +90,20 @@ export default function ApplicationForm({
   };
 
   const handleSubmit = async (status: "draft" | "submitted") => {
-    setSubmitting(true);
+    if (status === "draft") {
+      setSavingDraft(true);
+    } else {
+      setSubmittingApplication(true);
+    }
+
     setError(null);
     setReferenceErrors([]);
+    setShowDraftSavedMessage(false);
 
     try {
-      if (!existingApplication) {
+      if (!isDraft) {
         // Create new application
-        await applicationAPI.create({
+        const createdApplication = await applicationAPI.create({
           position: position.id,
           cover_letter: coverLetter,
           qualifications,
@@ -95,9 +111,15 @@ export default function ApplicationForm({
           status,
           references: references,
         });
-      } else {
+
+        if (status === "draft") {
+          // Enter draft mode
+          setIsDraft(true);
+          setDraftId(createdApplication.id);
+        }
+      } else if (draftId !== null) {
         // Edit existing application draft
-        await applicationAPI.update(existingApplication.id, {
+        await applicationAPI.update(draftId, {
           cover_letter: coverLetter,
           qualifications,
           gdpr,
@@ -107,7 +129,10 @@ export default function ApplicationForm({
       }
 
       if (status === "submitted") {
-        router.push("/");
+        setSubmitSuccess(true);
+        setEditable(false);
+      } else {
+        setShowDraftSavedMessage(true);
       }
     } catch (err: unknown) {
       const error = err as {
@@ -125,30 +150,36 @@ export default function ApplicationForm({
         setError(error.message || t("failedToSubmitApplication"));
       }
     } finally {
-      setSubmitting(false);
+      if (status === "draft") {
+        setSavingDraft(false);
+      } else {
+        setSubmittingApplication(false);
+      }
     }
   };
 
   const openDeleteModal = async () => {
-    if (!existingApplication) return;
+    if (!isDraft) return;
     setShowDeleteModal(true);
   };
 
   const handleDeleteDraft = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!existingApplication) return;
-    setSubmitting(true);
+    console.log("Deleting draft with ID:", draftId);
+    if (!isDraft || draftId === null) return;
+    setDeletingDraft(true);
     setError(null);
 
     try {
-      await applicationAPI.delete(existingApplication.id);
+      await applicationAPI.delete(draftId);
       window.location.reload();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("failedToDeleteApplication"),
       );
-      setSubmitting(false);
       setShowDeleteModal(false);
+    } finally {
+      setDeletingDraft(false);
     }
   };
 
@@ -171,13 +202,13 @@ export default function ApplicationForm({
           — {formatDate(position.term_end)}
         </p>
 
-        {existingApplication && (
+        {isDraft && (
           <p>
             <strong>{t("status")}:</strong>{" "}
             <span
-              className={`${styles.statusBadge} ${existingApplication.status === "draft" ? styles.draft : styles.submitted}`}
+              className={`${styles.statusBadge} ${isDraft ? styles.draft : styles.submitted}`}
             >
-              {t(existingApplication.status)}
+              {t(isDraft ? "draft" : "submitted")}
             </span>
           </p>
         )}
@@ -210,7 +241,7 @@ export default function ApplicationForm({
             onChange={(e) => setCoverLetter(e.target.value)}
             rows={6}
             required
-            disabled={!isEditable}
+            disabled={!editable}
           />
         </div>
 
@@ -222,14 +253,14 @@ export default function ApplicationForm({
             onChange={(e) => setQualifications(e.target.value)}
             rows={6}
             required
-            disabled={!isEditable}
+            disabled={!editable}
           />
         </div>
 
         <div className={cardStyles.cardSection}>
           <h2>{t("referencesTitle")}</h2>
 
-          {references.length === 0 && isEditable && (
+          {references.length === 0 && editable && (
             <p className={styles.formDescription}>
               {t("referencesOptionalMax")}
             </p>
@@ -243,11 +274,11 @@ export default function ApplicationForm({
                 <FormInput
                   label={t("name")}
                   type="text"
-                  value={ref.name}
+                  value={ref.name ?? ""}
                   onChange={(e) =>
                     updateReference(index, "name", e.target.value)
                   }
-                  disabled={!isEditable}
+                  disabled={!editable}
                   error={referenceErrors[index]?.name?.[0]}
                   icon={
                     <svg fill="currentColor" viewBox="0 0 24 24">
@@ -259,11 +290,11 @@ export default function ApplicationForm({
                 <FormInput
                   label={t("titleRoleLabel")}
                   type="text"
-                  value={ref.title}
+                  value={ref.title ?? ""}
                   onChange={(e) =>
                     updateReference(index, "title", e.target.value)
                   }
-                  disabled={!isEditable}
+                  disabled={!editable}
                   icon={
                     <svg fill="currentColor" viewBox="0 0 24 24">
                       <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
@@ -276,11 +307,11 @@ export default function ApplicationForm({
                 <FormInput
                   label={t("phoneNumber")}
                   type="tel"
-                  value={ref.phone_num}
+                  value={ref.phone_num ?? ""}
                   onChange={(e) =>
                     updateReference(index, "phone_num", e.target.value)
                   }
-                  disabled={!isEditable}
+                  disabled={!editable}
                   error={referenceErrors[index]?.phone_num?.[0]}
                   icon={
                     <svg fill="currentColor" viewBox="0 0 24 24">
@@ -292,11 +323,11 @@ export default function ApplicationForm({
                 <FormInput
                   label={t("email")}
                   type="email"
-                  value={ref.email}
+                  value={ref.email ?? ""}
                   onChange={(e) =>
                     updateReference(index, "email", e.target.value)
                   }
-                  disabled={!isEditable}
+                  disabled={!editable}
                   error={referenceErrors[index]?.email?.[0]}
                   icon={
                     <svg fill="currentColor" viewBox="0 0 24 24">
@@ -308,15 +339,15 @@ export default function ApplicationForm({
 
               <FormTextarea
                 label={t("commentLabel")}
-                value={ref.comment}
+                value={ref.comment ?? ""}
                 onChange={(e) =>
                   updateReference(index, "comment", e.target.value)
                 }
                 rows={3}
-                disabled={!isEditable}
+                disabled={!editable}
               />
 
-              {isEditable && (
+              {editable && (
                 <div className={styles.removeButtonContainer}>
                   <button
                     type="button"
@@ -330,7 +361,7 @@ export default function ApplicationForm({
             </div>
           ))}
 
-          {isEditable && references.length < 3 && (
+          {editable && references.length < 3 && (
             <button
               type="button"
               onClick={addReference}
@@ -349,7 +380,7 @@ export default function ApplicationForm({
               checked={gdpr}
               onChange={(e) => setGdpr(e.target.checked)}
               required
-              disabled={!isEditable}
+              disabled={!editable}
             />
             <span className={styles.checkboxLabel}>
               {t("gdprConsentText")}{" "}
@@ -367,41 +398,68 @@ export default function ApplicationForm({
         {error && <p className={styles.errorMessage}>{error}</p>}
 
         <div className={styles.actionButtons}>
-          {isEditable ? (
+          {editable ? (
             <>
-              <button
-                type="button"
-                onClick={() => handleSubmit("draft")}
-                disabled={
-                  submitting || !coverLetter || !qualifications || !gdpr
-                }
-                className={`button ${styles.draftButton}`}
-              >
-                {submitting ? t("saving") : t("saveDraft")}
-              </button>
+              <div className={styles.draftSaveGroup}>
+                <button
+                  type="button"
+                  onClick={() => handleSubmit("draft")}
+                  disabled={
+                    savingDraft ||
+                    submittingApplication ||
+                    deletingDraft ||
+                    !coverLetter ||
+                    !qualifications ||
+                    !gdpr
+                  }
+                  className={`button ${styles.draftButton}`}
+                >
+                  {savingDraft ? t("saving") : t("saveDraft")}
+                </button>
+
+                {showDraftSavedMessage && (
+                  <p className={styles.draftSavedMessage}>
+                    <Image
+                      src="/icons/check-blue.svg"
+                      alt=""
+                      width={16}
+                      height={16}
+                      className={styles.draftSavedIcon}
+                    />
+                    {t("draftSaved")}
+                  </p>
+                )}
+              </div>
 
               <button
                 type="button"
-                onClick={() => setShowSubmitModal(true)}
+                onClick={() => {
+                  setSubmitSuccess(false);
+                  setShowSubmitModal(true);
+                }}
                 disabled={
-                  submitting || !coverLetter || !qualifications || !gdpr
+                  savingDraft ||
+                  submittingApplication ||
+                  deletingDraft ||
+                  !coverLetter ||
+                  !qualifications ||
+                  !gdpr
                 }
                 className={`button ${styles.submitButton}`}
               >
-                {submitting ? t("submitting") : t("apply")}
+                {submittingApplication ? t("submitting") : t("apply")}
               </button>
 
-              {existingApplication &&
-                existingApplication.status === "draft" && (
-                  <button
-                    type="button"
-                    onClick={openDeleteModal}
-                    disabled={submitting}
-                    className={`button ${styles.deleteButton}`}
-                  >
-                    {t("deleteDraft")}
-                  </button>
-                )}
+              {isDraft && (
+                <button
+                  type="button"
+                  onClick={openDeleteModal}
+                  disabled={savingDraft || submittingApplication || deletingDraft}
+                  className={`button ${styles.deleteButton}`}
+                >
+                  {t("deleteDraft")}
+                </button>
+              )}
             </>
           ) : (
             <button
@@ -428,11 +486,25 @@ export default function ApplicationForm({
       <Modal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        title={t("submitApplication")}
-        primaryButtonText={t("submit")}
-        onSubmit={() => handleSubmit("submitted")}
+        title={submitSuccess ? t("submitted") : t("submitApplication")}
+        primaryButtonText={submitSuccess ? t("backToHome") : t("submit")}
+        onSubmit={() => {
+          if (submitSuccess) {
+            router.push("/");
+            return;
+          }
+
+          handleSubmit("submitted");
+        }}
+        primaryButtonDisabled={submittingApplication}
+        secondaryButtonDisabled={submittingApplication}
+        showSecondaryButton={!submitSuccess}
       >
-        <p>{t("submitApplicationConfirmation")}</p>
+        <p>
+          {submitSuccess
+            ? t("applicationSubmittedSuccess")
+            : t("submitApplicationConfirmation")}
+        </p>
       </Modal>
     </div>
   );

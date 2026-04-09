@@ -153,6 +153,9 @@ class PositionSerializer(ModelSerializer):
 
     def get_user_app_status(self, obj):
         request = self.context.get("request")
+        if not request or not getattr(request.user, "is_authenticated", False):
+            return ""
+
         application = obj.applications.filter(member=request.user).first()
         status = ""
         if application:
@@ -293,6 +296,7 @@ class ApplicationSerializer(ModelSerializer):
     class Meta:
         model = Application
         fields = [
+            "id",
             "position",
             "cover_letter",
             "qualifications",
@@ -300,6 +304,7 @@ class ApplicationSerializer(ModelSerializer):
             "status",
             "references",
         ]
+        read_only_fields = ["id"]
 
     def validate(self, data):
         """Validate application data"""
