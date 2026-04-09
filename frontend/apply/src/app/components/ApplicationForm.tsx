@@ -10,6 +10,7 @@ import "@/i18n/config";
 import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
 import { formatDate } from "@/utils/dateFormat";
+import Modal from "./Modal";
 
 type ApplicationFormProps = {
   position: Position;
@@ -38,6 +39,8 @@ export default function ApplicationForm({
   );
   const [gdpr, setGdpr] = useState(existingApplication?.gdpr || false);
   const [references, setReferences] = useState<Reference[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   const isEditable =
     !existingApplication || existingApplication?.status === "draft";
@@ -77,12 +80,6 @@ export default function ApplicationForm({
   };
 
   const handleSubmit = async (status: "draft" | "submitted") => {
-    if (
-      status === "submitted" &&
-      !window.confirm(t("confirmSubmitApplication"))
-    ) {
-      return;
-    }
     setSubmitting(true);
     setError(null);
     setReferenceErrors([]);
@@ -132,24 +129,28 @@ export default function ApplicationForm({
     }
   };
 
-  const handleDelete = async () => {
+  const openDeleteModal = async () => {
     if (!existingApplication) return;
-    if (!confirm(t("confirmDeleteDraft"))) return;
+    setShowDeleteModal(true);
+  };
 
+  const handleDeleteDraft = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!existingApplication) return;
     setSubmitting(true);
     setError(null);
 
     try {
       await applicationAPI.delete(existingApplication.id);
-      router.push("/");
+      window.location.reload();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("failedToDeleteApplication"),
       );
       setSubmitting(false);
+      setShowDeleteModal(false);
     }
   };
-
 
   return (
     <div className="pageContainer">
@@ -381,7 +382,7 @@ export default function ApplicationForm({
 
               <button
                 type="button"
-                onClick={() => handleSubmit("submitted")}
+                onClick={() => setShowSubmitModal(true)}
                 disabled={
                   submitting || !coverLetter || !qualifications || !gdpr
                 }
@@ -394,7 +395,7 @@ export default function ApplicationForm({
                 existingApplication.status === "draft" && (
                   <button
                     type="button"
-                    onClick={handleDelete}
+                    onClick={openDeleteModal}
                     disabled={submitting}
                     className={`button ${styles.deleteButton}`}
                   >
@@ -413,6 +414,26 @@ export default function ApplicationForm({
           )}
         </div>
       </form>
+
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title={t("deleteDraft")}
+        primaryButtonText={t("delete")}
+        onSubmit={handleDeleteDraft}
+      >
+        <p>{t("deleteDraftConfirmation")}</p>
+      </Modal>
+
+      <Modal
+        isOpen={showSubmitModal}
+        onClose={() => setShowSubmitModal(false)}
+        title={t("submitApplication")}
+        primaryButtonText={t("submit")}
+        onSubmit={() => handleSubmit("submitted")}
+      >
+        <p>{t("submitApplicationConfirmation")}</p>
+      </Modal>
     </div>
   );
 }
