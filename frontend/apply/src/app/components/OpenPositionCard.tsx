@@ -26,7 +26,7 @@ const OpenPositionCard = ({ position }: Props) => {
           {position.role.team_logo && (
             <Image
               src={getImageUrl(position.role.team_logo)}
-              alt={t("teamLogoAlt")}
+              alt={t("common.teamLogoAlt")}
               width={80}
               height={80}
             />
@@ -40,7 +40,7 @@ const OpenPositionCard = ({ position }: Props) => {
 
         <div className={styles.cardRightSection}>
           <h4>
-            {t("deadline")}: {formatDate(position.recruitment_end)}
+            {t("openPositionCard.deadline")}: {formatDate(position.recruitment_end)}
           </h4>
           <a
             className="smallButton"
@@ -48,10 +48,10 @@ const OpenPositionCard = ({ position }: Props) => {
             href={`/apply/${position.id}`}
           >
             {position.user_app_status === "Already applied"
-              ? t("viewApplication")
+              ? t("common.viewApplication")
               : position.user_app_status === "In draft"
-                ? t("openDraft")
-                : t("apply")}
+                ? t("openPositionCard.openDraft")
+                : t("common.apply")}
           </a>
         </div>
       </div>
@@ -62,17 +62,17 @@ const OpenPositionCard = ({ position }: Props) => {
         }`}
       >
         <p>
-          {t("termOfOffice")}: {formatDate(position.term_from)} -{" "}
+          {t("common.termOfOffice")}: {formatDate(position.term_from)} -{" "}
           {formatDate(position.term_end)}
         </p>
         <p>
-          {t("roleDescription")}: <br />
+          {t("common.roleDescription")}: <br />
           {position.role.description}
         </p>
 
         {position.comment && (
           <p>
-            {t("commentsForThisYear")}: <br />
+            {t("common.commentsForThisYear")}: <br />
             {position.comment}
           </p>
         )}
