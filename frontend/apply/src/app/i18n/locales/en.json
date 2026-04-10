@@ -46,6 +46,26 @@
     "noOpenPositions": "No open positions available",
     "noPositionsYet": "No positions yet"
   },
+  "aboutPage": {
+    "title": "Getting Involved in UTN",
+    "introText": "Being involved in the student union is the quintessential student life experience. You get to help create and improve the experience for other students, while gaining so much in return.",
+    "timeRequiredTitle": "Time Commitment",
+    "timeRequiredText": "The time commitment varies greatly. It can range from volunteering for a few hours at a single event, to being part of a working group or committee that meets regularly each week, or even working full-time with compensation at the union office.",
+    "purposeTitle": "Types of Involvement",
+    "purposeText": "There are many ways to get involved. You can work with student advocacy, the union's core mission, where you represent students' voices in university decision-making bodies. You can also join a committee that organizes major events, such as Forsränningen or orientation weeks.",
+    "benefitsText": "Every involvement in UTN offers unique experiences and opportunities to grow, learn, and contribute. You'll develop as a person, build friendships with other engaged students, and have the chance to leave your mark on the study environment we build together.",
+    "howToApplyTitle": "How do I apply?",
+    "applyHereText": "You apply here on",
+    "applyProcessText": "When a position opens for applications, it appears here. All members of Uppsala Union of Engineering and Science Students can apply. Keep an eye on this website and follow UTN's channels for information about when application periods open!",
+    "processingTitle": "The Selection Process",
+    "processingText": "The selection process starts with an announcement of vacant positions, where all interested members are welcome to apply. After the application period ends, applicants are usually contacted for an interview. The interview is conducted by the union's election committee, board, and/or those in charge of the position you applied for.",
+    "questionsTitle": "Do you have questions about getting involved?",
+    "moreInfoText": "For more information, check out",
+    "moreInfoWebsite": "our website",
+    "moreInfoUrl": "https://utn.se/en/engagera-dig/att-engagera-sig",
+    "moreInfoContinuationText": ", where we also have answers to frequently asked questions about getting involved.",
+    "contactText": "If you have any questions you can also email"
+  },
   "loginPage": {
     "loginTitle": "Login",
     "password": "Password",

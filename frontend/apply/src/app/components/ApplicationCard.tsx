@@ -58,7 +58,10 @@ const ApplicationCard = ({ application }: Props) => {
       </div>
 
       <div className={styles.cardButton}>
-        <a className={"smallButton"} href={`/apply/${application.id}`}>
+        <a
+          className={"smallButton"}
+          href={`/apply/${application.position_details.id}`}
+        >
           {t("common.viewApplication")}
         </a>
       </div>
