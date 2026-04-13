@@ -93,7 +93,9 @@
     "failedToLoadPosition": "Failed to load position",
     "failedToLoadApplication": "Failed to load application",
     "positionNotFound": "Position not found",
-    "applicationNotFound": "Application not found"
+    "applicationNotFound": "Application not found",
+    "loginRequiredMessage": "Log in to apply for this position",
+    "goToLogin": "Go to login"
   },
   "accountPage": {
     "accountTitle": "Account",
@@ -144,6 +146,9 @@
     "failedToDeleteApplication": "Failed to delete application",
     "teamLabel": "Team",
     "applicationDeadline": "Application Deadline",
+    "applicationDeadlineInDays_one": "in {{count}} day",
+    "applicationDeadlineInDays_other": "in {{count}} days",
+    "deadlineToday": "today",
     "viewRoleDescription": "View full role description",
     "contactEmail": "Contact email",
     "coverLetterTitle": "Cover letter",

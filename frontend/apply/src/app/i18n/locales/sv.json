@@ -93,7 +93,9 @@
     "failedToLoadPosition": "Det gick inte att hämta posten",
     "failedToLoadApplication": "Det gick inte att hämta ansökan",
     "positionNotFound": "Posten hittades inte",
-    "applicationNotFound": "Ansökan hittades inte"
+    "applicationNotFound": "Ansökan hittades inte",
+    "loginRequiredMessage": "Logga in för att ansöka om posten",
+    "goToLogin": "Gå till inloggning"
   },
   "accountPage": {
     "accountTitle": "Konto",
@@ -144,6 +146,9 @@
     "failedToDeleteApplication": "Det gick inte att radera ansökan",
     "teamLabel": "Grupp",
     "applicationDeadline": "Sista ansökningsdag",
+    "applicationDeadlineInDays_one": "om {{count}} dag",
+    "applicationDeadlineInDays_other": "om {{count}} dagar",
+    "deadlineToday": "idag",
     "viewRoleDescription": "Visa hela postbeskrivningen",
     "contactEmail": "Kontakt e-post",
     "coverLetterTitle": "Personligt brev",

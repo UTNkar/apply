@@ -26,7 +26,7 @@ export default function Login() {
 
       if (response.status === 200) {
         window.dispatchEvent(new CustomEvent("logged-in"));
-        router.push("/account");
+        router.push("/");
       } else if (response.status === 401) {
         setError(t("loginPage.incorrectCredentials"));
       } else if (response.status === 403) {
