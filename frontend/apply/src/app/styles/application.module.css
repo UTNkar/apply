@@ -318,6 +318,20 @@
   color: var(--text-primary);
 }
 
+.guestLoginCard {
+  border-radius: var(--paper-border-radius);
+  border: 2px solid var(--grey-200);
+  padding: 24px 32px;
+  margin-bottom: 32px;
+}
+
+.guestLoginButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
 .backButton:hover {
   background-color: var(--grey-300);
 }
