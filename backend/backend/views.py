@@ -599,9 +599,16 @@ class MyAccountAPIView(APIView):
 
     def delete(self, request):
         user = request.user
+        password = request.data.get("password")
 
-        logout(request)
+        if not password:
+            return Response({"message": "Password is required"}, status=400)
+
+        if not check_password(password, user.password):
+            return Response({"message": "Current password is incorrect"}, status=400)
+
         user.delete()
+        logout(request)
 
         return Response({"message": "Account deleted successfully"}, status=200)
 

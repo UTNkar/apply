@@ -260,8 +260,10 @@ class Appointment(models.Model):
 
     member = models.ForeignKey(
         "Member",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="appointments",
+        null=True,
+        blank=True,
         verbose_name=_("Member"),
     )
 

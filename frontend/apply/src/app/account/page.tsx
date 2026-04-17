@@ -143,14 +143,30 @@ export default function Account() {
     setDeleteError("");
     setDeleteLoading(true);
 
+    const formData = new FormData(e.currentTarget);
+    const password = (formData.get("deletePassword") as string) || "";
+
+    if (!password) {
+      setDeleteError(t("passwordRequired"));
+      setDeleteLoading(false);
+      return;
+    }
+
     try {
-      const response = await request(Method.DELETE, "/account/");
+      const response = await request(Method.DELETE, "/account/", {
+        password,
+      });
       if (response.ok) {
+        // Force window reload (instead of using router)
         window.location.href = "/login";
         return;
       }
 
-      setDeleteError(t("accountPage.accountDeleteError"));
+      if (response.status === 400) {
+        setDeleteError(t("accountPage.accountDeletePasswordError"));
+      } else {
+        setDeleteError(t("accountPage.accountDeleteError"));
+      }
     } catch {
       setDeleteError(t("accountPage.accountDeleteError"));
     } finally {
@@ -190,6 +206,7 @@ export default function Account() {
       if (response.ok) {
         setPasswordSuccess(true);
         setTimeout(() => {
+          // Force window reload (instead of using router)
           window.location.href = "/login";
         }, 1500);
       } else {
@@ -741,6 +758,16 @@ export default function Account() {
         secondaryButtonDisabled={deleteLoading}
       >
         <p>{t("accountPage.deleteAccountConfirmation")}</p>
+        <div className={modalStyles.formGroup}>
+          <label htmlFor="deletePassword">{t("accountPage.currentPassword")}</label>
+          <input
+            type="password"
+            id="deletePassword"
+            name="deletePassword"
+            required
+            autoComplete="current-password"
+          />
+        </div>
         {deleteError && (
           <div className={modalStyles.errorMessage}>{deleteError}</div>
         )}
