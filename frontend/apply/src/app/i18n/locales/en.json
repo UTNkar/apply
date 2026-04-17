@@ -71,6 +71,8 @@
   "noOpenPositions": "No open positions available",
   "teamLabel": "Team",
   "applicationDeadline": "Application Deadline",
+  "viewRoleDescription": "View full role description",
+  "contactEmail": "Contact email",
   "coverLetterTitle": "Cover letter",
   "coverLetterPrompt": "Present yourself and state why you are who we are looking for",
   "qualificationsTitle": "Qualifications",
@@ -144,5 +146,9 @@
   "submitApplication": "Submit Application",
   "applicationSubmittedSuccess": "Your application has been submitted.",
   "submitApplicationConfirmation": "Are you sure you want to submit this application? Once submitted, you will not be able to edit it anymore.",
-  "submit": "Submit"
+  "submit": "Submit",
+  "deleteAccount": "Delete Account",
+  "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
+  "accountDeleteError": "Failed to delete account. Please try again.",
+  "deleting": "Deleting..."
 }

@@ -5,6 +5,7 @@ export interface Position {
     team_logo?: string;
     title: string;
     description: string;
+    role_description_url?: string;
     contact_email?: string;
   };
   recruitment_start: string;

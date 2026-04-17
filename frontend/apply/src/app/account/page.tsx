@@ -46,6 +46,10 @@ interface FormState {
   program: string;
 }
 
+type AccountResponseData = Partial<FormState> & {
+  study_program?: { id: string; section: string } | null;
+};
+
 type Errors = {
   [key in keyof FormState]?: string;
 };
@@ -76,6 +80,9 @@ export default function Account() {
   const [newPasswordError, setNewPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const validateNewPassword = (password: string) => {
     if (password.length < 8) {
@@ -103,6 +110,32 @@ export default function Account() {
     setNewPasswordError("");
     setPasswordSuccess(false);
     setIsPasswordModalOpen(false);
+  };
+
+  const handleDeleteModalClose = () => {
+    if (deleteLoading) return;
+    setDeleteError("");
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setDeleteError("");
+    setDeleteLoading(true);
+
+    try {
+      const response = await request(Method.DELETE, "/account/");
+      if (response.ok) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setDeleteError(t("accountDeleteError"));
+    } catch {
+      setDeleteError(t("accountDeleteError"));
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -165,16 +198,19 @@ export default function Account() {
     );
   }, [i18n.language]);
 
-  const handleNewUserData = (data) => {
-    data.program = data.study_program?.id || "";
-    data.section = data.study_program?.section || "";
+  const handleNewUserData = (data: AccountResponseData) => {
+    const normalizedData = {
+      ...data,
+      program: data.study_program?.id || "",
+      section: data.study_program?.section || "",
+    };
     setState((prevState: FormState) => ({
       ...prevState,
-      ...data,
+      ...normalizedData,
     }));
     setOriginalState((prevState: FormState) => ({
       ...prevState,
-      ...data,
+      ...normalizedData,
     }));
   };
 
@@ -258,13 +294,20 @@ export default function Account() {
     }));
   };
 
-  const validateInput = (name: keyof FormState, value: string, target) => {
+  const validateInput = (
+    name: keyof FormState,
+    value: string,
+    target: HTMLInputElement,
+  ) => {
     // Validate required fields
     const required = target.required;
     if (required && value.length === 0) {
       // Get field label, e.g. "Email"
+      const labelElement = target.parentElement?.querySelector(".label");
       const label =
-        target.parentNode.querySelector(".label")?.innerText ?? t("thisField");
+        labelElement instanceof HTMLElement
+          ? labelElement.innerText
+          : t("thisField");
       onError(name, label + " " + t("isRequired"));
       return;
     }
@@ -291,7 +334,7 @@ export default function Account() {
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    const name = event.target.name;
+    const name = event.target.name as keyof FormState;
     setState((prevState: FormState) => ({
       ...prevState,
       [name]: value,
@@ -596,6 +639,34 @@ export default function Account() {
           {t("reset")}
         </button>
       </div>
+
+      <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+        <button
+          className={`button ${styles.deleteButton}`}
+          onClick={() => {
+            setDeleteError("");
+            setIsDeleteModalOpen(true);
+          }}
+          disabled={deleteLoading}
+        >
+          {t("deleteAccount")}
+        </button>
+      </div>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onSubmit={handleDeleteAccount}
+        title={t("deleteAccount")}
+        primaryButtonDisabled={deleteLoading}
+        primaryButtonText={deleteLoading ? t("deleting") : t("delete")}
+        secondaryButtonDisabled={deleteLoading}
+      >
+        <p>{t("deleteAccountConfirmation")}</p>
+        {deleteError && (
+          <div className={modalStyles.errorMessage}>{deleteError}</div>
+        )}
+      </Modal>
 
       <br style={{ marginBottom: 72 }} />
     </div>

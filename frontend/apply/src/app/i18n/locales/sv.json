@@ -71,6 +71,8 @@
   "noOpenPositions": "Inga öppna poster tillgängliga",
   "teamLabel": "Grupp",
   "applicationDeadline": "Sista ansökningsdag",
+  "viewRoleDescription": "Visa hela postbeskrivningen",
+  "contactEmail": "Kontakt e-post",
   "coverLetterTitle": "Personligt brev",
   "coverLetterPrompt": "Presentera dig och berätta varför just du är rätt för uppdraget",
   "qualificationsTitle": "Kvalifikationer",
@@ -144,5 +146,9 @@
   "submitApplication": "Skicka ansökan",
   "applicationSubmittedSuccess": "Din ansökan har skickats in.",
   "submitApplicationConfirmation": "Är du säker på att du vill skicka in denna ansökan? När den väl är inskickad kommer du inte kunna redigera den längre.",
-  "submit": "Skicka"
+  "submit": "Skicka",
+  "deleteAccount": "Radera konto",
+  "deleteAccountConfirmation": "Är du säker på att du vill radera ditt konto? Denna åtgärd kan inte ångras.",
+  "accountDeleteError": "Det gick inte att radera kontot. Försök igen.",
+  "deleting": "Raderar..."
 }
