@@ -4,6 +4,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import styles from "./reset-password.module.css";
+import TextInput from "@/components/TextInput";
+import Button from "@/components/Button";
+import { request, Method } from "@/utils/request";
+import "@/i18n/config";
 
 function ResetPasswordForm() {
     const { t } = useTranslation();
@@ -18,12 +22,11 @@ function ResetPasswordForm() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // If the link is missing params, show an error immediately
     if (!id || !token) {
         return (
             <div className={styles.container}>
                 <div className={styles.card}>
-                    <p className={styles.error}>{t("resetPasswordPage.invalidLink")}</p>
+                    <p className={styles.errorMessage}>{t("resetPasswordPage.invalidLink")}</p>
                     <Link href="/forgot-password" className={styles.link}>
                         {t("resetPasswordPage.requestNewLink")}
                     </Link>
@@ -44,11 +47,10 @@ function ResetPasswordForm() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/auth/reset", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, token, new_password: newPassword }),
-                credentials: "include",
+            const res = await request(Method.POST, "/auth/reset", {
+                id,
+                token,
+                new_password: newPassword,
             });
 
             if (res.ok) {
@@ -69,33 +71,29 @@ function ResetPasswordForm() {
                 <h1>{t("resetPasswordPage.title")}</h1>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
-                    <label htmlFor="new-password">{t("resetPasswordPage.newPassword")}</label>
-                    <input
-                        id="new-password"
+                    <TextInput
+                        label={t("resetPasswordPage.newPassword")}
+                        name="newPassword"
                         type="password"
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
                         required
-                        minLength={8}
-                        className={styles.input}
                     />
 
-                    <label htmlFor="confirm-password">{t("resetPasswordPage.confirmPassword")}</label>
-                    <input
-                        id="confirm-password"
+                    <TextInput
+                        label={t("resetPasswordPage.confirmPassword")}
+                        name="confirmPassword"
                         type="password"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                         required
-                        minLength={8}
-                        className={styles.input}
                     />
 
-                    {error && <p className={styles.error}>{error}</p>}
+                    {error && <p className={styles.errorMessage}>{error}</p>}
 
-                    <button type="submit" disabled={loading} className="button">
-                        {loading ? t("loading") : t("resetPasswordPage.submit")}
-                    </button>
+                    <Button loading={loading} disabled={loading} style={{ margin: "0 auto" }}>
+                        {t("resetPasswordPage.submit")}
+                    </Button>
                 </form>
             </div>
         </div>

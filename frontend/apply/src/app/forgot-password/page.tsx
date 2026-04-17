@@ -3,6 +3,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import styles from "./forgot-password.module.css";
+import TextInput from "@/components/TextInput";
+import Button from "@/components/Button";
+import { request, Method } from "@/utils/request";
+import "@/i18n/config";
 
 export default function ForgotPasswordPage() {
     const { t } = useTranslation();
@@ -17,17 +21,11 @@ export default function ForgotPasswordPage() {
         setError("");
 
         try {
-            const res = await fetch("http://localhost:8000/api/auth/reset-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-                credentials: "include",
-            });
+            const res = await request(Method.POST, "/auth/reset-password", { email });
 
             if (res.ok) {
                 setSubmitted(true);
             } else {
-                // This case should actually never happen since we never respond with other than 200 (ok)
                 setError(t("forgotPasswordPage.error"));
             }
         } catch {
@@ -58,21 +56,20 @@ export default function ForgotPasswordPage() {
                 <p>{t("forgotPasswordPage.description")}</p>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
-                    <label htmlFor="email">{t("email")}</label>
-                    <input
-                        id="email"
+                    <TextInput
+                        label={t("email")}
+                        name="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                         required
-                        className={styles.input}
                     />
 
-                    {error && <p className={styles.error}>{error}</p>}
+                    {error && <p className={styles.errorMessage}>{error}</p>}
 
-                    <button type="submit" disabled={loading} className="button">
-                        {loading ? t("loading") : t("forgotPasswordPage.submit")}
-                    </button>
+                    <Button loading={loading} disabled={loading} style={{ margin: "0 auto" }}>
+                        {t("forgotPasswordPage.submit")}
+                    </Button>
                 </form>
 
                 <Link href="/login" className={styles.link}>

@@ -166,25 +166,6 @@ class InitiatePasswordResetViewAPIView(APIView):
 
     def post(self, request):
 
-        #### Remove later ###########
-        try:
-            self.test_member = Member.objects.create(
-                email="test@example.com",
-                phone_number="123-456-7890",
-                is_superuser=False,
-                is_staff=False,
-                name="Test User",
-                ssn="199001011234",  # Valid format Swedish SSN
-                registration_year="2020",
-                status="member",
-            )
-        except:
-            nothing = 1
-            # do nothing
-
-
-        ##### Remove later ############
-
         email = request.data.get("email")
         try:
             user = get_user_model().objects.get(email=email)
