@@ -34,7 +34,7 @@ export default function ApplyPage() {
         setApplication(applicationData);
         setError(null);
       } catch {
-        setError("failedToLoadPosition");
+        setError("applyPage.failedToLoadPosition");
       } finally {
         setLoading(false);
       }
@@ -45,7 +45,7 @@ export default function ApplyPage() {
   if (loading)
     return (
       <div className="pageContainer">
-        <p>{t("loading")}</p>
+        <p>{t("common.loading")}</p>
       </div>
     );
   if (error)
@@ -57,7 +57,7 @@ export default function ApplyPage() {
   if (!position)
     return (
       <div className="pageContainer">
-        <p>{t("positionNotFound")}</p>
+        <p>{t("applyPage.positionNotFound")}</p>
       </div>
     );
 

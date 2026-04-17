@@ -106,7 +106,7 @@ export default function Account() {
 
   const validateNewPassword = (password: string) => {
     if (password.length < 8) {
-      return t("passwordTooShort");
+      return t("accountPage.accountDeleteError");
     }
 
     return "";
@@ -150,9 +150,9 @@ export default function Account() {
         return;
       }
 
-      setDeleteError(t("accountDeleteError"));
+      setDeleteError(t("accountPage.accountDeleteError"));
     } catch {
-      setDeleteError(t("accountDeleteError"));
+      setDeleteError(t("accountPage.accountDeleteError"));
     } finally {
       setDeleteLoading(false);
     }
@@ -168,7 +168,7 @@ export default function Account() {
     const confirmPassword = formData.get("confirmPassword") as string;
 
     if (newPassword !== confirmPassword) {
-      setPasswordError(t("passwordsDoNotMatch"));
+      setPasswordError(t("accountPage.passwordsDoNotMatch"));
       return;
     }
 
@@ -193,10 +193,10 @@ export default function Account() {
           window.location.href = "/login";
         }, 1500);
       } else {
-        setPasswordError(t("passwordChangeError"));
+        setPasswordError(t("accountPage.passwordChangeError"));
       }
     } catch {
-      setPasswordError(t("passwordChangeError"));
+      setPasswordError(t("accountPage.passwordChangeError"));
     } finally {
       setPasswordLoading(false);
     }
@@ -357,8 +357,8 @@ export default function Account() {
       const label =
         labelElement instanceof HTMLElement
           ? labelElement.innerText
-          : t("thisField");
-      onError(name, label + " " + t("isRequired"));
+          : t("accountPage.thisField");
+      onError(name, label + " " + t("accountPage.isRequired"));
       return;
     }
 
@@ -368,7 +368,7 @@ export default function Account() {
         // Validate email format (very permissive)
         const email_re = /^.*@.*$/;
         if (value.match(email_re) === null) {
-          onError("email", t("invalidEmailFormat"));
+          onError("email", t("accountPage.invalidEmailFormat"));
         }
         break;
       case "phone_number":
@@ -376,7 +376,7 @@ export default function Account() {
         const phone_re =
           /^\s*(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?\s*$/;
         if (value.match(phone_re) === null) {
-          onError("phone_number", t("invalidPhoneFormat"));
+          onError("phone_number", t("accountPage.invalidPhoneFormat"));
         }
         break;
     }
@@ -420,7 +420,7 @@ export default function Account() {
   const submitForm = () => {
     if (formHasErrors) {
       // Normally unreachable since the button should be disabled, but just in case
-      alert(t("formHasErrors"));
+      alert(t("accountPage.formHasErrors"));
       return;
     }
 
@@ -474,32 +474,32 @@ export default function Account() {
 
   const no_programs = {
     value: "N/A",
-    name: t("selectSectionFirst"),
+    name: t("accountPage.selectSectionFirst"),
   };
 
   const membershipText = (memberSince: string) => {
     if (memberSince === "Not a member") {
-      return t("notMemberInfo");
+      return t("accountPage.notMemberInfo");
     }
     if (memberSince === "Member") {
-      return t("isMemberInfo");
+      return t("accountPage.isMemberInfo");
     }
     if (memberSince.length === 0) {
-      return t("loadingMembershipInfo");
+      return t("accountPage.loadingMembershipInfo");
     }
-    return `${t("memberSince")} ${formatDate(memberSince)}.`;
+    return `${t("accountPage.memberSince")} ${formatDate(memberSince)}.`;
   };
 
   return (
     <div className="pageContainer">
-      <h2>{t("accountTitle")}</h2>
+      <h2>{t("accountPage.accountTitle")}</h2>
 
       <div className={cardStyles.cardSection}>
-        <h3>{t("contactInformation")}</h3>
+        <h3>{t("accountPage.contactInformation")}</h3>
 
         <div className={styles.formRow}>
           <TextInput
-            label={t("name")}
+            label={t("common.name")}
             value={state.name}
             onChange={onChange}
             name="name"
@@ -507,7 +507,7 @@ export default function Account() {
             disabled
           />
           <TextInput
-            label={t("personalIdentityNumber")}
+            label={t("accountPage.personalIdentityNumber")}
             value={state.ssn}
             onChange={onChange}
             name="ssn"
@@ -516,7 +516,7 @@ export default function Account() {
             disabled
           />
         </div>
-        <p>{t("memberRegistryInfo")}</p>
+        <p>{t("accountPage.memberRegistryInfo")}</p>
 
         <Button
           onClick={update_info_from_unicore}
@@ -524,13 +524,13 @@ export default function Account() {
           disabled={unicoreLoading}
           loading={unicoreLoading}
         >
-          {t("updateInformation")}
+          {t("accountPage.updateInformation")}
         </Button>
 
         <div className={styles.formRow}>
           <TextInput
             required
-            label={t("phoneNumber")}
+            label={t("common.phoneNumber")}
             value={state.phone_number}
             onChange={onChange}
             name="phone_number"
@@ -540,7 +540,7 @@ export default function Account() {
           />
           <TextInput
             required
-            label={t("email")}
+            label={t("common.email")}
             value={state.email}
             onChange={onChange}
             name="email"
@@ -551,18 +551,18 @@ export default function Account() {
       </div>
 
       <div className={cardStyles.cardSection}>
-        <h3>{t("membershipStatus")}</h3>
+        <h3>{t("accountPage.membershipStatus")}</h3>
         <p>{membershipText(memberSince)}</p>
       </div>
 
       <div className={cardStyles.cardSection}>
-        <h3>{t("accountSecurity")}</h3>
-        <p>{t("changePasswordDescription")}</p>
+        <h3>{t("accountPage.accountSecurity")}</h3>
+        <p>{t("accountPage.changePasswordDescription")}</p>
         <Button
           onClick={() => setIsPasswordModalOpen(true)}
           style={{ margin: "12px 0px" }}
         >
-          {t("changePassword")}
+          {t("accountPage.changePassword")}
         </Button>
       </div>
 
@@ -570,19 +570,19 @@ export default function Account() {
         isOpen={isPasswordModalOpen}
         onClose={handlePasswordModalClose}
         onSubmit={handlePasswordSubmit}
-        title={t("changePassword")}
+        title={t("accountPage.changePassword")}
         primaryButtonDisabled={passwordLoading}
-        primaryButtonText={passwordLoading ? t("saving") : t("changePassword")}
+        primaryButtonText={passwordLoading ? t("common.saving") : t("accountPage.changePassword")}
         secondaryButtonDisabled={passwordLoading}
       >
         {passwordSuccess ? (
           <div className={modalStyles.successMessage}>
-            {t("passwordChanged")}
+            {t("accountPage.passwordChanged")}
           </div>
         ) : (
           <>
             <div className={modalStyles.formGroup}>
-              <label htmlFor="currentPassword">{t("currentPassword")}</label>
+              <label htmlFor="currentPassword">{t("accountPage.currentPassword")}</label>
               <input
                 type="password"
                 id="currentPassword"
@@ -593,7 +593,7 @@ export default function Account() {
             </div>
 
             <div className={modalStyles.formGroup}>
-              <label htmlFor="newPassword">{t("newPassword")}</label>
+              <label htmlFor="newPassword">{t("accountPage.newPassword")}</label>
               <input
                 type="password"
                 id="newPassword"
@@ -612,7 +612,7 @@ export default function Account() {
             </div>
 
             <div className={modalStyles.formGroup}>
-              <label htmlFor="confirmPassword">{t("confirmNewPassword")}</label>
+              <label htmlFor="confirmPassword">{t("accountPage.confirmNewPassword")}</label>
               <input
                 type="password"
                 id="confirmPassword"
@@ -630,9 +630,9 @@ export default function Account() {
       </Modal>
 
       <div className={cardStyles.cardSection}>
-        <h3>{t("studyDetails")}</h3>
+        <h3>{t("accountPage.studyDetails")}</h3>
         <TextInput
-          label={t("section")}
+          label={t("accountPage.section")}
           value={state.section}
           onChange={onChange}
           name="section"
@@ -648,7 +648,7 @@ export default function Account() {
           }}
         >
           <TextInput
-            label={t("program")}
+            label={t("accountPage.program")}
             value={
               programs_in_section.length === 0
                 ? no_programs.value
@@ -667,7 +667,7 @@ export default function Account() {
           />
           <TextInput
             required
-            label={t("registrationYear")}
+            label={t("accountPage.registrationYear")}
             value={
               state.registration_year === undefined ||
               state.registration_year === 0
@@ -690,7 +690,7 @@ export default function Account() {
             onClick={submitForm}
             disabled={formHasErrors}
           >
-            {t("save")}
+            {t("common.save")}
           </button>
 
           <p
@@ -709,12 +709,12 @@ export default function Account() {
                 className={styles.draftSavedIcon}
               />
             </span>
-            <span>{t("accountDetailsSaved")}</span>
+            <span>{t("accountPage.accountDetailsSaved")}</span>
           </p>
         </div>
 
         <button className={`button`} onClick={resetForm}>
-          {t("reset")}
+          {t("accountPage.reset")}
         </button>
       </div>
 
@@ -727,7 +727,7 @@ export default function Account() {
           }}
           disabled={deleteLoading}
         >
-          {t("deleteAccount")}
+          {t("accountPage.deleteAccount")}
         </button>
       </div>
 
@@ -735,12 +735,12 @@ export default function Account() {
         isOpen={isDeleteModalOpen}
         onClose={handleDeleteModalClose}
         onSubmit={handleDeleteAccount}
-        title={t("deleteAccount")}
+        title={t("accountPage.deleteAccount")}
         primaryButtonDisabled={deleteLoading}
-        primaryButtonText={deleteLoading ? t("deleting") : t("delete")}
+        primaryButtonText={deleteLoading ? t("accountPage.deleting") : t("common.delete")}
         secondaryButtonDisabled={deleteLoading}
       >
-        <p>{t("deleteAccountConfirmation")}</p>
+        <p>{t("accountPage.deleteAccountConfirmation")}</p>
         {deleteError && (
           <div className={modalStyles.errorMessage}>{deleteError}</div>
         )}

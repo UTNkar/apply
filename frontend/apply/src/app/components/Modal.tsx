@@ -32,7 +32,7 @@ export default function Modal({
 
   if (!isOpen) return null;
 
-  if (secondaryButtonText === "") secondaryButtonText = t("cancel");
+  if (secondaryButtonText === "") secondaryButtonText = t("common.cancel");
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>

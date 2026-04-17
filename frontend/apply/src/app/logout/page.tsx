@@ -21,30 +21,30 @@ export default function LogOut() {
         window.dispatchEvent(new CustomEvent('logged-out'));
         router.push("/");
       } else {
-        setError("An error occurred during logout");
+        setError(t("logoutPage.logoutError"));
       }
     } catch {
-      setError("Network error. Please try again.");
+      setError(t("logoutPage.networkError"));
     } 
   };
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.heading}>{t("doYouWantToLogOut")}</h1>
+      <h1 className={styles.heading}>{t("logoutPage.doYouWantToLogOut")}</h1>
       
       <div className={styles.buttonContainer}>
         <button
           onClick={handleLogout}
           className={styles.confirmButton}
         >
-          {t("yesLogOut")}
+          {t("logoutPage.yesLogOut")}
         </button>
 
         <button
           onClick={() => router.push("/")}
           className={styles.cancelButton}
         >
-          {t("noCancel")}
+          {t("logoutPage.noCancel")}
         </button>
       </div>
       <div className="error">
