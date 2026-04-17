@@ -117,7 +117,8 @@ export default function Account() {
         password,
       });
       if (response.ok) {
-        router.push("/login");
+        // Force window reload (instead of using router)
+        window.location.href = "/login";
         return;
       }
 
@@ -163,7 +164,8 @@ export default function Account() {
       if (response.ok) {
         setPasswordSuccess(true);
         setTimeout(() => {
-          router.push("/login");
+          // Force window reload (instead of using router)
+          window.location.href = "/login";
         }, 1500);
       } else {
         setPasswordError(t("passwordChangeError"));
