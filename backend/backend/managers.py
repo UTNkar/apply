@@ -1,4 +1,6 @@
 from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Count, F, Manager, Q
 from django.utils import timezone
 
@@ -28,8 +30,12 @@ class MemberManager(BaseUserManager):
     ):
         if not email:
             raise ValueError("The Email field must be set")
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters long")
+        if not password:
+            raise ValueError("Password must be set")
+        try:
+            validate_password(password)
+        except ValidationError as err:
+            raise ValueError(" ".join(err.messages))
 
         unicore = unicoremember()
         data = unicore.get_user_data(ssn)

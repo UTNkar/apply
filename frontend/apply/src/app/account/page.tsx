@@ -76,10 +76,19 @@ export default function Account() {
   const [newPasswordError, setNewPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const passwordSpecialCharRegex = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
 
   const validateNewPassword = (password: string) => {
-    if (password.length < 8) {
+    if (password.length < 10) {
       return t("passwordTooShort");
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return t("passwordMustContainNumber");
+    }
+
+    if (!passwordSpecialCharRegex.test(password)) {
+      return t("passwordMustContainSpecialCharacter");
     }
 
     return "";
@@ -116,6 +125,11 @@ export default function Account() {
 
     if (newPassword !== confirmPassword) {
       setPasswordError(t("passwordsDoNotMatch"));
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setPasswordError(t("passwordCannotBeSame"));
       return;
     }
 
