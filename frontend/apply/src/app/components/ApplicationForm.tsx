@@ -145,9 +145,9 @@ export default function ApplicationForm({
         setError(error.non_field_errors.join(" "));
       } else if (error.fieldErrors?.references) {
         setReferenceErrors(error.fieldErrors.references);
-        setError(t("validationErrorsInReferences"));
+        setError(t("applicationForm.validationErrorsInReferences"));
       } else {
-        setError(error.message || t("failedToSubmitApplication"));
+        setError(error.message || t("applicationForm.failedToSubmitApplication"));
       }
     } finally {
       if (status === "draft") {
@@ -175,7 +175,7 @@ export default function ApplicationForm({
       window.location.reload();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t("failedToDeleteApplication"),
+        err instanceof Error ? err.message : t("applicationForm.failedToDeleteApplication"),
       );
       setShowDeleteModal(false);
     } finally {
@@ -191,52 +191,73 @@ export default function ApplicationForm({
 
       <div className={cardStyles.cardDark}>
         <p>
-          <strong>{t("teamLabel")}:</strong> {position.role.team_name}
+          <strong>{t("applicationForm.teamLabel")}:</strong> {position.role.team_name}
         </p>
         <p>
-          <strong>{t("applicationDeadline")}:</strong>{" "}
+          <strong>{t("applicationForm.applicationDeadline")}:</strong>{" "}
           {formatDate(position.recruitment_end)}
         </p>
         <p>
-          <strong>{t("termOfOffice")}:</strong> {formatDate(position.term_from)}{" "}
+          <strong>{t("common.termOfOffice")}:</strong> {formatDate(position.term_from)}{" "}
           — {formatDate(position.term_end)}
         </p>
 
+        {position.role.contact_email && (
+          <p>
+            <strong>{t("applicationForm.contactEmail")}:</strong>{" "}
+            <a href={`mailto:${position.role.contact_email}`}>
+              {position.role.contact_email}
+            </a>
+          </p>
+        )}
+
         {isDraft && (
           <p>
-            <strong>{t("status")}:</strong>{" "}
+            <strong>{t("common.status")}:</strong>{" "}
             <span
               className={`${styles.statusBadge} ${isDraft ? styles.draft : styles.submitted}`}
             >
-              {t(isDraft ? "draft" : "submitted")}
+              {t(isDraft ? "applicationStatus.draft" : "applicationStatus.submitted")}
             </span>
           </p>
         )}
 
         {position.role.description && (
           <>
-            <p style={{ marginTop: "1rem" }}>
-              <strong>{t("roleDescription")}:</strong>
+            <p>
+              <strong>{t("common.roleDescription")}:</strong>
             </p>
-            <p>{position.role.description}</p>
+            <p style={{ whiteSpace: "pre-line" }}>{position.role.description}</p>
           </>
+        )}
+
+        {position.role.role_description_url && (
+          <p>
+            <a
+              href={position.role.role_description_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("applicationForm.viewRoleDescription")}
+            </a>
+          </p>
         )}
 
         {position.comment && (
           <>
-            <p style={{ marginTop: "1rem" }}>
-              <strong>{t("commentsForThisYear")}:</strong>
+            <p>
+              <strong>{t("common.commentsForThisYear")}:</strong>
             </p>
-            <p>{position.comment}</p>
+            <p style={{ whiteSpace: "pre-line" }}>{position.comment}</p>
           </>
         )}
       </div>
 
       <form onSubmit={(e) => e.preventDefault()}>
         <div className={cardStyles.cardSection}>
-          <h2>{t("coverLetterTitle")}</h2>
+          <h2>{t("applicationForm.coverLetterTitle")}</h2>
           <FormTextarea
-            label={t("coverLetterPrompt")}
+            label={t("applicationForm.coverLetterPrompt")}
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
             rows={6}
@@ -246,9 +267,9 @@ export default function ApplicationForm({
         </div>
 
         <div className={cardStyles.cardSection}>
-          <h2>{t("qualificationsTitle")}</h2>
+          <h2>{t("applicationForm.qualificationsTitle")}</h2>
           <FormTextarea
-            label={t("qualificationsPrompt")}
+            label={t("applicationForm.qualificationsPrompt")}
             value={qualifications}
             onChange={(e) => setQualifications(e.target.value)}
             rows={6}
@@ -258,21 +279,21 @@ export default function ApplicationForm({
         </div>
 
         <div className={cardStyles.cardSection}>
-          <h2>{t("referencesTitle")}</h2>
+          <h2>{t("applicationForm.referencesTitle")}</h2>
 
           {references.length === 0 && editable && (
             <p className={styles.formDescription}>
-              {t("referencesOptionalMax")}
+              {t("applicationForm.referencesOptionalMax")}
             </p>
           )}
 
           {references.map((ref, index) => (
             <div key={index} className={styles.referenceCard}>
-              <h4>{`${t("referenceLabel")} ${index + 1}`}</h4>
+              <h4>{`${t("applicationForm.referenceLabel")} ${index + 1}`}</h4>
 
               <div className={styles.formFieldRow}>
                 <FormInput
-                  label={t("name")}
+                  label={t("common.name")}
                   type="text"
                   value={ref.name ?? ""}
                   onChange={(e) =>
@@ -288,7 +309,7 @@ export default function ApplicationForm({
                 />
 
                 <FormInput
-                  label={t("titleRoleLabel")}
+                  label={t("applicationForm.titleRoleLabel")}
                   type="text"
                   value={ref.title ?? ""}
                   onChange={(e) =>
@@ -305,7 +326,7 @@ export default function ApplicationForm({
 
               <div className={styles.formFieldRow}>
                 <FormInput
-                  label={t("phoneNumber")}
+                  label={t("common.phoneNumber")}
                   type="tel"
                   value={ref.phone_num ?? ""}
                   onChange={(e) =>
@@ -321,7 +342,7 @@ export default function ApplicationForm({
                 />
 
                 <FormInput
-                  label={t("email")}
+                  label={t("common.email")}
                   type="email"
                   value={ref.email ?? ""}
                   onChange={(e) =>
@@ -338,7 +359,7 @@ export default function ApplicationForm({
               </div>
 
               <FormTextarea
-                label={t("commentLabel")}
+                label={t("applicationForm.commentLabel")}
                 value={ref.comment ?? ""}
                 onChange={(e) =>
                   updateReference(index, "comment", e.target.value)
@@ -354,7 +375,7 @@ export default function ApplicationForm({
                     onClick={() => removeReference(index)}
                     className={styles.removeButton}
                   >
-                    {t("removeReference")}
+                    {t("applicationForm.removeReference")}
                   </button>
                 </div>
               )}
@@ -367,13 +388,13 @@ export default function ApplicationForm({
               onClick={addReference}
               className={`button ${styles.addReferenceButton}`}
             >
-              {t("addReference")}
+              {t("applicationForm.addReference")}
             </button>
           )}
         </div>
 
         <div className={cardStyles.cardSection}>
-          <h2>{t("gdprTitle")}</h2>
+          <h2>{t("applicationForm.gdprTitle")}</h2>
           <div className={styles.checkboxContainer}>
             <input
               type="checkbox"
@@ -383,7 +404,7 @@ export default function ApplicationForm({
               disabled={!editable}
             />
             <span className={styles.checkboxLabel}>
-              {t("gdprConsentText")}{" "}
+              {t("applicationForm.gdprConsentText")}{" "}
               <a
                 href="https://utn.se/dokumentarkiv"
                 target="_blank"
@@ -414,7 +435,7 @@ export default function ApplicationForm({
                   }
                   className={`button ${styles.draftButton}`}
                 >
-                  {savingDraft ? t("saving") : t("saveDraft")}
+                  {savingDraft ? t("common.saving") : t("applicationForm.saveDraft")}
                 </button>
 
                 {showDraftSavedMessage && (
@@ -426,7 +447,7 @@ export default function ApplicationForm({
                       height={16}
                       className={styles.draftSavedIcon}
                     />
-                    {t("draftSaved")}
+                    {t("applicationForm.draftSaved")}
                   </p>
                 )}
               </div>
@@ -447,7 +468,7 @@ export default function ApplicationForm({
                 }
                 className={`button ${styles.submitButton}`}
               >
-                {submittingApplication ? t("submitting") : t("apply")}
+                {submittingApplication ? t("applicationForm.submitting") : t("common.apply")}
               </button>
 
               {isDraft && (
@@ -457,7 +478,7 @@ export default function ApplicationForm({
                   disabled={savingDraft || submittingApplication || deletingDraft}
                   className={`button ${styles.deleteButton}`}
                 >
-                  {t("deleteDraft")}
+                  {t("applicationForm.deleteDraft")}
                 </button>
               )}
             </>
@@ -467,7 +488,7 @@ export default function ApplicationForm({
               onClick={() => router.push("/")}
               className={`button ${styles.backButton}`}
             >
-              {t("backToHome")}
+              {t("common.backToHome")}
             </button>
           )}
         </div>
@@ -476,18 +497,18 @@ export default function ApplicationForm({
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title={t("deleteDraft")}
-        primaryButtonText={t("delete")}
+        title={t("applicationForm.deleteDraft")}
+        primaryButtonText={t("common.delete")}
         onSubmit={handleDeleteDraft}
       >
-        <p>{t("deleteDraftConfirmation")}</p>
+        <p>{t("applicationForm.deleteDraftConfirmation")}</p>
       </Modal>
 
       <Modal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        title={submitSuccess ? t("submitted") : t("submitApplication")}
-        primaryButtonText={submitSuccess ? t("backToHome") : t("submit")}
+        title={submitSuccess ? t("applicationStatus.submitted") : t("applicationForm.submitApplication")}
+        primaryButtonText={submitSuccess ? t("common.backToHome") : t("common.submit")}
         onSubmit={() => {
           if (submitSuccess) {
             router.push("/");
@@ -502,8 +523,8 @@ export default function ApplicationForm({
       >
         <p>
           {submitSuccess
-            ? t("applicationSubmittedSuccess")
-            : t("submitApplicationConfirmation")}
+            ? t("applicationForm.applicationSubmittedSuccess")
+            : t("applicationForm.submitApplicationConfirmation")}
         </p>
       </Modal>
     </div>

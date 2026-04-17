@@ -614,6 +614,14 @@ class MyAccountAPIView(APIView):
 
         return Response(serializer.errors, status=400)
 
+    def delete(self, request):
+        user = request.user
+
+        logout(request)
+        user.delete()
+
+        return Response({"message": "Account deleted successfully"}, status=200)
+
 
 class UnicoreDataAPIView(APIView):
     def get(self, request):

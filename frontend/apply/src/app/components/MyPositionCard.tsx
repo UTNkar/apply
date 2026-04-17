@@ -22,7 +22,7 @@ const MyPositionCard = ({ position }: Props) => {
       {position.role.team_logo && (
         <Image
           src={getImageUrl(position.role.team_logo)}
-          alt={t("teamLogoAlt")}
+          alt={t("common.teamLogoAlt")}
           height={80}
           width={80}
           className={styles.logoFloat}
@@ -34,7 +34,7 @@ const MyPositionCard = ({ position }: Props) => {
 
       <div className={styles.cardText}>
         <p>
-          {t("termOfOffice")}: <br />
+          {t("common.termOfOffice")}: <br />
           {dateRange}
         </p>
       </div>
