@@ -17,7 +17,6 @@ import Button from "@/components/Button";
 import { formatDate } from "@/utils/dateFormat";
 import Modal from "@/components/Modal";
 import modalStyles from "@/styles/modal.module.css";
-import { useRouter } from "next/navigation";
 
 interface Program {
   id: string;
@@ -83,8 +82,6 @@ export default function Account() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  const router = useRouter();
 
   const handlePasswordModalClose = () => {
     setPasswordError("");
