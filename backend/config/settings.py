@@ -31,7 +31,7 @@ if DEBUG:
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    ALLOWED_HOSTS = ["localhost"]
+    ALLOWED_HOSTS = ["localhost", "backend"]
 
 
 AUTH_USER_MODEL = "backend.Member"
@@ -160,7 +160,8 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-MEDIA_ROOT = "../media"
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
 
 # Unicore API Configuration
 UNICORE_URL = os.getenv("UNICORE_URL")

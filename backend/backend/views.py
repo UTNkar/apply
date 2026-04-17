@@ -4,6 +4,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.middleware.csrf import get_token
 from .managers import MemberManager
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -233,6 +234,12 @@ class PasswordResetAPIView(APIView):
         token = request.data.get("token")
         new_password = request.data.get("new_password")
 
+        if len(new_password) < 8:
+            return Response(
+                {"message": "New password must be at least 8 characters long"},
+                status=400,
+            )
+
         try:
             user = get_user_model().objects.get(pk=user_id)
         except get_user_model().DoesNotExist:
@@ -273,14 +280,18 @@ class ChangePasswordAPIView(APIView):
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
+        if len(new_password) < 8:
+            return Response(
+                {"message": "New password must be at least 8 characters long"},
+                status=400,
+            )
+
         if check_password(old_password, user.password):
             user.set_password(new_password)
             user.save()
             return Response({"message": "Password changed successfully"}, status=200)
-
-        return Response(
-            {"message": "An error occurred while changing the password"}, status=400
-        )
+        else:
+            return Response({"message": "Current password is incorrect"}, status=400)
 
 
 class EmailVerificationAPIView(APIView):
@@ -497,6 +508,22 @@ class ApplicationViewSet(ModelViewSet):
             {"message": "Application deleted successfully"}, status=status.HTTP_200_OK
         )
 
+    def by_position(self, request, position_id=None):
+        """Get the application for the logged-in user for a given position"""
+        try:
+            application = Application.objects.select_related(
+                "member", "position", "position__role"
+            ).get(position_id=position_id, member=request.user)
+            serializer = ListApplicationSerializer(
+                application, context={"request": request}
+            )
+            return Response(serializer.data)
+        except Application.DoesNotExist:
+            return Response(
+                {"detail": "Application not found for this position."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
 
 class PositionViewSet(ReadOnlyModelViewSet):
     queryset = Position.objects.all()
@@ -504,14 +531,15 @@ class PositionViewSet(ReadOnlyModelViewSet):
 
     def list(self, request):
         """Return both open positions and user's positions"""
+        if request.user.is_authenticated:
+            my_positions = Position.objects.for_member(request.user).select_related(
+                "role", "role__team"
+            )
+        else:
+            my_positions = Position.objects.none()
 
-        my_positions = Position.objects.for_member(request.user).select_related(
+        open_positions = Position.objects.open_positions().select_related(
             "role", "role__team"
-        )
-        open_positions = (
-            Position.objects.open_positions()
-            .exclude(id__in=my_positions)
-            .select_related("role", "role__team")
         )
 
         return Response(
@@ -520,6 +548,33 @@ class PositionViewSet(ReadOnlyModelViewSet):
                 "my_positions": self.get_serializer(my_positions, many=True).data,
             }
         )
+
+
+class OpenPositionsAPIView(APIView):
+    """
+    OpenPositionsAPIView handles retrieving all open positions.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all open positions.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When open positions are retrieved successfully.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        open_positions = Position.objects.open_positions().select_related(
+            "role", "role__team"
+        )
+        serializer = PositionSerializer(
+            open_positions, many=True, context={"request": request}
+        )
+        return Response(serializer.data, status=200)
 
 
 class MyAccountAPIView(APIView):

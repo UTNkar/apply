@@ -9,7 +9,9 @@ interface TextInputProps {
   icon?: React.ReactNode;
   label: string;
   name: string;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange:
+    | ((event: React.ChangeEvent<HTMLSelectElement>) => void)
+    | ((event: React.ChangeEvent<HTMLInputElement>) => void);
   options?: { value: string; name: string }[];
   placeholder?: string;
   required?: boolean;
@@ -48,7 +50,7 @@ export default function TextInput({
             required={required}
             value={value}
             name={name}
-            onChange={onChange}
+            onChange={onChange as React.ChangeEventHandler<HTMLSelectElement>}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             className={"input"}
@@ -66,7 +68,7 @@ export default function TextInput({
             type={type}
             value={value}
             name={name}
-            onChange={onChange}
+            onChange={onChange as React.ChangeEventHandler<HTMLInputElement>}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}

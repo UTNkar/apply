@@ -21,7 +21,7 @@ export interface Application {
   email: string;
   phone_number?: string;
   study_program?: string;
-  status: 'draft' | 'submitted' | 'approved' | 'disapproved' | 'appointed';
+  status: "draft" | "submitted" | "approved" | "disapproved" | "appointed";
   cover_letter: string;
   qualifications: string;
   gdpr: boolean;
@@ -42,6 +42,6 @@ export interface CreateApplicationData {
   cover_letter: string;
   qualifications: string;
   gdpr: boolean;
-  status: 'draft' | 'submitted';
+  status: "draft" | "submitted";
   references?: Reference[];
 }

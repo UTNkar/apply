@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import TextInput from "../components/TextInput";
-import styles from "@/account/account.module.css";
+import styles from "@/styles/account.module.css";
+import cardStyles from "@/styles/card.module.css";
 import Person from "@/icons/person.jsx";
 import Number from "@/icons/number.jsx";
 import Mail from "@/icons/mail.jsx";
@@ -14,6 +15,8 @@ import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import Button from "@/components/Button";
 import { formatDate } from "@/utils/dateFormat";
+import Modal from "@/components/Modal";
+import modalStyles from "@/styles/modal.module.css";
 
 interface Program {
   id: string;
@@ -33,14 +36,14 @@ interface Section {
 }
 
 interface FormState {
+  ssn: string;
   email: string;
   name: string;
-  ssn: string;
   phone_number: string;
-  program: string;
   registration_year: number;
-  section: string;
   study_program: { id: string; section: string } | null;
+  section: string;
+  program: string;
 }
 
 type Errors = {
@@ -50,14 +53,14 @@ type Errors = {
 export default function Account() {
   const { t, i18n } = useTranslation();
   const default_state = {
-    name: "",
-    email: "",
     ssn: "",
+    email: "",
+    name: "",
     phone_number: "",
     registration_year: 0,
+    study_program: null,
     section: "",
     program: "",
-    study_program: null,
   } as FormState;
   const [state, setState] = useState<FormState>(default_state);
   const [originalState, setOriginalState] = useState<FormState>(default_state);
@@ -66,6 +69,85 @@ export default function Account() {
   const [sections, setSections] = useState<Array<Section>>([]);
   const [unicoreLoading, setUnicoreLoading] = useState<boolean>(false);
   const [memberSince, setMemberSince] = useState<string>("");
+
+  const [isPasswordModalOpen, setIsPasswordModalOpen] =
+    useState<boolean>(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const validateNewPassword = (password: string) => {
+    if (password.length < 8) {
+      return t("passwordTooShort");
+    }
+
+    return "";
+  };
+
+  const handleNewPasswordChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const password = e.target.value;
+
+    if (password.length === 0) {
+      setNewPasswordError("");
+      return;
+    }
+
+    setNewPasswordError(validateNewPassword(password));
+  };
+
+  const handlePasswordModalClose = () => {
+    setPasswordError("");
+    setNewPasswordError("");
+    setPasswordSuccess(false);
+    setIsPasswordModalOpen(false);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setPasswordError("");
+
+    const formData = new FormData(e.currentTarget);
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t("passwordsDoNotMatch"));
+      return;
+    }
+
+    const passwordValidationError = validateNewPassword(newPassword);
+    if (passwordValidationError) {
+      setNewPasswordError(passwordValidationError);
+      return;
+    }
+    setNewPasswordError("");
+
+    setPasswordLoading(true);
+
+    try {
+      const response = await request(Method.POST, "/auth/change-password", {
+        old_password: currentPassword,
+        new_password: newPassword,
+      });
+
+      if (response.ok) {
+        setPasswordSuccess(true);
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+      } else {
+        setPasswordError(t("passwordChangeError"));
+      }
+    } catch {
+      setPasswordError(t("passwordChangeError"));
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const setProgramNames = useCallback(() => {
     const isSwedish = i18n.language === "sv";
@@ -79,7 +161,7 @@ export default function Account() {
             name: isSwedish ? program.name_sv : program.name_en,
           })),
         };
-      })
+      }),
     );
   }, [i18n.language]);
 
@@ -242,6 +324,7 @@ export default function Account() {
 
   const submitForm = () => {
     if (formHasErrors) {
+      // Normally unreachable since the button should be disabled, but just in case
       alert(t("formHasErrors"));
       return;
     }
@@ -311,7 +394,7 @@ export default function Account() {
     <div className="pageContainer">
       <h2>{t("accountTitle")}</h2>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("contactInformation")}</h3>
 
         <div className={styles.formRow}>
@@ -367,12 +450,86 @@ export default function Account() {
         </div>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
         <h3>{t("membershipStatus")}</h3>
         <p>{membershipText(memberSince)}</p>
       </div>
 
-      <div className={styles.card}>
+      <div className={cardStyles.cardSection}>
+        <h3>{t("accountSecurity")}</h3>
+        <p>{t("changePasswordDescription")}</p>
+        <Button
+          onClick={() => setIsPasswordModalOpen(true)}
+          style={{ margin: "12px 0px" }}
+        >
+          {t("changePassword")}
+        </Button>
+      </div>
+
+      <Modal
+        isOpen={isPasswordModalOpen}
+        onClose={handlePasswordModalClose}
+        onSubmit={handlePasswordSubmit}
+        title={t("changePassword")}
+        primaryButtonDisabled={passwordLoading}
+        primaryButtonText={passwordLoading ? t("saving") : t("changePassword")}
+        secondaryButtonDisabled={passwordLoading}
+      >
+        {passwordSuccess ? (
+          <div className={modalStyles.successMessage}>
+            {t("passwordChanged")}
+          </div>
+        ) : (
+          <>
+            <div className={modalStyles.formGroup}>
+              <label htmlFor="currentPassword">{t("currentPassword")}</label>
+              <input
+                type="password"
+                id="currentPassword"
+                name="currentPassword"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            <div className={modalStyles.formGroup}>
+              <label htmlFor="newPassword">{t("newPassword")}</label>
+              <input
+                type="password"
+                id="newPassword"
+                name="newPassword"
+                required
+                autoComplete="new-password"
+                onChange={handleNewPasswordChange}
+                aria-invalid={newPasswordError.length > 0}
+                aria-describedby={
+                  newPasswordError.length > 0 ? "newPasswordError" : undefined
+                }
+              />
+                <div id="newPasswordError" className={modalStyles.fieldError}>
+                  {newPasswordError}
+                </div>
+            </div>
+
+            <div className={modalStyles.formGroup}>
+              <label htmlFor="confirmPassword">{t("confirmNewPassword")}</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                required
+                autoComplete="new-password"
+              />
+            </div>
+
+            {passwordError && (
+              <div className={modalStyles.errorMessage}>{passwordError}</div>
+            )}
+          </>
+        )}
+      </Modal>
+
+      <div className={cardStyles.cardSection}>
         <h3>{t("studyDetails")}</h3>
         <TextInput
           label={t("section")}

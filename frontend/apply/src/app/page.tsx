@@ -4,132 +4,161 @@ import styles from "./page.module.css";
 import ApplicationCard from "./components/ApplicationCard";
 import MyPositionCard from "./components/MyPositionCard";
 import OpenPositionCard from "./components/OpenPositionCard";
-import { positionAPI, applicationAPI } from "@/lib/api";
-import type { Position, Application } from "@/lib/types";
+import { positionAPI, applicationAPI } from "@/utils/api";
+import { useIsLoggedIn } from "@/utils/auth";
+import type { Position, Application } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 
 type Tab = "Open Positions" | "My Applications" | "My Positions";
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { isLoggedIn, loading: authLoading } = useIsLoggedIn();
   const [activeTab, setActiveTab] = useState<Tab>("Open Positions");
   const [openPositions, setOpenPositions] = useState<Position[]>([]);
   const [myPositions, setMyPositions] = useState<Position[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [positionsError, setPositionsError] = useState<string | null>(null);
+  const [applicationsError, setApplicationsError] = useState<string | null>(
+    null,
+  );
 
-  // Fetch all data once on mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [positionsData, applicationsData] = await Promise.all([
-          positionAPI.getAll(),
-          applicationAPI.getAll(),
-        ]);
+    if (!isLoggedIn) {
+      setActiveTab("Open Positions");
+    }
+  }, [isLoggedIn]);
 
-        setOpenPositions(positionsData.open_positions);
-        setMyPositions(positionsData.my_positions);
-        setApplications(applicationsData);
-        setError(null);
+  // Fetch data whenever auth state or language changes
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    const fetchData = async () => {
+      setLoading(true);
+
+      try {
+        if (isLoggedIn) {
+          const [positionsData, applicationsData] = await Promise.all([
+            positionAPI.getAll(),
+            applicationAPI.getAll(),
+          ]);
+
+          setOpenPositions(positionsData.open_positions);
+          setMyPositions(positionsData.my_positions);
+          setApplications(applicationsData);
+          setPositionsError(null);
+          setApplicationsError(null);
+          return;
+        }
+
+        const openPositionsData = await positionAPI.getOpen();
+        setOpenPositions(openPositionsData);
+        setMyPositions([]);
+        setApplications([]);
+        setPositionsError(null);
+        setApplicationsError(null);
       } catch {
-        setError("Failed to load data");
+        setPositionsError("failedToLoadPositions");
+        if (isLoggedIn) {
+          setApplicationsError("failedToLoadApplications");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [authLoading, isLoggedIn, i18n.language]);
 
   return (
     <div className="pageContainer">
-      <h2>
-        {activeTab === "Open Positions"
-          ? t("openPositions")
-          : activeTab === "My Applications"
-            ? t("myApplications")
-            : t("myPositions")}
-      </h2>
+      {!isLoggedIn && (
+        <h2 style={{ marginBottom: -32 }}>{t("openPositions")}</h2>
+      )}
 
-      <div className={styles.buttonsContainer}>
-        <button
-          className={`button ${activeTab === "Open Positions" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("Open Positions")}
-        >
-          {t("openPositions")}
-        </button>
+      {isLoggedIn && (
+        <div className={styles.buttonsContainer}>
+          <button
+            className={`button ${activeTab === "Open Positions" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("Open Positions")}
+          >
+            {t("openPositions")}
+          </button>
 
-        <button
-          className={`button ${activeTab === "My Applications" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("My Applications")}
-        >
-          {t("myApplications")}
-        </button>
+          <button
+            className={`button ${activeTab === "My Applications" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("My Applications")}
+          >
+            {t("myApplications")}
+          </button>
 
-        <button
-          className={`button ${activeTab === "My Positions" ? "activeButton" : ""}`}
-          onClick={() => setActiveTab("My Positions")}
-        >
-          {t("myPositions")}
-        </button>
-      </div>
+          <button
+            className={`button ${activeTab === "My Positions" ? "activeButton" : ""}`}
+            onClick={() => setActiveTab("My Positions")}
+          >
+            {t("myPositions")}
+          </button>
+        </div>
+      )}
 
-      {loading && <p>Loading...</p>}
-      {error && <p className={styles.error}>{error}</p>}
+      {loading && <p>{t("loading")}</p>}
 
       {activeTab === "My Applications" && !loading && (
-        <div className={styles.myApplicationsContainer}>
-          {applications.length === 0 ? (
-            <p>No applications yet</p>
-          ) : (
-            applications.map((application) => (
-              <ApplicationCard
-                key={application.id}
-                application={{
-                  title: application.position_details.role.title,
-                  status: application.status,
-                  termStart: application.position_details.term_from,
-                  termEnd: application.position_details.term_end,
-                  applicationId: application.id.toString(),
-                }}
-              />
-            ))
+        <>
+          {applicationsError && (
+            <p className={styles.error}>{t(applicationsError)}</p>
           )}
-        </div>
+          <div className={styles.myApplicationsContainer}>
+            {applications.length === 0 ? (
+              <p>{t("noApplicationsYet")}</p>
+            ) : (
+              applications.map((application) => (
+                <ApplicationCard
+                  key={application.id}
+                  application={application}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === "Open Positions" && !loading && (
-        <div className={styles.openPositionsContainer}>
-          {openPositions.length === 0 ? (
-            <p>No open positions available</p>
-          ) : (
-            openPositions.map((position) => (
-              <OpenPositionCard key={position.id} position={position} />
-            ))
+        <>
+          {positionsError && (
+            <p className={styles.error}>{t(positionsError)}</p>
           )}
-        </div>
+          <div className={styles.openPositionsContainer}>
+            {openPositions.length === 0 ? (
+              <p>{t("noOpenPositions")}</p>
+            ) : (
+              openPositions.map((position) => (
+                <OpenPositionCard key={position.id} position={position} />
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === "My Positions" && !loading && (
-        <div className={styles.myPositionsContainer}>
-          {myPositions.length === 0 ? (
-            <p>No positions yet</p>
-          ) : (
-            myPositions.map((position) => (
-              <MyPositionCard
-                key={position.id}
-                position={{
-                  title: position.role.title,
-                  termStart: position.term_from,
-                  termEnd: position.term_end,
-                  applicationId: position.id.toString(),
-                }}
-              />
-            ))
+        <>
+          {positionsError && (
+            <p className={styles.error}>{t(positionsError)}</p>
           )}
-        </div>
+          <div className={styles.myPositionsContainer}>
+            {myPositions.length === 0 ? (
+              <p>{t("noPositionsYet")}</p>
+            ) : (
+              myPositions.map((position) => (
+                <MyPositionCard key={position.id} position={position} />
+              ))
+            )}
+          </div>
+        </>
       )}
     </div>
   );
