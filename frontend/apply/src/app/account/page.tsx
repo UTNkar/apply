@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import TextInput from "../components/TextInput";
 import styles from "@/styles/account.module.css";
 import cardStyles from "@/styles/card.module.css";
@@ -28,11 +29,33 @@ interface Program {
 
 interface Section {
   id: string;
+  abbreviation: string;
   section_en: string;
   section_sv: string;
   name: string;
   value: string;
   programs: Array<Program>;
+}
+
+interface AccountStudyProgram {
+  id: number | string;
+  name_en: string;
+  name_sv: string;
+  section: {
+    id: number | string;
+    abbreviation: string;
+    section_en: string;
+    section_sv: string;
+  };
+}
+
+interface AccountResponse {
+  ssn: string;
+  email: string;
+  name: string;
+  phone_number: string;
+  registration_year: number | string;
+  study_program: AccountStudyProgram | null;
 }
 
 interface FormState {
@@ -45,10 +68,6 @@ interface FormState {
   section: string;
   program: string;
 }
-
-type AccountResponseData = Partial<FormState> & {
-  study_program?: { id: string; section: string } | null;
-};
 
 type Errors = {
   [key in keyof FormState]?: string;
@@ -83,6 +102,7 @@ export default function Account() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [showSaveMessage, setShowSaveMessage] = useState(false);
 
   const validateNewPassword = (password: string) => {
     if (password.length < 8) {
@@ -198,33 +218,63 @@ export default function Account() {
     );
   }, [i18n.language]);
 
-  const handleNewUserData = (data: AccountResponseData) => {
-    const normalizedData = {
-      ...data,
-      program: data.study_program?.id || "",
-      section: data.study_program?.section || "",
-    };
+  const handleNewUserData = (data: AccountResponse) => {
+    const programId = data.study_program?.id
+      ? String(data.study_program.id)
+      : "";
+    const sectionId = data.study_program?.section?.id
+      ? String(data.study_program.section.id)
+      : "";
+    const normalizedStudyProgram = data.study_program
+      ? { id: programId, section: sectionId }
+      : null;
+    const registrationYear = parseInt(String(data.registration_year), 10) || 0;
+
     setState((prevState: FormState) => ({
       ...prevState,
-      ...normalizedData,
+      ssn: data.ssn,
+      email: data.email,
+      name: data.name,
+      phone_number: data.phone_number,
+      registration_year: registrationYear,
+      study_program: normalizedStudyProgram,
+      section: sectionId,
+      program: programId,
     }));
     setOriginalState((prevState: FormState) => ({
       ...prevState,
-      ...normalizedData,
+      ssn: data.ssn,
+      email: data.email,
+      name: data.name,
+      phone_number: data.phone_number,
+      registration_year: registrationYear,
+      study_program: normalizedStudyProgram,
+      section: sectionId,
+      program: programId,
     }));
   };
 
   useEffect(() => {
+    const normalizeSections = (data: Section[]): Section[] => {
+      return data.map((section) => ({
+        ...section,
+        id: section.id,
+        value: section.id,
+        name: i18n.language === "sv" ? section.section_sv : section.section_en,
+        programs: section.programs.map((program) => ({
+          ...program,
+          id: program.id,
+          value: program.id,
+          name: i18n.language === "sv" ? program.name_sv : program.name_en,
+        })),
+      }));
+    };
+
     // Fetch sections and programs
     request(Method.GET, "/sections/").then(async (res) => {
       if (res.ok) {
-        let data = await res.json();
-        data = data.map((program: Program) => ({
-          ...program,
-          value: program.id,
-        }));
-        setSections(data);
-        setProgramNames();
+        const data = (await res.json()) as Section[];
+        setSections(normalizeSections(data));
       } else {
         const err = await res.text();
         console.error("Failed to fetch sections");
@@ -234,7 +284,7 @@ export default function Account() {
     // Fetch user account data
     request(Method.GET, "/account/").then(async (res) => {
       if (res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as AccountResponse;
         handleNewUserData(data);
       } else {
         const err = await res.text();
@@ -253,7 +303,7 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, [setProgramNames]);
+  }, [setProgramNames, i18n.language]);
 
   useEffect(() => {
     if (sections.length > 0) {
@@ -297,13 +347,13 @@ export default function Account() {
   const validateInput = (
     name: keyof FormState,
     value: string,
-    target: HTMLInputElement,
+    target: HTMLInputElement | HTMLSelectElement,
   ) => {
     // Validate required fields
     const required = target.required;
     if (required && value.length === 0) {
       // Get field label, e.g. "Email"
-      const labelElement = target.parentElement?.querySelector(".label");
+      const labelElement = target.parentNode?.querySelector(".label");
       const label =
         labelElement instanceof HTMLElement
           ? labelElement.innerText
@@ -332,7 +382,9 @@ export default function Account() {
     }
   };
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const value = event.target.value;
     const name = event.target.name as keyof FormState;
     setState((prevState: FormState) => ({
@@ -371,6 +423,9 @@ export default function Account() {
       alert(t("formHasErrors"));
       return;
     }
+
+    setShowSaveMessage(false);
+
     const payload = { ...state, study_program: state.program };
     request(Method.POST, "/account/", payload).then((resp) => {
       if (!resp.ok) {
@@ -381,6 +436,8 @@ export default function Account() {
       } else {
         resp.json().then((data) => {
           handleNewUserData(data.user);
+          setShowSaveMessage(true);
+          setTimeout(() => setShowSaveMessage(false), 3000);
         });
       }
     });
@@ -626,15 +683,36 @@ export default function Account() {
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <button
-          className={`button activeButton ${formHasErrors ? "disabled" : ""}`}
-          onClick={submitForm}
-          style={{ marginRight: 16 }}
-          disabled={formHasErrors}
-        >
-          {t("save")}
-        </button>
+      <div style={{ display: "flex", justifyContent: "center", gap: 16 }}>
+        <div className={styles.saveGroup}>
+          <button
+            className={`button activeButton ${formHasErrors ? "disabled" : ""}`}
+            onClick={submitForm}
+            disabled={formHasErrors}
+          >
+            {t("save")}
+          </button>
+
+          <p
+            className={`${styles.draftSavedMessage} ${showSaveMessage ? styles.draftSavedMessageVisible : ""}`}
+            aria-live="polite"
+          >
+            <span
+              className={styles.draftSavedIconWrap}
+              aria-hidden={!showSaveMessage}
+            >
+              <Image
+                src="/icons/check-blue.svg"
+                alt=""
+                width={16}
+                height={16}
+                className={styles.draftSavedIcon}
+              />
+            </span>
+            <span>{t("accountDetailsSaved")}</span>
+          </p>
+        </div>
+
         <button className={`button`} onClick={resetForm}>
           {t("reset")}
         </button>
