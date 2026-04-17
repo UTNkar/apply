@@ -1,4 +1,6 @@
-const BASE_URL = process.env.API_URL || "http://localhost:8000/api"; // Replace with actual url or make an environment variable
+import { getAPIURL } from "./api";
+
+const API_URL = getAPIURL();
 
 export enum Method {
     GET = "GET",
@@ -50,7 +52,7 @@ export async function request(method: Method, url: string, body?: object, header
         };
     }
 
-    return fetch(`${BASE_URL}${url}`, options)
+    return fetch(`${API_URL}${url}`, options)
         .then(response => {
             return response
         })

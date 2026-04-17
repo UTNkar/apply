@@ -38,18 +38,18 @@ const Navbar = () => {
   // Generate navigation links based on auth state
   const navLinks = useMemo(() => {
     const links = [
-      { href: "/", label: t("home") },
-      { href: "/about", label: t("about") },
+      { href: "/", label: t("navbar.home") },
+      { href: "/about", label: t("navbar.about") },
     ];
 
     if (!loading) {
       if (isLoggedIn) {
         links.push(
-          { href: "/account", label: t("account") },
-          { href: "/logout", label: t("logOut") }
+          { href: "/account", label: t("navbar.account") },
+          { href: "/logout", label: t("navbar.logOut") }
         );
       } else {
-        links.push({ href: "/login", label: t("login") });
+        links.push({ href: "/login", label: t("navbar.login") });
       }
     }
 
@@ -123,7 +123,7 @@ const Navbar = () => {
                 <span></span>
               </div>
               <span className={styles.hamburgerText}>
-                {menuOpen ? t("close") : t("menu")}
+                {menuOpen ? t("navbar.close") : t("navbar.menu")}
               </span>
             </button>
 

@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n/config";
 
@@ -8,10 +9,11 @@ interface TranslationProviderProps {
 }
 
 export default function TranslationProvider({ initialLanguage, children }: TranslationProviderProps) {
-  // Set language synchronously during initial load to avoid hydration issues
-  if (i18n.language !== initialLanguage) {
-    i18n.changeLanguage(initialLanguage);
-  }
+  useEffect(() => {
+    if (i18n.language !== initialLanguage) {
+      void i18n.changeLanguage(initialLanguage);
+    }
+  }, [initialLanguage]);
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 }

@@ -28,15 +28,15 @@ export default function Login() {
         window.dispatchEvent(new CustomEvent("logged-in"));
         router.push("/account");
       } else if (response.status === 401) {
-        setError(t("incorrectCredentials"));
+        setError(t("loginPage.incorrectCredentials"));
       } else if (response.status === 403) {
         const data = await response.json();
-        setError(data.message || t("emailNotVerified"));
+        setError(data.message || t("loginPage.emailNotVerified"));
       } else {
-        setError(t("loginError"));
+        setError(t("loginPage.loginError"));
       }
     } catch {
-      setError(t("networkError"));
+      setError(t("loginPage.networkError"));
     } finally {
       setLoading(false);
     }
@@ -51,29 +51,29 @@ export default function Login() {
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
-        <h1 className={styles.title}>{t("loginTitle")}</h1>
+        <h1 className={styles.title}>{t("loginPage.loginTitle")}</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
             required
-            label={t("email")}
+            label={t("common.email")}
             value={email}
             onChange={handleChange}
             name="email"
             type="email"
-            placeholder={t("emailPlaceholder")}
-            error={error && email === "" ? t("emailRequired") : ""}
+            placeholder={t("loginPage.emailPlaceholder")}
+            error={error && email === "" ? t("loginPage.emailRequired") : ""}
           />
 
           <TextInput
             required
-            label={t("password")}
+            label={t("loginPage.password")}
             value={password}
             onChange={handleChange}
             name="password"
             type="password"
-            placeholder={t("passwordPlaceholder")}
-            error={error && password === "" ? t("passwordRequired") : ""}
+            placeholder={t("loginPage.passwordPlaceholder")}
+            error={error && password === "" ? t("loginPage.passwordRequired") : ""}
           />
 
           {error && <div className={styles.errorMessage}>{error}</div>}
@@ -83,16 +83,16 @@ export default function Login() {
             style={{ margin: "12px auto 0" }}
             disabled={loading}
           >
-            {loading ? t("signingIn") : t("signIn")}
+            {loading ? t("loginPage.signingIn") : t("loginPage.signIn")}
           </button>
         </form>
 
         <div className={styles.links}>
           <a href="/signup" className={styles.link}>
-            {t("noAccount")}
+            {t("loginPage.noAccount")}
           </a>
           <a href="/forgot-password" className={styles.link}>
-            {t("forgotPassword")}
+            {t("loginPage.forgotPassword")}
           </a>
         </div>
       </div>

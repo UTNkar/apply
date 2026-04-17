@@ -113,6 +113,7 @@ class RoleDetailSerializer(ModelSerializer):
             "team_logo",
             "title",
             "description",
+            "role_description_url",
             "contact_email",
         ]
 
