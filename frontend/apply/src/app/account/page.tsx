@@ -17,6 +17,7 @@ import Button from "@/components/Button";
 import { formatDate } from "@/utils/dateFormat";
 import Modal from "@/components/Modal";
 import modalStyles from "@/styles/modal.module.css";
+import { useRouter } from "next/navigation";
 
 interface Program {
   id: string;
@@ -83,6 +84,8 @@ export default function Account() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const router = useRouter();
+
   const handlePasswordModalClose = () => {
     setPasswordError("");
     setPasswordSuccess(false);
@@ -100,14 +103,29 @@ export default function Account() {
     setDeleteError("");
     setDeleteLoading(true);
 
+    const formData = new FormData(e.currentTarget);
+    const password = (formData.get("deletePassword") as string) || "";
+
+    if (!password) {
+      setDeleteError(t("passwordRequired"));
+      setDeleteLoading(false);
+      return;
+    }
+
     try {
-      const response = await request(Method.DELETE, "/account/");
+      const response = await request(Method.DELETE, "/account/", {
+        password,
+      });
       if (response.ok) {
-        window.location.href = "/login";
+        router.push("/login");
         return;
       }
 
-      setDeleteError(t("accountDeleteError"));
+      if (response.status === 400) {
+        setDeleteError(t("accountDeletePasswordError"));
+      } else {
+        setDeleteError(t("accountDeleteError"));
+      }
     } catch {
       setDeleteError(t("accountDeleteError"));
     } finally {
@@ -145,7 +163,7 @@ export default function Account() {
       if (response.ok) {
         setPasswordSuccess(true);
         setTimeout(() => {
-          window.location.href = "/login";
+          router.push("/login");
         }, 1500);
       } else {
         setPasswordError(t("passwordChangeError"));
@@ -626,10 +644,20 @@ export default function Account() {
         onSubmit={handleDeleteAccount}
         title={t("deleteAccount")}
         primaryButtonDisabled={deleteLoading}
-        primaryButtonText={deleteLoading ? t("deleting") : t("delete")}
+        primaryButtonText={deleteLoading ? t("deleting") : t("deleteAccount")}
         secondaryButtonDisabled={deleteLoading}
       >
         <p>{t("deleteAccountConfirmation")}</p>
+        <div className={modalStyles.formGroup}>
+          <label htmlFor="deletePassword">{t("currentPassword")}</label>
+          <input
+            type="password"
+            id="deletePassword"
+            name="deletePassword"
+            required
+            autoComplete="current-password"
+          />
+        </div>
         {deleteError && (
           <div className={modalStyles.errorMessage}>{deleteError}</div>
         )}
