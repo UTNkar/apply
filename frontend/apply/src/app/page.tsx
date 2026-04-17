@@ -62,9 +62,9 @@ export default function Home() {
         setPositionsError(null);
         setApplicationsError(null);
       } catch {
-        setPositionsError("failedToLoadPositions");
+        setPositionsError("homePage.failedToLoadPositions");
         if (isLoggedIn) {
-          setApplicationsError("failedToLoadApplications");
+          setApplicationsError("homePage.failedToLoadApplications");
         }
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ export default function Home() {
   return (
     <div className="pageContainer">
       {!isLoggedIn && (
-        <h2 style={{ marginBottom: -32 }}>{t("openPositions")}</h2>
+        <h2 style={{ marginBottom: -32 }}>{t("homePage.openPositions")}</h2>
       )}
 
       {isLoggedIn && (
@@ -86,26 +86,26 @@ export default function Home() {
             className={`button ${activeTab === "Open Positions" ? "activeButton" : ""}`}
             onClick={() => setActiveTab("Open Positions")}
           >
-            {t("openPositions")}
+            {t("homePage.openPositions")}
           </button>
 
           <button
             className={`button ${activeTab === "My Applications" ? "activeButton" : ""}`}
             onClick={() => setActiveTab("My Applications")}
           >
-            {t("myApplications")}
+            {t("homePage.myApplications")}
           </button>
 
           <button
             className={`button ${activeTab === "My Positions" ? "activeButton" : ""}`}
             onClick={() => setActiveTab("My Positions")}
           >
-            {t("myPositions")}
+            {t("homePage.myPositions")}
           </button>
         </div>
       )}
 
-      {loading && <p>{t("loading")}</p>}
+      {loading && <p>{t("common.loading")}</p>}
 
       {activeTab === "My Applications" && !loading && (
         <>
@@ -114,7 +114,7 @@ export default function Home() {
           )}
           <div className={styles.myApplicationsContainer}>
             {applications.length === 0 ? (
-              <p>{t("noApplicationsYet")}</p>
+              <p>{t("homePage.noApplicationsYet")}</p>
             ) : (
               applications.map((application) => (
                 <ApplicationCard
@@ -134,7 +134,7 @@ export default function Home() {
           )}
           <div className={styles.openPositionsContainer}>
             {openPositions.length === 0 ? (
-              <p>{t("noOpenPositions")}</p>
+              <p>{t("homePage.noOpenPositions")}</p>
             ) : (
               openPositions.map((position) => (
                 <OpenPositionCard key={position.id} position={position} />
@@ -151,7 +151,7 @@ export default function Home() {
           )}
           <div className={styles.myPositionsContainer}>
             {myPositions.length === 0 ? (
-              <p>{t("noPositionsYet")}</p>
+              <p>{t("homePage.noPositionsYet")}</p>
             ) : (
               myPositions.map((position) => (
                 <MyPositionCard key={position.id} position={position} />

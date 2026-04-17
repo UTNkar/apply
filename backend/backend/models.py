@@ -677,6 +677,13 @@ class Role(models.Model):
         blank=False,
     )
 
+    role_description_url = models.URLField(
+        verbose_name=_("Role description URL"),
+        help_text=_("Optional URL to a full role description"),
+        blank=True,
+        default="",
+    )
+
     contact_email = models.EmailField(
         verbose_name=_("Contact email address"),
         help_text=_("The email address for the current position holder"),

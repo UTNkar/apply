@@ -21,12 +21,12 @@ const ApplicationCard = ({ application }: Props) => {
 
   const status = t(
     {
-      draft: "draft",
-      submitted: "submitted",
-      approved: "approved",
-      disapproved: "disapproved",
-      appointed: "appointed",
-      turned_down: "turnedDown",
+      draft: "applicationStatus.draft",
+      submitted: "applicationStatus.submitted",
+      approved: "applicationStatus.approved",
+      disapproved: "applicationStatus.disapproved",
+      appointed: "applicationStatus.appointed",
+      turned_down: "applicationStatus.turnedDown",
     }[application.status] || application.status,
   );
 
@@ -35,7 +35,7 @@ const ApplicationCard = ({ application }: Props) => {
       {application.position_details.role.team_logo && (
         <Image
           src={getImageUrl(application.position_details.role.team_logo)}
-          alt={t("teamLogoAlt")}
+          alt={t("common.teamLogoAlt")}
           height={80}
           width={80}
           className={styles.logoFloat}
@@ -48,18 +48,21 @@ const ApplicationCard = ({ application }: Props) => {
 
       <div className={styles.cardText}>
         <p>
-          {t("status")}: {status}
+          {t("common.status")}: {status}
         </p>
 
         <p>
-          {t("termOfOffice")}: <br />
+          {t("common.termOfOffice")}: <br />
           {dateRange}
         </p>
       </div>
 
       <div className={styles.cardButton}>
-        <a className={"smallButton"} href={`/apply/${application.id}`}>
-          {t("viewApplication")}
+        <a
+          className={"smallButton"}
+          href={`/apply/${application.position_details.id}`}
+        >
+          {t("common.viewApplication")}
         </a>
       </div>
     </div>
