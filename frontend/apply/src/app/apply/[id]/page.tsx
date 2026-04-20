@@ -8,14 +8,16 @@ import PositionInfoCard from "@/components/PositionInfoCard";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import styles from "@/styles/application.module.css";
+import Link from "next/link";
 
 type APIError = {
   detail?: string;
+  status: number;
 };
 
 const isAuthenticationError = (error: unknown) => {
   const apiError = error as APIError;
-  return apiError?.detail === "Authentication credentials were not provided.";
+  return apiError.status === 403;
 };
 
 export default function ApplyPage() {
@@ -48,7 +50,7 @@ export default function ApplyPage() {
           setPosition(null);
           setApplication(null);
           setShowLoginPrompt(false);
-          setError(null);
+          setError("applyPage.positionNotFound");
           return;
         }
 
@@ -110,9 +112,9 @@ export default function ApplyPage() {
 
         <div className={styles.guestLoginCard}>
           <p>{t("applyPage.loginRequiredMessage")}</p>
-          <a href="/login" className={`button activeButton ${styles.guestLoginButton}`}>
+          <Link href="/login" className={`button activeButton ${styles.guestLoginButton}`}>
             {t("applyPage.goToLogin")}
-          </a>
+          </Link>
         </div>
       </div>
     );
