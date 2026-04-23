@@ -158,25 +158,34 @@ class InitiatePasswordResetViewAPIView(APIView):
     -------
         Responds with HTTP 200
             When password reset email is sent successfully.
-        Responds with HTTP 400
+        Responds with HTTP 200
             When provided data is invalid or user does not exist.
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
+
         email = request.data.get("email")
         try:
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
+            # We should return the same message and status so not to leak information about wether an account exists or not
             return Response(
-                {"message": "An error occurred while sending the password reset email"},
-                status=400,
+                {
+                    "message": "If an account with that email exists, a password reset email has been sent"
+                },
+                status=200,
             )
 
         send_password_reset_email(user)
 
-        return Response({"message": "Password reset email sent"}, status=200)
+        return Response(
+            {
+                "message": "If an account with that email exists, a password reset email has been sent"
+            },
+            status=200,
+        )
 
 
 class PasswordResetAPIView(APIView):
