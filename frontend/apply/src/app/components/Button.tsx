@@ -11,6 +11,8 @@ interface ButtonProps {
   children: React.ReactNode;
   disabled?: boolean;
   loading?: boolean;
+  type?: "button" | "submit" | "reset";
+  secondaryButton?: boolean;
 }
 
 export default function Button({
@@ -20,6 +22,8 @@ export default function Button({
   disabled = false,
   loading = false,
   children,
+  type = "button",
+  secondaryButton = false,
 }: ButtonProps) {
   const button = React.useRef<HTMLButtonElement>(null);
   if (loading) {
@@ -31,15 +35,16 @@ export default function Button({
 
   return (
     <button
-      className={`button activeButton ${className} ${disabled ? "disabled" : ""} ${
+      className={`button ${secondaryButton ? "" : "activeButton"} ${className} ${disabled ? "disabled" : ""} ${
         loading ? "loading" : ""
       }`}
       onClick={onClick}
       style={style}
       ref={button}
       disabled={disabled}
+      type={type}
     >
-      {buttonWidth && (
+      {buttonWidth !== 0 && (
         <svg
           className="loading-indicator"
           viewBox={`0 0 ${buttonWidth + borderWidth * 2} ${buttonHeight + borderWidth * 2}`}

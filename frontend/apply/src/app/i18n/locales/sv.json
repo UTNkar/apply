@@ -71,7 +71,6 @@
     "password": "Lösenord",
     "emailRequired": "E-post krävs",
     "passwordRequired": "Lösenord krävs",
-    "signingIn": "Loggar in...",
     "signIn": "Logga in",
     "noAccount": "Har du inget konto? Registrera dig här",
     "forgotPassword": "Glömt lösenord?",
@@ -131,8 +130,7 @@
     "deleteAccount": "Radera konto",
     "deleteAccountConfirmation": "Är du säker på att du vill radera ditt konto? Denna åtgärd kan inte ångras.",
     "accountDeletePasswordError": "Det gick inte att radera kontot. Nuvarande lösenord är felaktigt.",
-    "accountDeleteError": "Det gick inte att radera kontot. Försök igen.",
-    "deleting": "Raderar..."
+    "accountDeleteError": "Det gick inte att radera kontot. Försök igen."
   },
   "openPositionCard": {
     "deadline": "Sista ansökningsdag",

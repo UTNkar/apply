@@ -12,6 +12,7 @@ import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
 import { formatDate } from "@/utils/dateFormat";
 import Modal from "./Modal";
+import Button from "./Button";
 
 type ApplicationFormProps = {
   position: Position;
@@ -165,7 +166,6 @@ export default function ApplicationForm({
 
   const handleDeleteDraft = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log("Deleting draft with ID:", draftId);
     if (!isDraft || draftId === null) return;
     setDeletingDraft(true);
     setError(null);
@@ -422,7 +422,7 @@ export default function ApplicationForm({
           {editable ? (
             <>
               <div className={styles.draftSaveGroup}>
-                <button
+                <Button
                   type="button"
                   onClick={() => handleSubmit("draft")}
                   disabled={
@@ -434,9 +434,10 @@ export default function ApplicationForm({
                     !gdpr
                   }
                   className={`button ${styles.draftButton}`}
+                  loading={savingDraft}
                 >
-                  {savingDraft ? t("common.saving") : t("applicationForm.saveDraft")}
-                </button>
+                  {t("applicationForm.saveDraft")}
+                </Button>
 
                 {showDraftSavedMessage && (
                   <p className={styles.draftSavedMessage}>
@@ -452,7 +453,7 @@ export default function ApplicationForm({
                 )}
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   setSubmitSuccess(false);
@@ -467,9 +468,10 @@ export default function ApplicationForm({
                   !gdpr
                 }
                 className={`button ${styles.submitButton}`}
+                loading={submittingApplication}
               >
-                {submittingApplication ? t("applicationForm.submitting") : t("common.apply")}
-              </button>
+                {t("common.apply")}
+              </Button>
 
               {isDraft && (
                 <button
@@ -499,6 +501,7 @@ export default function ApplicationForm({
         onClose={() => setShowDeleteModal(false)}
         title={t("applicationForm.deleteDraft")}
         primaryButtonText={t("common.delete")}
+        primaryButtonLoading={deletingDraft}
         onSubmit={handleDeleteDraft}
       >
         <p>{t("applicationForm.deleteDraftConfirmation")}</p>
