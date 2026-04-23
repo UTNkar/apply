@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
 
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <TextInput
-                        label={t("email")}
+                        label={t("common.email")}
                         name="email"
                         type="email"
                         value={email}
@@ -67,14 +67,15 @@ export default function ForgotPasswordPage() {
 
                     {error && <p className={styles.errorMessage}>{error}</p>}
 
-                    <Button loading={loading} disabled={loading} style={{ margin: "0 auto" }}>
-                        {t("forgotPasswordPage.submit")}
-                    </Button>
+                    <div className={styles.actions}>
+                        <Link href="/login" className={styles.link}>
+                            {t("forgotPasswordPage.backToLogin")}
+                        </Link>
+                        <Button loading={loading} disabled={loading}>
+                            {t("forgotPasswordPage.submit")}
+                        </Button>
+                    </div>
                 </form>
-
-                <Link href="/login" className={styles.link}>
-                    {t("forgotPasswordPage.backToLogin")}
-                </Link>
             </div>
         </div>
     );
