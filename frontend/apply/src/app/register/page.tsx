@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
-import styles from "../login/login.module.css";
+import styles from "../register/login.module.css";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 
@@ -150,21 +150,22 @@ export default function Signup() {
 
           {error && <div className={styles.errorMessage}>{error}</div>}
 
+        </form>
+
+        <div className={styles.links}>
           <button
             className="button activeButton"
-            style={{ margin: "12px auto 0" }}
+            onClick={handleSubmit}
             disabled={loading}
           >
             {loading ? t("creatingAccount") : t("registerAccount")}
           </button>
-        </form>
-
-        <div className={styles.links}>
           <a href="/login" className={styles.link}>
             {t("login")}
           </a>
         </div>
       </div>
+      
     </div>
   );
 }
