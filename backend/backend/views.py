@@ -269,13 +269,14 @@ class ChangePasswordAPIView(APIView):
                 {"message": " ".join(err.messages)},
                 status=400,
             )
+        
+        if old_password == new_password:
+            return Response(
+                {"message": "New password cannot be the same as current password"},
+                status=400,
+            )
 
         if check_password(old_password, user.password):
-            if old_password == new_password:
-                return Response(
-                    {"message": "New password cannot be the same as current password"},
-                    status=400,
-                )
             user.set_password(new_password)
             user.save()
             return Response({"message": "Password changed successfully"}, status=200)
