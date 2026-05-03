@@ -167,5 +167,30 @@
     "submitApplication": "Submit Application",
     "applicationSubmittedSuccess": "Your application has been submitted.",
     "submitApplicationConfirmation": "Are you sure you want to submit this application? Once submitted, you will not be able to edit it anymore."
+  },
+  "registerPage": {
+    "registerTitle": "Register",
+    "username": "Username",
+    "usernamePlaceholder": "Choose a username",
+    "usernameRequired": "Username is required",
+    "email": "Email",
+    "emailPlaceholder": "your.email@example.com",
+    "emailRequired": "Email is required",
+    "password": "Password",
+    "passwordPlaceholder": "Enter a password",
+    "passwordRequired": "Password is required",
+    "passwordConfirmation": "Confirm password",
+    "passwordConfirmationPlaceholder": "Confirm your password",
+    "passwordConfirmationRequired": "Password confirmation is required",
+    "personalIdentityNumber": "Personal identity number",
+    "PersonNumberPlaceholder": "YYYYMMDD-XXXX",
+    "PersonNumberRequired": "Personal identity number is required",
+    "section": "Section",
+    "sectionPlaceholder": "Select your section",
+    "sectionRequired": "Section is required",
+    "phoneNumber": "Phone number",
+    "phoneNumberPlaceholder": "+46 12 345 67 89",
+    "phoneNumberRequired": "Phone number is required",
+    "registerAccount": "Create account"
   }
 }

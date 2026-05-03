@@ -88,7 +88,7 @@ export default function Login() {
         </form>
 
         <div className={styles.links}>
-          <a href="/signup" className={styles.link}>
+          <a href="/register" className={styles.link}>
             {t("loginPage.noAccount")}
           </a>
           <a href="/forgot-password" className={styles.link}>

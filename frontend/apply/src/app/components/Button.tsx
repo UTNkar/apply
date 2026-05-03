@@ -39,7 +39,7 @@ export default function Button({
       ref={button}
       disabled={disabled}
     >
-      {buttonWidth && (
+      {buttonWidth !== 0 && (
         <svg
           className="loading-indicator"
           viewBox={`0 0 ${buttonWidth + borderWidth * 2} ${buttonHeight + borderWidth * 2}`}

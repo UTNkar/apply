@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import styles from "../register/login.module.css";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
+import Button from "@/components/Button";
 
 export default function Signup() {
   const { t } = useTranslation();
-  const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -59,68 +58,68 @@ export default function Signup() {
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
-        <h1 className={styles.title}>{t("registerTitle")}</h1>
+        <h1 className={styles.title}>{t("registerPage.registerTitle")}</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
             required
-            label={t("username")}
+            label={t("registerPage.username")}
             value={username}
             onChange={handleChange}
             name="username"
             type="text"
-            placeholder={t("usernamePlaceholder")}
-            error={error && username === "" ? t("usernameRequired") : ""}
+            placeholder={t("registerPage.usernamePlaceholder")}
+            error={error && username === "" ? t("registerPage.usernameRequired") : ""}
           />
 
           <TextInput
             required
-            label={t("email")}
+            label={t("registerPage.email")}
             value={email}
             onChange={handleChange}
             name="email"
             type="email"
-            placeholder={t("emailPlaceholder")}
-            error={error && email === "" ? t("emailRequired") : ""}
+            placeholder={t("registerPage.emailPlaceholder")}
+            error={error && email === "" ? t("registerPage.emailRequired") : ""}
           />
 
           <TextInput
             required
-            label={t("password")}
+            label={t("registerPage.password")}
             value={password}
             onChange={handleChange}
             name="password"
             type="password"
-            placeholder={t("passwordPlaceholder")}
-            error={error && password === "" ? t("passwordRequired") : ""}
+            placeholder={t("registerPage.passwordPlaceholder")}
+            error={error && password === "" ? t("registerPage.passwordRequired") : ""}
           />
 
           <TextInput
             required
-            label={t("passwordConfirmation")}
+            label={t("registerPage.passwordConfirmation")}
             value={passwordConfirmation}
             onChange={handleChange}
             name="passwordConfirmation"
             type="password"
-            placeholder={t("passwordConfirmationPlaceholder")}
+            placeholder={t("registerPage.passwordConfirmationPlaceholder")}
             error={
               error && passwordConfirmation === ""
-                ? t("passwordConfirmationRequired")
+                ? t("registerPage.passwordConfirmationRequired")
                 : ""
             }
           />
 
           <TextInput
             required
-            label={t("personalIdentityNumber")}
+            label={t("registerPage.personalIdentityNumber")}
             value={personalIdentityNumber}
             onChange={handleChange}
             name="personalIdentityNumber"
             type="text"
-            placeholder={t("PersonNumberPlaceholder")}
+            placeholder={t("registerPage.PersonNumberPlaceholder")}
             error={
               error && personalIdentityNumber === ""
-                ? t("PersonNumberRequired")
+                ? t("registerPage.PersonNumberRequired")
                 : ""
             }
           />
@@ -128,24 +127,24 @@ export default function Signup() {
           {/* Placeholder until dropdown/select */}
           <TextInput
             required
-            label={t("section")}
+            label={t("registerPage.section")}
             value={sectionValue}
             onChange={handleChange}
             name="section"
             type="text"
-            placeholder={t("sectionPlaceholder")}
-            error={error && sectionValue === "" ? t("sectionRequired") : ""}
+            placeholder={t("registerPage.sectionPlaceholder")}
+            error={error && sectionValue === "" ? t("registerPage.sectionRequired") : ""}
           />
 
           <TextInput
             required
-            label={t("phoneNumber")}
+            label={t("registerPage.phoneNumber")}
             value={phoneNumberValue}
             onChange={handleChange}
             name="phoneNumber"
             type="tel"
-            placeholder={t("phoneNumberPlaceholder")}
-            error={error && phoneNumberValue === "" ? t("phoneNumberRequired") : ""}
+            placeholder={t("registerPage.phoneNumberPlaceholder")}
+            error={error && phoneNumberValue === "" ? t("registerPage.phoneNumberRequired") : ""}
           />
 
           {error && <div className={styles.errorMessage}>{error}</div>}
@@ -153,15 +152,16 @@ export default function Signup() {
         </form>
 
         <div className={styles.links}>
-          <button
+          <Button
             className="button activeButton"
             onClick={handleSubmit}
             disabled={loading}
+            loading={loading}
           >
-            {loading ? t("creatingAccount") : t("registerAccount")}
-          </button>
+            {t("registerPage.registerAccount")}
+          </Button>
           <a href="/login" className={styles.link}>
-            {t("login")}
+            {t("navbar.login")}
           </a>
         </div>
       </div>
