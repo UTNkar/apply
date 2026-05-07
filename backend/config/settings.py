@@ -176,4 +176,20 @@ UNFOLD = {
     "SITE_SYMBOL": "diversity_3",  # Material icon
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
+    # Primary palette anchored on UTN blue (#034C97) at the 700 shade.
+    "COLORS": {
+        "primary": {
+            "50": "239 246 255",
+            "100": "219 234 254",
+            "200": "191 219 254",
+            "300": "147 197 253",
+            "400": "96 165 250",
+            "500": "27 111 203",
+            "600": "13 93 180",
+            "700": "3 76 151",
+            "800": "2 58 117",
+            "900": "2 43 87",
+            "950": "1 23 53",
+        },
+    },
 }

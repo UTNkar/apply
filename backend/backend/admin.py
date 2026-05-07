@@ -1,8 +1,14 @@
-from django.contrib import admin
+from datetime import date
+
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.models import Group
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
+from unfold.decorators import action
 
 from .models import (
     Member,
@@ -39,6 +45,9 @@ class MemberAdmin(BaseUserAdmin, ModelAdmin):
     ordering = ("ssn", "email")
     list_filter_submit = True
     filter_horizontal = ("groups", "user_permissions")
+
+    def has_add_permission(self, request):
+        return False
 
     fieldsets = (
         (None, {"fields": ("ssn", "email", "password")}),
@@ -105,6 +114,46 @@ class ApplicationAdmin(ModelAdmin):
         "member__email",
     )
     list_filter_submit = True
+    actions_row = ("appoint_application", "turn_down_application")
+    actions_detail = ("appoint_application", "turn_down_application")
+
+    def has_add_permission(self, request):
+        return False
+
+    @action(
+        description=_("Appoint"),
+        icon="check_circle",
+        permissions=["change"],
+    )
+    def appoint_application(self, request, object_id):
+        application = Application.objects.select_related("position", "member").get(pk=object_id)
+        application.status = Application.APPOINTED
+        application.decision_date = date.today()
+        application.save(update_fields=["status", "decision_date"])
+        Appointment.objects.get_or_create(
+            member=application.member,
+            position=application.position,
+            defaults={
+                "appointed_by": request.user,
+                "appointed_date": date.today(),
+                "status": Appointment.APPOINTED,
+            },
+        )
+        messages.success(request, _("Application appointed."))
+        return redirect(reverse("admin:backend_application_change", args=[object_id]))
+
+    @action(
+        description=_("Turn down"),
+        icon="cancel",
+        permissions=["change"],
+    )
+    def turn_down_application(self, request, object_id):
+        application = Application.objects.get(pk=object_id)
+        application.status = Application.TURNED_DOWN
+        application.decision_date = date.today()
+        application.save(update_fields=["status", "decision_date"])
+        messages.success(request, _("Application turned down."))
+        return redirect(reverse("admin:backend_application_change", args=[object_id]))
 
 
 @admin.register(Appointment)
@@ -115,12 +164,18 @@ class AppointmentAdmin(ModelAdmin):
     list_filter_submit = True
     date_hierarchy = "appointed_date"
 
+    def has_add_permission(self, request):
+        return False
+
 
 @admin.register(Reference)
 class ReferenceAdmin(ModelAdmin):
     list_display = ("name", "application", "email", "phone_num", "title")
     search_fields = ("name", "email", "application__member__name")
     list_filter_submit = True
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(Section)
