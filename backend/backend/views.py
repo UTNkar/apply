@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
 from django.middleware.csrf import get_token
 from .managers import MemberManager
 from rest_framework import status
@@ -215,9 +217,14 @@ class PasswordResetAPIView(APIView):
         token = request.data.get("token")
         new_password = request.data.get("new_password")
 
-        if len(new_password) < 8:
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password)
+        except ValidationError as err:
             return Response(
-                {"message": "New password must be at least 8 characters long"},
+                {"message": " ".join(err.messages)},
                 status=400,
             )
 
@@ -261,9 +268,20 @@ class ChangePasswordAPIView(APIView):
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
-        if len(new_password) < 8:
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as err:
             return Response(
-                {"message": "New password must be at least 8 characters long"},
+                {"message": " ".join(err.messages)},
+                status=400,
+            )
+        
+        if old_password == new_password:
+            return Response(
+                {"message": "New password cannot be the same as current password"},
                 status=400,
             )
 
