@@ -91,20 +91,16 @@ const Navbar = () => {
   return (
     <>
       <div className={styles.navbar}>
-        <a
-          className={styles.logo}
-          href="https://www.utn.se"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <Link className={styles.logo} href="/">
           <Image
             src="/utn_standard_bla.png"
             alt="Logo"
             width={200}
-            height={51.25}
-            style={{ height: "auto" }}
+            height={51}
+            priority
+            style={{ width: "100%", height: "auto" }}
           />
-        </a>
+        </Link>
 
         {mounted && (
           <>

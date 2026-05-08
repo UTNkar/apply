@@ -142,6 +142,13 @@
   },
   "applicationForm": {
     "validationErrorsInReferences": "Det finns fel i referensfälten. Var god åtgärda dessa.",
+    "referenceNameRequired": "Namn krävs",
+    "referencePhoneOrEmailRequired": "Antingen telefonnummer eller e-post krävs",
+    "referenceContactHint": "Minst en kontaktmetod (telefon eller e-post) krävs",
+    "invalidEmail": "Ogiltig e-postadress",
+    "invalidPhone": "Ogiltigt telefonnummer",
+    "fieldRequired": "Det här fältet är obligatoriskt",
+    "gdprRequired": "Du måste godkänna GDPR-policyn för att skicka in ansökan",
     "failedToSubmitApplication": "Det gick inte att skicka ansökan",
     "failedToDeleteApplication": "Det gick inte att radera ansökan",
     "teamLabel": "Grupp",

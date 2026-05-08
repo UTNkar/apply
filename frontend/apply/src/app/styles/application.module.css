@@ -157,6 +157,11 @@
   margin-bottom: 0;
 }
 
+.requiredAsterisk {
+  color: var(--error-500);
+  margin-left: 2px;
+}
+
 .inputError,
 .textareaError {
   border-color: var(--error-500);

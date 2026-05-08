@@ -142,6 +142,13 @@
   },
   "applicationForm": {
     "validationErrorsInReferences": "Please fix the validation errors in the reference fields",
+    "referenceNameRequired": "Name is required",
+    "referencePhoneOrEmailRequired": "Either a phone number or an email is required",
+    "referenceContactHint": "At least one contact method (phone or email) is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number",
+    "fieldRequired": "This field is required",
+    "gdprRequired": "You must accept the GDPR policy to submit",
     "failedToSubmitApplication": "Failed to submit application",
     "failedToDeleteApplication": "Failed to delete application",
     "teamLabel": "Team",
