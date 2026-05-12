@@ -26,8 +26,6 @@ export default function Button({
   secondaryButton = false,
 }: ButtonProps) {
   const button = React.useRef<HTMLButtonElement>(null);
-  if (loading) {
-  }
   const buttonWidth = button.current?.offsetWidth || 0;
   const buttonHeight = button.current?.offsetHeight || 0;
   const cornerRadius = 10;
