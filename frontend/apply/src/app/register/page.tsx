@@ -12,15 +12,13 @@ export default function Signup() {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-
   const [personalIdentityNumber, setPersonalIdentityNumber] = useState("");
-  const [sectionValue, setSectionValue] = useState(""); // placeholder until dropdown/select
+  const [sectionValue, setSectionValue] = useState("");
   const [phoneNumberValue, setPhoneNumberValue] = useState("");
 
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,31 +26,86 @@ export default function Signup() {
 
     if (name === "username") setUsername(value);
     if (name === "email") setEmail(value);
-
     if (name === "password") setPassword(value);
     if (name === "passwordConfirmation") setPasswordConfirmation(value);
-
     if (name === "personalIdentityNumber") setPersonalIdentityNumber(value);
     if (name === "section") setSectionValue(value);
     if (name === "phoneNumber") setPhoneNumberValue(value);
+
+    // Clear field error on change
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // you said ignore handleSubmit logic for now
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  const validate = (): Record<string, string> => {
+    const newErrors: Record<string, string> = {};
 
-    // minimal client-side check
-    if (password !== passwordConfirmation) {
-      setError(t("passwordsDoNotMatch"));
-      setLoading(false);
+    if (!username.trim()) {
+      newErrors.username = t("registerPage.usernameRequired");
+    } else if (username.trim().length < 3) {
+      newErrors.username = t("registerPage.usernameTooShort"); // "Username must be at least 3 characters"
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim()) {
+      newErrors.email = t("registerPage.emailRequired");
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = t("registerPage.emailInvalid"); // "Please enter a valid email address"
+    }
+
+    if (!password) {
+      newErrors.password = t("registerPage.passwordRequired");
+    } else if (password.length < 8) {
+      newErrors.password = t("registerPage.passwordTooShort"); // "Password must be at least 8 characters"
+    } else if (!/[A-Z]/.test(password)) {
+      newErrors.password = t("registerPage.passwordNeedsUppercase"); // "Password must contain at least one uppercase letter"
+    } else if (!/[0-9]/.test(password)) {
+      newErrors.password = t("registerPage.passwordNeedsNumber"); // "Password must contain at least one number"
+    }
+
+    if (!passwordConfirmation) {
+      newErrors.passwordConfirmation = t("registerPage.passwordConfirmationRequired");
+    } else if (password !== passwordConfirmation) {
+      newErrors.passwordConfirmation = t("passwordsDoNotMatch"); // "Passwords do not match"
+    }
+
+    // Swedish personal identity number: YYYYMMDD-XXXX or YYYYMMDDXXXX
+    const pinRegex = /^\d{8}[-]?\d{4}$/;
+    if (!personalIdentityNumber.trim()) {
+      newErrors.personalIdentityNumber = t("registerPage.PersonNumberRequired");
+    } else if (!pinRegex.test(personalIdentityNumber.trim())) {
+      newErrors.personalIdentityNumber = t("registerPage.PersonNumberInvalid"); // "Enter a valid personal identity number (YYYYMMDD-XXXX)"
+    }
+
+    // Section
+    if (!sectionValue.trim()) {
+      newErrors.section = t("registerPage.sectionRequired");
+    }
+
+    // Phone number: allows +, spaces, dashes, digits; min 7 digits
+    const phoneRegex = /^[+\d][\d\s\-()]{6,}$/;
+    if (!phoneNumberValue.trim()) {
+      newErrors.phoneNumber = t("registerPage.phoneNumberRequired");
+    } else if (!phoneRegex.test(phoneNumberValue.trim())) {
+      newErrors.phoneNumber = t("registerPage.phoneNumberInvalid"); // "Enter a valid phone number"
+    }
+
+    return newErrors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
+    e.preventDefault();
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    // TODO: connect real register API later
+    setErrors({});
+    setLoading(true);
+
+    // TODO: Register API
     setLoading(false);
-    // router.push("/account"); // example
   };
 
   return (
@@ -69,7 +122,7 @@ export default function Signup() {
             name="username"
             type="text"
             placeholder={t("registerPage.usernamePlaceholder")}
-            error={error && username === "" ? t("registerPage.usernameRequired") : ""}
+            error={errors.username}
           />
 
           <TextInput
@@ -80,7 +133,7 @@ export default function Signup() {
             name="email"
             type="email"
             placeholder={t("registerPage.emailPlaceholder")}
-            error={error && email === "" ? t("registerPage.emailRequired") : ""}
+            error={errors.email}
           />
 
           <TextInput
@@ -91,7 +144,7 @@ export default function Signup() {
             name="password"
             type="password"
             placeholder={t("registerPage.passwordPlaceholder")}
-            error={error && password === "" ? t("registerPage.passwordRequired") : ""}
+            error={errors.password}
           />
 
           <TextInput
@@ -102,11 +155,7 @@ export default function Signup() {
             name="passwordConfirmation"
             type="password"
             placeholder={t("registerPage.passwordConfirmationPlaceholder")}
-            error={
-              error && passwordConfirmation === ""
-                ? t("registerPage.passwordConfirmationRequired")
-                : ""
-            }
+            error={errors.passwordConfirmation}
           />
 
           <TextInput
@@ -117,14 +166,9 @@ export default function Signup() {
             name="personalIdentityNumber"
             type="text"
             placeholder={t("registerPage.PersonNumberPlaceholder")}
-            error={
-              error && personalIdentityNumber === ""
-                ? t("registerPage.PersonNumberRequired")
-                : ""
-            }
+            error={errors.personalIdentityNumber}
           />
 
-          {/* Placeholder until dropdown/select */}
           <TextInput
             required
             label={t("registerPage.section")}
@@ -133,7 +177,7 @@ export default function Signup() {
             name="section"
             type="text"
             placeholder={t("registerPage.sectionPlaceholder")}
-            error={error && sectionValue === "" ? t("registerPage.sectionRequired") : ""}
+            error={errors.section}
           />
 
           <TextInput
@@ -144,11 +188,8 @@ export default function Signup() {
             name="phoneNumber"
             type="tel"
             placeholder={t("registerPage.phoneNumberPlaceholder")}
-            error={error && phoneNumberValue === "" ? t("registerPage.phoneNumberRequired") : ""}
+            error={errors.phoneNumber}
           />
-
-          {error && <div className={styles.errorMessage}>{error}</div>}
-
         </form>
 
         <div className={styles.links}>
@@ -165,7 +206,6 @@ export default function Signup() {
           </a>
         </div>
       </div>
-      
     </div>
   );
 }
