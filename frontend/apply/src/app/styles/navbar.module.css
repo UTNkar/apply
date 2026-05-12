@@ -7,7 +7,6 @@
     padding: 0px 50px;
     justify-content: space-between;
     position: relative;
-    z-index: 100;
 }
 
 .logo {
@@ -78,6 +77,8 @@
     cursor: pointer;
     padding: 8px;
     gap: 4px;
+    position: relative;
+    z-index: 102;
 }
 
 .hamburgerIcon {
@@ -148,7 +149,7 @@
     width: 70%;
     height: 100vh;
     background-color: white;
-    z-index: 99;
+    z-index: 101;
     /* delay visibility until slide-out finishes so focus can't reach hidden links */
     visibility: hidden;
     transition: right 0.3s ease, visibility 0s linear 0.3s;

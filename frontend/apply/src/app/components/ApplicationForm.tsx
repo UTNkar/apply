@@ -456,11 +456,11 @@ export default function ApplicationForm({
               <span className={styles.requiredAsterisk}>*</span>{" "}
               {t("applicationForm.gdprConsentText")}{" "}
               <a
-                href="https://utn.se/dokumentarkiv"
+                href={t("applicationForm.gdprPolicyUrl")}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                https://utn.se/dokumentarkiv
+                {t("applicationForm.gdprPolicyLinkText")}
               </a>
             </span>
           </div>
