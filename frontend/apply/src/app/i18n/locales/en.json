@@ -121,9 +121,9 @@
   "phoneNumberPlaceholder": "Enter your phone number",
   "phoneNumberRequired": "Phone number is required",
   "phoneNumberInvalid": "Enter a valid phone number",
-  "registerAccount": "Create account"
+  "registerAccount": "Create account",
+  "passwordsDoNotMatch": "Passwords do not match"
 },
-"passwordsDoNotMatch": "Passwords do not match",
   "applyPage": {
     "failedToLoadPosition": "Failed to load position",
     "failedToLoadApplication": "Failed to load application",

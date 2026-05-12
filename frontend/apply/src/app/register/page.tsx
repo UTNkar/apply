@@ -65,7 +65,7 @@ export default function Signup() {
     if (!passwordConfirmation) {
       newErrors.passwordConfirmation = t("registerPage.passwordConfirmationRequired");
     } else if (password !== passwordConfirmation) {
-      newErrors.passwordConfirmation = t("passwordsDoNotMatch"); // "Passwords do not match"
+      newErrors.passwordConfirmation = t("registerPage.passwordsDoNotMatch"); // "Passwords do not match"
     }
 
     // Swedish personal identity number: YYYYMMDD-XXXX or YYYYMMDDXXXX

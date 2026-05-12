@@ -200,8 +200,9 @@
     "phoneNumberPlaceholder": "+46 12 345 67 89",
     "phoneNumberRequired": "Telefonnummer krävs",
     "phoneNumberInvalid": "Ange ett giltigt telefonnummer",
-    "registerAccount": "Skapa konto"
-  },
-  "passwordsDoNotMatch": "Lösenorden stämmer inte överens"
+    "registerAccount": "Skapa konto",
+    "passwordsDoNotMatch": "Lösenorden stämmer inte överens"
+
+  }
 
 }
