@@ -4,7 +4,10 @@ from datetime import date
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core import validators
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
 from .managers import MemberManager, PositionManager
 from .utils.validators import SSNValidator
@@ -202,6 +205,30 @@ class Member(AbstractBaseUser, PermissionsMixin):
             return user
 
         return None
+
+    def get_appointer_team_ids(self, reference_date=None):
+        """Return team IDs where the member is currently an appointer."""
+        if not self.pk:
+            return []
+
+        reference_date = reference_date or timezone.now().date()
+        role_types = Role.appointer_role_types()
+
+        return list(
+            Team.objects.filter(
+                role__positions__appointments__member=self,
+                role__positions__appointments__status=Appointment.APPOINTED,
+                role__positions__term_from__lte=reference_date,
+                role__positions__term_end__gte=reference_date,
+                role__role_type__in=role_types,
+            )
+            .values_list("id", flat=True)
+            .distinct()
+        )
+
+    def is_appointer(self, reference_date=None):
+        """Return True if the member is currently an appointer."""
+        return bool(self.get_appointer_team_ids(reference_date=reference_date))
 
 
 class Position(models.Model):
@@ -669,6 +696,17 @@ class Role(models.Model):
         # Return the corresponding level or 6 if the role_type is not in the dictionary
         return role_levels.get(role_type, 6)
 
+    @staticmethod
+    def appointer_role_types():
+        """Role types that qualify a member as an appointer."""
+        return [
+            Role.ADMIN,
+            Role.FUM,
+            Role.BOARD,
+            Role.PRESIDIUM,
+            Role.GROUP_LEADER,
+        ]
+
     archived = models.BooleanField(
         verbose_name=_("Archived"),
         help_text=_("Hide the role from menus"),
@@ -734,3 +772,26 @@ class Role(models.Model):
 
     def __str__(self):
         return f"{self.title_en} ({self.team})"
+
+
+def _sync_staff_status(member, reference_date=None):
+    if not member:
+        return
+
+    # Users appointed to roles above "Involved" level should be staff
+    should_be_staff = member.is_superuser or member.is_appointer(
+        reference_date=reference_date
+    )
+    if member.is_staff != should_be_staff:
+        member.is_staff = should_be_staff
+        member.save(update_fields=["is_staff"])
+
+
+@receiver(post_save, sender=Appointment)
+def _sync_staff_on_appointment_save(sender, instance, **kwargs):
+    _sync_staff_status(instance.member)
+
+
+@receiver(post_delete, sender=Appointment)
+def _sync_staff_on_appointment_delete(sender, instance, **kwargs):
+    _sync_staff_status(instance.member)
