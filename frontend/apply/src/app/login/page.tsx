@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
+import Button from "@/components/Button";
 import styles from "./login.module.css";
 import { logIn } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
@@ -73,18 +74,21 @@ export default function Login() {
             name="password"
             type="password"
             placeholder={t("loginPage.passwordPlaceholder")}
-            error={error && password === "" ? t("loginPage.passwordRequired") : ""}
+            error={
+              error && password === "" ? t("loginPage.passwordRequired") : ""
+            }
           />
 
           {error && <div className={styles.errorMessage}>{error}</div>}
 
-          <button
-            className="button activeButton"
-            style={{ margin: "12px auto 0" }}
+          <Button
+            style={{ margin: "16px auto 0" }}
             disabled={loading}
+            loading={loading}
+            type={"submit"}
           >
-            {loading ? t("loginPage.signingIn") : t("loginPage.signIn")}
-          </button>
+            {t("loginPage.signIn")}
+          </Button>
         </form>
 
         <div className={styles.links}>

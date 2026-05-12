@@ -7,6 +7,7 @@ import "@/i18n/config";
 import { formatDate } from "@/utils/dateFormat";
 import Image from "next/image";
 import { getImageUrl } from "@/utils/imageUrl";
+import Link from "next/link";
 
 type Props = {
   position: Position;
@@ -42,7 +43,7 @@ const OpenPositionCard = ({ position }: Props) => {
           <h4>
             {t("openPositionCard.deadline")}: {formatDate(position.recruitment_end)}
           </h4>
-          <a
+          <Link
             className="smallButton"
             onClick={(e) => e.stopPropagation()}
             href={`/apply/${position.id}`}
@@ -52,7 +53,7 @@ const OpenPositionCard = ({ position }: Props) => {
               : position.user_app_status === "In draft"
                 ? t("openPositionCard.openDraft")
                 : t("common.apply")}
-          </a>
+          </Link>
         </div>
       </div>
 
