@@ -1,6 +1,8 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
 from django.middleware.csrf import get_token
 from .managers import MemberManager
 from rest_framework import status
@@ -158,25 +160,34 @@ class InitiatePasswordResetViewAPIView(APIView):
     -------
         Responds with HTTP 200
             When password reset email is sent successfully.
-        Responds with HTTP 400
+        Responds with HTTP 200
             When provided data is invalid or user does not exist.
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
+
         email = request.data.get("email")
         try:
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
+            # We should return the same message and status so not to leak information about wether an account exists or not
             return Response(
-                {"message": "An error occurred while sending the password reset email"},
-                status=400,
+                {
+                    "message": "If an account with that email exists, a password reset email has been sent"
+                },
+                status=200,
             )
 
         send_password_reset_email(user)
 
-        return Response({"message": "Password reset email sent"}, status=200)
+        return Response(
+            {
+                "message": "If an account with that email exists, a password reset email has been sent"
+            },
+            status=200,
+        )
 
 
 class PasswordResetAPIView(APIView):
@@ -206,9 +217,14 @@ class PasswordResetAPIView(APIView):
         token = request.data.get("token")
         new_password = request.data.get("new_password")
 
-        if len(new_password) < 8:
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password)
+        except ValidationError as err:
             return Response(
-                {"message": "New password must be at least 8 characters long"},
+                {"message": " ".join(err.messages)},
                 status=400,
             )
 
@@ -252,9 +268,20 @@ class ChangePasswordAPIView(APIView):
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
-        if len(new_password) < 8:
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as err:
             return Response(
-                {"message": "New password must be at least 8 characters long"},
+                {"message": " ".join(err.messages)},
+                status=400,
+            )
+        
+        if old_password == new_password:
+            return Response(
+                {"message": "New password cannot be the same as current password"},
                 status=400,
             )
 

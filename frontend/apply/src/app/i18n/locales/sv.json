@@ -93,7 +93,9 @@
     "failedToLoadPosition": "Det gick inte att hämta posten",
     "failedToLoadApplication": "Det gick inte att hämta ansökan",
     "positionNotFound": "Posten hittades inte",
-    "applicationNotFound": "Ansökan hittades inte"
+    "applicationNotFound": "Ansökan hittades inte",
+    "loginRequiredMessage": "Logga in för att ansöka om posten",
+    "goToLogin": "Gå till inloggning"
   },
   "accountPage": {
     "accountTitle": "Konto",
@@ -125,7 +127,10 @@
     "newPassword": "Nytt lösenord",
     "confirmNewPassword": "Bekräfta nytt lösenord",
     "passwordsDoNotMatch": "De nya lösenorden matchar inte",
-    "passwordTooShort": "Lösenordet måste vara minst 8 tecken",
+    "passwordCannotBeSame": "Nytt lösenord kan inte vara detsamma som det nuvarande lösenordet",
+    "passwordTooShort": "Lösenordet måste vara minst 10 tecken",
+    "passwordMustContainNumber": "Lösenordet måste innehålla minst en siffra",
+    "passwordMustContainSpecialCharacter": "Lösenordet måste innehålla minst ett specialtecken",
     "passwordChanged": "Lösenordet har ändrats! Du kommer nu att loggas ut.",
     "passwordChangeError": "Det gick inte att byta lösenord. Kontrollera ditt nuvarande lösenord.",
     "deleteAccount": "Radera konto",
@@ -144,6 +149,9 @@
     "failedToDeleteApplication": "Det gick inte att radera ansökan",
     "teamLabel": "Grupp",
     "applicationDeadline": "Sista ansökningsdag",
+    "applicationDeadlineInDays_one": "om {{count}} dag",
+    "applicationDeadlineInDays_other": "om {{count}} dagar",
+    "deadlineToday": "idag",
     "viewRoleDescription": "Visa hela postbeskrivningen",
     "contactEmail": "Kontakt e-post",
     "coverLetterTitle": "Personligt brev",
@@ -203,6 +211,26 @@
     "registerAccount": "Skapa konto",
     "passwordsDoNotMatch": "Lösenorden stämmer inte överens"
 
+  "forgotPasswordPage": {
+    "title": "Glömt lösenord",
+    "description": "Skriv din mejl så skickar vi en återställningslänk.",
+    "submit": "Skicka återställningslänk",
+    "link": "Glömt lösenord?",
+    "checkEmail": "Kolla din mejl",
+    "emailSent": "Om ett konto finns för denna mejl så har en återställningslänk skickats.",
+    "backToLogin": "Tillbaka till logga in",
+    "error": "Något gick fel, var snäll prova igen."
+  },
+  "resetPasswordPage": {
+    "title": "Ange nytt lösenord",
+    "newPassword": "Nytt lösenord",
+    "confirmPassword": "Bekräfta lösenord",
+    "submit": "Återställ lösenord",
+    "passwordMismatch": "Lösenord överensstämmer inte.",
+    "invalidOrExpired": "Denna länk är ogiltig eller har utgått.",
+    "invalidLink": "Ogiltig återställningslänk.",
+    "requestNewLink": "Begär en ny länk",
+    "error": "Något gick fel, var snäll prova igen."
   }
 
 }
