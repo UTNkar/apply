@@ -1,16 +1,20 @@
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError
 from django.middleware.csrf import get_token
+from .managers import MemberManager
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .email import send_password_reset_email, send_verification_email
-from .models import Application, Position
+from .models import Application, Position, Member, Section, StudyProgram
+from .send_email import send_password_reset_email, send_verification_email
 from .permissions import CanCreatePosition
 from .serializers import (
     ApplicationSerializer,
@@ -18,7 +22,9 @@ from .serializers import (
     ListApplicationSerializer,
     MemberSerializer,
     PositionSerializer,
+    SectionWithProgramsSerializer,
 )
+from .utils.unicore import unicoremember
 
 # Create your views here.
 
@@ -56,7 +62,11 @@ class LoginAPIView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
-        user = authenticate(request, username=email, password=password)
+        member = Member.find_user_by_email(email)
+        if member is None:
+            return Response({"message": "Invalid credentials"}, status=401)
+
+        user = authenticate(request, username=member.ssn, password=password)
 
         if user is not None:
             if user.is_active and user.verified_email:
@@ -150,25 +160,34 @@ class InitiatePasswordResetViewAPIView(APIView):
     -------
         Responds with HTTP 200
             When password reset email is sent successfully.
-        Responds with HTTP 400
+        Responds with HTTP 200
             When provided data is invalid or user does not exist.
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request):
+
         email = request.data.get("email")
         try:
             user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
+            # We should return the same message and status so not to leak information about wether an account exists or not
             return Response(
-                {"message": "An error occurred while sending the password reset email"},
-                status=400,
+                {
+                    "message": "If an account with that email exists, a password reset email has been sent"
+                },
+                status=200,
             )
 
         send_password_reset_email(user)
 
-        return Response({"message": "Password reset email sent"}, status=200)
+        return Response(
+            {
+                "message": "If an account with that email exists, a password reset email has been sent"
+            },
+            status=200,
+        )
 
 
 class PasswordResetAPIView(APIView):
@@ -197,6 +216,17 @@ class PasswordResetAPIView(APIView):
         user_id = request.data.get("id")
         token = request.data.get("token")
         new_password = request.data.get("new_password")
+
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password)
+        except ValidationError as err:
+            return Response(
+                {"message": " ".join(err.messages)},
+                status=400,
+            )
 
         try:
             user = get_user_model().objects.get(pk=user_id)
@@ -238,14 +268,29 @@ class ChangePasswordAPIView(APIView):
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
 
+        if not new_password:
+            return Response({"message": "New password is required"}, status=400)
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as err:
+            return Response(
+                {"message": " ".join(err.messages)},
+                status=400,
+            )
+        
+        if old_password == new_password:
+            return Response(
+                {"message": "New password cannot be the same as current password"},
+                status=400,
+            )
+
         if check_password(old_password, user.password):
             user.set_password(new_password)
             user.save()
             return Response({"message": "Password changed successfully"}, status=200)
-
-        return Response(
-            {"message": "An error occurred while changing the password"}, status=400
-        )
+        else:
+            return Response({"message": "Current password is incorrect"}, status=400)
 
 
 class EmailVerificationAPIView(APIView):
@@ -369,6 +414,7 @@ class ChangeEmailAPIView(APIView):
 
 #### END OF AUTHENTICATION VIEWS ####
 
+
 # TODO: Should be removed if we're considering django-admin for admin functionalities
 class CreatePositionAPIView(APIView):
     """
@@ -461,6 +507,22 @@ class ApplicationViewSet(ModelViewSet):
             {"message": "Application deleted successfully"}, status=status.HTTP_200_OK
         )
 
+    def by_position(self, request, position_id=None):
+        """Get the application for the logged-in user for a given position"""
+        try:
+            application = Application.objects.select_related(
+                "member", "position", "position__role"
+            ).get(position_id=position_id, member=request.user)
+            serializer = ListApplicationSerializer(
+                application, context={"request": request}
+            )
+            return Response(serializer.data)
+        except Application.DoesNotExist:
+            return Response(
+                {"detail": "Application not found for this position."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
 
 class PositionViewSet(ReadOnlyModelViewSet):
     queryset = Position.objects.all()
@@ -468,14 +530,15 @@ class PositionViewSet(ReadOnlyModelViewSet):
 
     def list(self, request):
         """Return both open positions and user's positions"""
+        if request.user.is_authenticated:
+            my_positions = Position.objects.for_member(request.user).select_related(
+                "role", "role__team"
+            )
+        else:
+            my_positions = Position.objects.none()
 
-        my_positions = Position.objects.for_member(request.user).select_related(
+        open_positions = Position.objects.open_positions().select_related(
             "role", "role__team"
-        )
-        open_positions = (
-            Position.objects.open_positions()
-            .exclude(id__in=my_positions)
-            .select_related("role", "role__team")
         )
 
         return Response(
@@ -484,3 +547,157 @@ class PositionViewSet(ReadOnlyModelViewSet):
                 "my_positions": self.get_serializer(my_positions, many=True).data,
             }
         )
+
+
+class OpenPositionsAPIView(APIView):
+    """
+    OpenPositionsAPIView handles retrieving all open positions.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all open positions.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When open positions are retrieved successfully.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        open_positions = Position.objects.open_positions().select_related(
+            "role", "role__team"
+        )
+        serializer = PositionSerializer(
+            open_positions, many=True, context={"request": request}
+        )
+        return Response(serializer.data, status=200)
+
+
+class MyAccountAPIView(APIView):
+    """
+    MyAccount handles retrieving the authenticated user's account information.
+
+    Methods
+    -------
+        get(request)
+            Retrieve the authenticated user's account information.
+
+        post(request)
+            Update the authenticated user's account information.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When account information is retrieved successfully.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = MemberSerializer(request.user)
+        return Response(serializer.data, status=200)
+
+    def post(self, request):
+        user = request.user
+
+        # Handle study_program update if 'program' is provided in request
+        if "program" in request.data:
+            program_id = request.data.pop("program")
+            try:
+                program = StudyProgram.objects.get(id=program_id)
+                user.study_program = program
+                user.save()
+            except StudyProgram.DoesNotExist:
+                return Response({"program": ["Invalid study program ID"]}, status=400)
+
+        serializer = MemberSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Account updated successfully", "user": serializer.data},
+                status=200,
+            )
+
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request):
+        user = request.user
+        password = request.data.get("password")
+
+        if not password:
+            return Response({"message": "Password is required"}, status=400)
+
+        if not check_password(password, user.password):
+            return Response({"message": "Current password is incorrect"}, status=400)
+
+        user.delete()
+        logout(request)
+
+        return Response({"message": "Account deleted successfully"}, status=200)
+
+
+class UnicoreDataAPIView(APIView):
+    def get(self, request):
+        """
+        Get membership status of the logged in user from unicore
+        """
+        req_user = request.user
+        unicore = unicoremember()
+        try:
+            join_date = unicore.get_member_since(req_user.ssn)
+        except Exception as e:
+            return Response({"message": str(e)}, status=500)
+
+        if join_date is False:
+            join_date = "Not a member"
+        elif join_date is True:
+            join_date = "Member"
+        else:
+            # Format date to YYYY-MM-DD
+            join_date = join_date.split("T")[0]
+        return Response(join_date, status=200)
+
+    def post(self, request):
+        """
+        Updates the logged in user's data from unicore
+        """
+        req_user = request.user
+        user = Member.objects.get(ssn=req_user.ssn)
+        unicore = unicoremember()
+        data = unicore.get_user_data(user.ssn)
+
+        if data is not None:
+            user.name = "{} {}".format(
+                data["firstname"].strip(), data["lastname"].strip()
+            )
+            user.save()
+
+        serializer = MemberSerializer(user)
+        return Response(serializer.data, status=200)
+
+
+class SectionsAPIView(APIView):
+    """
+    SectionsAPIView returns all sections with their associated study programs.
+
+    Methods
+    -------
+        get(request)
+            Retrieve all sections with nested study programs.
+
+    Returns
+    -------
+        Responds with HTTP 200
+            When sections are retrieved successfully.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        sections = Section.objects.prefetch_related("study_programs").all()
+        serializer = SectionWithProgramsSerializer(sections, many=True)
+        return Response(serializer.data, status=200)

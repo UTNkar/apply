@@ -38,8 +38,7 @@ def send_password_reset_email(user):
     token = default_token_generator.make_token(user)
 
     subject = "Reset your password"
-    message = f"Sign in with the secure link: http://localhost:3000/auth/reset?id={user.id}&token={token}"
-
+    message = f"Click to reset your password: http://localhost:3000/reset-password?id={user.id}&token={token}"
     send_mail(
         subject,
         message,

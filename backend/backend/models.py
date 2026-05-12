@@ -22,7 +22,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         is_staff (BooleanField): Indicates if the member can log into the admin site.
         name (CharField): The name of the member.
         ssn (CharField): The social security number of the member.
-        study (ForeignKey): A reference to the member's study program.
+        study_program (ForeignKey): A reference to the member's study program.
         registration_year (CharField): The year the member started studying at the TekNat faculty.
         status (CharField): The membership status of the member, with choices including 'unknown', 'nonmember', 'member', and 'alumnus'.
     """
@@ -41,7 +41,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = "ssn"
     EMAIL_FIELD = "email"
-    REQUIRED_FIELDS = ["email", "name", "phone_number"]
+    REQUIRED_FIELDS = ["email", "name", "phone_number"]  # TODO: add more fields, maybe
 
     objects = MemberManager()
 
@@ -64,7 +64,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         max_length=255,
         verbose_name=_("Email"),
-        help_text=_("Enter an email address that you want to connect to this account."),
+        help_text=_(
+            "Enter an email address that you want to connect to this account."
+        ),
     )
 
     verified_email = models.BooleanField(default=False)
@@ -72,17 +74,18 @@ class Member(AbstractBaseUser, PermissionsMixin):
     phone_number = models.CharField(
         max_length=20,
         verbose_name=_("Phone number"),
-        help_text=_("Enter a phone number that you want to connect to this account."),
+        help_text=_(
+            "Enter a phone number that you want to connect to this account."),
     )
 
     is_superuser = models.BooleanField(
-        help_text=("Designates whether the user is a superuser")
-    )
+        help_text=("Designates whether the user is a superuser"))
 
     is_staff = models.BooleanField(
         _("Staff status"),
         default=False,
-        help_text=_("Designates whether the user can log into the admin site."),
+        help_text=_(
+            "Designates whether the user can log into the admin site."),
     )
 
     # Required by AbstractBaseUser
@@ -91,8 +94,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
         default=True,
         help_text=_(
             "Designates whether this user should be treated as active. "
-            "Unselect this instead of deleting accounts."
-        ),
+            "Unselect this instead of deleting accounts."),
     )
 
     name = models.CharField(
@@ -117,11 +119,11 @@ class Member(AbstractBaseUser, PermissionsMixin):
     registration_year = models.CharField(
         max_length=4,
         verbose_name=_("Registration year"),
-        help_text=_("Enter the year you started studying at the TekNat " "faculty"),
+        help_text=_("Enter the year you started studying at the TekNat "
+                    "faculty"),
         validators=[
-            validators.RegexValidator(
-                regex=r"^20\d{2}$", message=_("Please enter a valid year")
-            )
+            validators.RegexValidator(regex=r"^20\d{2}$",
+                                      message=_("Please enter a valid year"))
         ],
         blank=True,
     )
@@ -167,7 +169,7 @@ class Member(AbstractBaseUser, PermissionsMixin):
     @staticmethod
     def find_user_by_ssn(ssn):
         """
-        Checks if a user exists in our db
+        Find a user from our db by ssn
         """
         ssn = ssn.strip()
 
@@ -186,6 +188,20 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.name} ({self.ssn})"
+      
+
+    @staticmethod
+    def find_user_by_email(email):
+        """
+        Find a user from our db by email
+        """
+        email = email.strip().lower()
+
+        user = Member.objects.filter(email__iexact=email).first()
+        if user is not None:
+            return user
+
+        return None
 
 
 class Position(models.Model):
@@ -227,8 +243,10 @@ class Position(models.Model):
 
     term_from = models.DateField(verbose_name=("Date of appointment"))
     term_end = models.DateField(verbose_name=("End date of the appointment"))
-    comment_eng = models.TextField(verbose_name=("Comment in English"), blank=True)
-    comment_sv = models.TextField(verbose_name=("Comment in Swedish"), blank=True)
+    comment_eng = models.TextField(verbose_name=("Comment in English"),
+                                   blank=True)
+    comment_sv = models.TextField(verbose_name=("Comment in Swedish"),
+                                  blank=True)
 
     def __str__(self):
         return f"{self.role} ({self.term_from} - {self.term_end})"
@@ -251,8 +269,10 @@ class Appointment(models.Model):
 
     member = models.ForeignKey(
         "Member",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="appointments",
+        null=True,
+        blank=True,
         verbose_name=_("Member"),
     )
 
@@ -340,7 +360,9 @@ class Reference(models.Model):
         blank=False,
     )
 
-    name = models.CharField(max_length=255, verbose_name=_("Name"), blank=False)
+    name = models.CharField(max_length=255,
+                            verbose_name=_("Name"),
+                            blank=False)
 
     phone_num = models.CharField(
         max_length=20,
@@ -468,7 +490,7 @@ class Team(models.Model):
         verbose_name=_("Logo"),
         help_text=_("Upload a logo for the team"),
         blank=True,
-        upload_to="../media/",
+        upload_to="team_logos/",
     )
 
     desc_en = models.TextField(
@@ -551,10 +573,8 @@ class Application(models.Model):
     # ---- Application Information ------
     cover_letter = models.TextField(
         verbose_name=_("Cover Letter"),
-        help_text=_(
-            """Present yourself and state why you are
-         who we are looking for"""
-        ),
+        help_text=_("""Present yourself and state why you are
+         who we are looking for"""),
     )
     qualifications = models.TextField(
         verbose_name=_("Qualifications"),
@@ -563,18 +583,16 @@ class Application(models.Model):
     gdpr = models.BooleanField(
         default=False,
         verbose_name=("GDPR"),
-        help_text=_(
-            """
+        help_text=_("""
             I accept that my data is saved in accordance
             with Uppsala Union of Engineering and Science Students integrity
             policy that can be found within the link:
-        """
-        ),
+        """),
     )
 
-    decision_date = models.DateField(
-        verbose_name=_("Decision date"), null=True, blank=True
-    )
+    decision_date = models.DateField(verbose_name=_("Decision date"),
+                                     null=True,
+                                     blank=True)
 
     def __str__(self):
         return f"{self.member.name} - {self.position} ({self.status})"
@@ -681,6 +699,13 @@ class Role(models.Model):
         verbose_name=_("Swedish role description"),
         help_text=_("Enter a description of the role"),
         blank=False,
+    )
+
+    role_description_url = models.URLField(
+        verbose_name=_("Role description URL"),
+        help_text=_("Optional URL to a full role description"),
+        blank=True,
+        default="",
     )
 
     contact_email = models.EmailField(
