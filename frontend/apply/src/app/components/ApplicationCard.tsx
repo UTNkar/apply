@@ -1,44 +1,72 @@
-/*
-Todo:
-- Navigate to application page when button is clicked, with the id of the application
-- Add logo from model
-*/
-
-import styles from '@/styles/applicationcard.module.css'
-
-type ApplicationType = {
-  title: string
-  status: string
-  termStart: string
-  termEnd: string
-  applicationId: string
-}
+"use client";
+import styles from "@/styles/card.module.css";
+import positionCardStyles from "@/styles/positioncard.module.css";
+import { useTranslation } from "react-i18next";
+import "@/i18n/config";
+import { formatDateRange } from "@/utils/dateFormat";
+import { Application } from "@/utils/types";
+import { getImageUrl } from "@/utils/imageUrl";
+import Image from "next/image";
 
 type Props = {
-  application: ApplicationType
-}
+  application: Application;
+};
 
 const ApplicationCard = ({ application }: Props) => {
+  const { t } = useTranslation();
+  const dateRange = formatDateRange(
+    application.position_details.term_from,
+    application.position_details.term_end,
+  );
+
+  const status = t(
+    {
+      draft: "applicationStatus.draft",
+      submitted: "applicationStatus.submitted",
+      approved: "applicationStatus.approved",
+      disapproved: "applicationStatus.disapproved",
+      appointed: "applicationStatus.appointed",
+      turned_down: "applicationStatus.turnedDown",
+    }[application.status] || application.status,
+  );
+
   return (
-    <div className={styles.card}>
+    <div className={`${styles.cardPadded} ${positionCardStyles.card}`}>
+      {application.position_details.role.team_logo && (
+        <Image
+          src={getImageUrl(application.position_details.role.team_logo)}
+          alt={t("common.teamLogoAlt")}
+          height={80}
+          width={80}
+          className={styles.logoFloat}
+        />
+      )}
+
       <div className={styles.cardHeading}>
-        <h3>{application.title}</h3>
+        <h3>{application.position_details.role.title}</h3>
       </div>
 
       <div className={styles.cardText}>
-        <p>Status: {application.status}</p>
+        <p>
+          {t("common.status")}: {status}
+        </p>
 
         <p>
-          Term of office: <br />
-          {application.termStart} - {application.termEnd}
+          {t("common.termOfOffice")}: <br />
+          {dateRange}
         </p>
       </div>
 
       <div className={styles.cardButton}>
-        <button className={'smallButton'}>View Application</button>
+        <a
+          className={"smallButton"}
+          href={`/apply/${application.position_details.id}`}
+        >
+          {t("common.viewApplication")}
+        </a>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ApplicationCard
+export default ApplicationCard;

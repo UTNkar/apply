@@ -31,7 +31,7 @@ if DEBUG:
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    ALLOWED_HOSTS = ["localhost"]
+    ALLOWED_HOSTS = ["localhost", "backend"]
 
 
 AUTH_USER_MODEL = "backend.Member"
@@ -133,6 +133,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
+    },
+    {
+        "NAME": "backend.utils.validators.NumberValidator",
+    },
+    {
+        "NAME": "backend.utils.validators.SpecialCharacterValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -145,13 +152,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
 
@@ -164,10 +167,6 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-MEDIA_ROOT = "../media"
-
 
 # Django Unfold Admin Configuration
 UNFOLD = {
@@ -193,3 +192,12 @@ UNFOLD = {
         },
     },
 }
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+# Unicore API Configuration
+UNICORE_URL = os.getenv("UNICORE_URL")
+UNICORE_USER = os.getenv("UNICORE_USER")
+UNICORE_PASSWORD = os.getenv("UNICORE_PASSWORD")
+UNICORE_ORG_ID = os.getenv("UNICORE_ORG_ID")

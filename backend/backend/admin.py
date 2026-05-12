@@ -325,19 +325,32 @@ class ReferenceAdmin(ModelAdmin):
         return False
 
 
+admin.site.register(Member, MemberAdmin)
+admin.site.register(Role)
+admin.site.register(Team)
+admin.site.register(Position)
+admin.site.register(Application)
+admin.site.register(Reference)
+admin.site.register(Appointment)
+
+
+class StudyProgramInline(admin.TabularInline):
+    model = StudyProgram
+    extra = 1
+
+
 @admin.register(Section)
-class SectionAdmin(ModelAdmin):
+class SectionAdmin(admin.ModelAdmin):
     list_display = ("abbreviation", "section_en", "section_sv")
     search_fields = ("abbreviation", "section_en", "section_sv")
+    inlines = [StudyProgramInline]
     list_filter_submit = True
 
 
 @admin.register(StudyProgram)
-class StudyProgramAdmin(ModelAdmin):
+class StudyProgramAdmin(admin.ModelAdmin):
     list_display = ("name_en", "name_sv", "section")
-    list_filter = ("section",)
     search_fields = ("name_en", "name_sv", "section__abbreviation")
+    list_filter = ("section",)
     list_filter_submit = True
 
-
-admin.site.register(Member, MemberAdmin)
