@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import styles from "./login.module.css";
 import { logIn } from "@/utils/auth";
@@ -11,6 +11,8 @@ import "@/i18n/config";
 export default function Login() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,25 @@ export default function Login() {
 
       if (response.status === 200) {
         window.dispatchEvent(new CustomEvent("logged-in"));
-        router.push("/");
+
+        const isSafeRedirect = (path: string | null) => {
+          if (!path) return false;
+          // Disallow absolute URLs or protocol markers
+          if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return false;
+          // Must be a normalized absolute path within this site
+          if (!path.startsWith("/")) return false;
+          // Prevent double slashes or attempts to break out
+          if (path.includes("//")) return false;
+          // Only allow redirects under /apply (application form pages)
+          return /^\/apply(\/.*)?$/.test(path);
+        };
+
+        const next = rawNext;
+        if (isSafeRedirect(next)) {
+          router.push(next as string);
+        } else {
+          router.push("/");
+        }
       } else if (response.status === 401) {
         setError(t("loginPage.incorrectCredentials"));
       } else if (response.status === 403) {
