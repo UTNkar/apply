@@ -10,9 +10,9 @@ import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
-import { formatDate } from "@/utils/dateFormat";
 import Modal from "./Modal";
 import Button from "./Button";
+import PositionInfoCard from "./PositionInfoCard";
 
 type ApplicationFormProps = {
   position: Position;
@@ -189,69 +189,7 @@ export default function ApplicationForm({
         <h2>{position.role.title}</h2>
       </div>
 
-      <div className={cardStyles.cardDark}>
-        <p>
-          <strong>{t("applicationForm.teamLabel")}:</strong> {position.role.team_name}
-        </p>
-        <p>
-          <strong>{t("applicationForm.applicationDeadline")}:</strong>{" "}
-          {formatDate(position.recruitment_end)}
-        </p>
-        <p>
-          <strong>{t("common.termOfOffice")}:</strong> {formatDate(position.term_from)}{" "}
-          — {formatDate(position.term_end)}
-        </p>
-
-        {position.role.contact_email && (
-          <p>
-            <strong>{t("applicationForm.contactEmail")}:</strong>{" "}
-            <a href={`mailto:${position.role.contact_email}`}>
-              {position.role.contact_email}
-            </a>
-          </p>
-        )}
-
-        {isDraft && (
-          <p>
-            <strong>{t("common.status")}:</strong>{" "}
-            <span
-              className={`${styles.statusBadge} ${isDraft ? styles.draft : styles.submitted}`}
-            >
-              {t(isDraft ? "applicationStatus.draft" : "applicationStatus.submitted")}
-            </span>
-          </p>
-        )}
-
-        {position.role.description && (
-          <>
-            <p>
-              <strong>{t("common.roleDescription")}:</strong>
-            </p>
-            <p style={{ whiteSpace: "pre-line" }}>{position.role.description}</p>
-          </>
-        )}
-
-        {position.role.role_description_url && (
-          <p>
-            <a
-              href={position.role.role_description_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("applicationForm.viewRoleDescription")}
-            </a>
-          </p>
-        )}
-
-        {position.comment && (
-          <>
-            <p>
-              <strong>{t("common.commentsForThisYear")}:</strong>
-            </p>
-            <p style={{ whiteSpace: "pre-line" }}>{position.comment}</p>
-          </>
-        )}
-      </div>
+      <PositionInfoCard position={position} showDraftStatus={isDraft} />
 
       <form onSubmit={(e) => e.preventDefault()}>
         <div className={cardStyles.cardSection}>

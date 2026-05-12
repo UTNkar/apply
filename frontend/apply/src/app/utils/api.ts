@@ -57,9 +57,11 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     if (error.message) {
       const errorObj = new Error(
         error.message || `HTTP ${response.status}`,
-      ) as Error & { fieldErrors?: Record<string, unknown> };
+      ) as Error & { fieldErrors?: Record<string, unknown>, status: number };
+      errorObj.status = response.status;
       throw errorObj;
     }
+    error.status = response.status;
     throw error;
   }
 

@@ -1,4 +1,6 @@
 from django.contrib.auth.models import BaseUserManager
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Count, F, Manager, Q
 from django.utils import timezone
 
@@ -28,8 +30,15 @@ class MemberManager(BaseUserManager):
     ):
         if not email:
             raise ValueError("The Email field must be set")
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters long")
+        if not password:
+            raise ValueError("Password must be set")
+        if not ssn:
+            raise ValueError("The SSN field must be set")
+
+        try:
+            validate_password(password)
+        except ValidationError as err:
+            raise ValueError(" ".join(err.messages))
 
         unicore = unicoremember()
         data = unicore.get_user_data(ssn)
@@ -52,6 +61,14 @@ class MemberManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    def create_superuser(self, ssn, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("verified_email", True)
+
+        return self.create_user(ssn, email, password, **extra_fields)
 
 
 class PositionManager(Manager):

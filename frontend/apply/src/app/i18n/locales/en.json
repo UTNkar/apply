@@ -92,7 +92,9 @@
     "failedToLoadPosition": "Failed to load position",
     "failedToLoadApplication": "Failed to load application",
     "positionNotFound": "Position not found",
-    "applicationNotFound": "Application not found"
+    "applicationNotFound": "Application not found",
+    "loginRequiredMessage": "Log in to apply for this position",
+    "goToLogin": "Go to login"
   },
   "accountPage": {
     "accountTitle": "Account",
@@ -124,7 +126,10 @@
     "newPassword": "New Password",
     "confirmNewPassword": "Confirm New Password",
     "passwordsDoNotMatch": "New passwords do not match",
-    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordCannotBeSame": "New password cannot be the same as current password",
+    "passwordTooShort": "Password must be at least 10 characters",
+    "passwordMustContainNumber": "Password must contain at least one number",
+    "passwordMustContainSpecialCharacter": "Password must contain at least one special character",
     "passwordChanged": "Password changed successfully! You will now be logged out.",
     "passwordChangeError": "Failed to change password. Please check your current password.",
     "deleteAccount": "Delete Account",
@@ -142,6 +147,9 @@
     "failedToDeleteApplication": "Failed to delete application",
     "teamLabel": "Team",
     "applicationDeadline": "Application Deadline",
+    "applicationDeadlineInDays_one": "in {{count}} day",
+    "applicationDeadlineInDays_other": "in {{count}} days",
+    "deadlineToday": "today",
     "viewRoleDescription": "View full role description",
     "contactEmail": "Contact email",
     "coverLetterTitle": "Cover letter",
@@ -165,5 +173,26 @@
     "submitApplication": "Submit Application",
     "applicationSubmittedSuccess": "Your application has been submitted.",
     "submitApplicationConfirmation": "Are you sure you want to submit this application? Once submitted, you will not be able to edit it anymore."
+  },
+  "forgotPasswordPage": {
+    "title": "Forgot password",
+    "description": "Enter your email and we'll send you a reset link.",
+    "submit": "Send reset link",
+    "link": "Forgot your password?",
+    "checkEmail": "Check your email",
+    "emailSent": "If an account exists for that email, a reset link has been sent.",
+    "backToLogin": "Back to login",
+    "error": "Something went wrong. Please try again."
+  },
+  "resetPasswordPage": {
+    "title": "Set new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "submit": "Reset password",
+    "passwordMismatch": "Passwords do not match.",
+    "invalidOrExpired": "This link is invalid or has expired.",
+    "invalidLink": "Invalid reset link.",
+    "requestNewLink": "Request a new link",
+    "error": "Something went wrong. Please try again."
   }
 }

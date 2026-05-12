@@ -1,3 +1,5 @@
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -85,12 +87,17 @@ class MemberSerializer(ModelSerializer):
             "verified_email": {"read_only": True},
         }
 
+    def validate_password(self, value):
+        try:
+            validate_password(value)
+        except ValidationError as err:
+            raise serializers.ValidationError(err.messages)
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop("password", None)
         if password is None:
-            raise ValueError("Password must be set")
-        if len(password) < 8:
-            raise ValueError("Password must be at least 8 characters long")
+            raise serializers.ValidationError({"password": ["Password must be set"]})
         user = Member(**validated_data)
         user.set_password(password)
         user.save()

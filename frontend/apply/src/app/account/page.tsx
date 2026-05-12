@@ -103,10 +103,19 @@ export default function Account() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [showSaveMessage, setShowSaveMessage] = useState(false);
+  const passwordSpecialCharRegex = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
 
   const validateNewPassword = (password: string) => {
-    if (password.length < 8) {
-      return t("accountPage.accountDeleteError");
+    if (password.length < 10) {
+      return t("accountPage.passwordTooShort");
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return t("accountPage.passwordMustContainNumber");
+    }
+
+    if (!passwordSpecialCharRegex.test(password)) {
+      return t("accountPage.passwordMustContainSpecialCharacter");
     }
 
     return "";
@@ -185,6 +194,11 @@ export default function Account() {
 
     if (newPassword !== confirmPassword) {
       setPasswordError(t("accountPage.passwordsDoNotMatch"));
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setPasswordError(t("accountPage.passwordCannotBeSame"));
       return;
     }
 
