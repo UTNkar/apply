@@ -324,16 +324,6 @@ class ReferenceAdmin(ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-
-admin.site.register(Member, MemberAdmin)
-admin.site.register(Role)
-admin.site.register(Team)
-admin.site.register(Position)
-admin.site.register(Application)
-admin.site.register(Reference)
-admin.site.register(Appointment)
-
-
 class StudyProgramInline(admin.TabularInline):
     model = StudyProgram
     extra = 1
