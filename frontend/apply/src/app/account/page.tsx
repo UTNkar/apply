@@ -224,7 +224,10 @@ export default function Account() {
           window.location.href = "/login";
         }, 1500);
       } else {
-        setPasswordError(t("accountPage.passwordChangeError"));
+        const errorData = await response.json().catch(() => ({}));
+        setPasswordError(
+          errorData?.message || t("accountPage.passwordChangeError"),
+        );
       }
     } catch {
       setPasswordError(t("accountPage.passwordChangeError"));
@@ -577,6 +580,7 @@ export default function Account() {
             name="email"
             icon={<Mail />}
             error={errors.email}
+            disabled
           />
         </div>
       </div>

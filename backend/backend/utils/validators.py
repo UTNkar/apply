@@ -36,7 +36,7 @@ class NumberValidator:
     def validate(self, password, user=None):
         if not any(char.isdigit() for char in password):
             raise validators.ValidationError(
-                _("This password must contain at least one number."),
+                _("The password must contain at least one number."),
                 code="password_no_number",
             )
 
@@ -50,7 +50,7 @@ class SpecialCharacterValidator:
     def validate(self, password, user=None):
         if not any(char in self.SPECIAL_CHARACTERS for char in password):
             raise validators.ValidationError(
-                _("This password must contain at least one special character."),
+                _("The password must contain at least one special character."),
                 code="password_no_special_character",
             )
 

@@ -1,26 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import Button from "@/components/Button";
 import styles from "./login.module.css";
-import { logIn } from "@/utils/auth";
+import { logIn, useIsLoggedIn } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 
 export default function Login() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { isLoggedIn, loading } = useIsLoggedIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
+
+  useEffect(() => {
+    if (!loading && isLoggedIn) {
+      router.push("/");
+    }
+  }, [isLoggedIn, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setLoadingForm(true);
 
     try {
       const response = await logIn(email, password);
@@ -39,7 +46,7 @@ export default function Login() {
     } catch {
       setError(t("loginPage.networkError"));
     } finally {
-      setLoading(false);
+      setLoadingForm(false);
     }
   };
 
@@ -83,8 +90,8 @@ export default function Login() {
 
           <Button
             style={{ margin: "16px auto 0" }}
-            disabled={loading}
-            loading={loading}
+            disabled={loadingForm}
+            loading={loadingForm}
             type={"submit"}
           >
             {t("loginPage.signIn")}
@@ -92,7 +99,7 @@ export default function Login() {
         </form>
 
         <div className={styles.links}>
-          <a href="/signup" className={styles.link}>
+          <a href="/register" className={styles.link}>
             {t("loginPage.noAccount")}
           </a>
           <a href="/forgot-password" className={styles.link}>

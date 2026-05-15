@@ -73,6 +73,29 @@ class Member(AbstractBaseUser, PermissionsMixin):
     )
 
     verified_email = models.BooleanField(default=False)
+    email_verification_code = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("One-time email verification code"),
+    )
+    email_verification_code_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("When the email verification code expires"),
+    )
+    email_verification_attempts = models.PositiveSmallIntegerField(
+        default=0,
+        help_text=_("Failed email verification attempts"),
+    )
+    email_verification_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("When the last email verification code was sent"),
+    )
 
     phone_number = models.CharField(
         max_length=20,
@@ -82,7 +105,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
     )
 
     is_superuser = models.BooleanField(
-        help_text=("Designates whether the user is a superuser"))
+        default=False,
+        help_text=("Designates whether the user is a superuser"),
+    )
 
     is_staff = models.BooleanField(
         _("Staff status"),

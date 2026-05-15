@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
 from django.middleware.csrf import get_token
+from django.utils import timezone
 from .managers import MemberManager
 from rest_framework import status
 from rest_framework.decorators import action
@@ -180,7 +181,8 @@ class InitiatePasswordResetViewAPIView(APIView):
                 status=200,
             )
 
-        send_password_reset_email(user)
+        if user.verified_email:
+            send_password_reset_email(user)
 
         return Response(
             {
@@ -296,7 +298,7 @@ class ChangePasswordAPIView(APIView):
 class EmailVerificationAPIView(APIView):
     """
     EmailVerificationAPIView handles email verification through the API.
-    This view processes GET requests to verify user email addresses using a token and ID.
+    This view processes GET requests to verify user email addresses using a code and ID.
 
     DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING
 
@@ -316,20 +318,54 @@ class EmailVerificationAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        user_id = request.GET.get("id")
-        token = request.GET.get("token")
+        code = (request.GET.get("code") or "").strip().upper()
+        email = (request.GET.get("email") or "").strip()
 
         try:
-            user = get_user_model().objects.get(pk=user_id)
+            user = get_user_model().objects.get(email=email)
         except get_user_model().DoesNotExist:
             user = None
 
-        if default_token_generator.check_token(user, token):
-            login(request, user)
+        if user is None:
+            return Response({"message": "No account found for this email."}, status=400)
 
-            return Response({"message": "Email verified successfully"}, status=200)
+        if not code:
+            return Response({"message": "Verification code is required."}, status=400)
 
-        return Response({"message": "Invalid verification link"}, status=400)
+        if not user.email_verification_code or not user.email_verification_code_expires_at:
+            return Response({"message": "No active verification code. Please request a new one."}, status=400)
+
+        if user.email_verification_code_expires_at < timezone.now():
+            return Response({"message": "Verification code has expired. Please request a new one."}, status=400)
+
+        if user.email_verification_attempts >= 5:
+            return Response({"message": "Too many failed attempts. Please request a new code."}, status=400)
+
+        if not check_password(code, user.email_verification_code):
+            user.email_verification_attempts += 1
+            user.save(update_fields=["email_verification_attempts"])
+            remaining_attempts = max(0, 5 - user.email_verification_attempts)
+            return Response(
+                {"message": f"Invalid verification code. Attempts remaining: {remaining_attempts}."},
+                status=400,
+            )
+
+        user.verified_email = True
+        user.email_verification_code = None
+        user.email_verification_code_expires_at = None
+        user.email_verification_attempts = 0
+        user.email_verification_sent_at = None
+        user.save(
+            update_fields=[
+                "verified_email",
+                "email_verification_code",
+                "email_verification_code_expires_at",
+                "email_verification_attempts",
+                "email_verification_sent_at",
+            ]
+        )
+        login(request, user)
+        return Response({"message": "Email verified successfully"}, status=200)
 
 
 class ResendVerificationEmailAPIView(APIView):
@@ -369,7 +405,12 @@ class ResendVerificationEmailAPIView(APIView):
         if user.verified_email:
             return Response({"message": "Email already verified"}, status=400)
 
-        send_verification_email(user)
+        sent = send_verification_email(user, allow_rate_limit=True)
+        if not sent:
+            return Response(
+                {"message": "Verification email sent recently. Try again shortly."},
+                status=429,
+            )
 
         return Response({"message": "Verification email resent"}, status=200)
 

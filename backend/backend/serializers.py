@@ -12,6 +12,7 @@ from .models import (
     Application,
     Reference,
 )
+from .send_email import send_verification_email
 
 
 def get_language_from_request(request):
@@ -63,6 +64,24 @@ class MemberSerializer(ModelSerializer):
     """
 
     study_program = StudyProgramSerializer(read_only=True)
+    study_program_id = serializers.PrimaryKeyRelatedField(
+        queryset=StudyProgram.objects.all(),
+        source="study_program",
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    section_id = serializers.PrimaryKeyRelatedField(
+        queryset=Section.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance is not None:
+            self.fields["email"].read_only = True
 
     class Meta:
         model = Member
@@ -70,6 +89,8 @@ class MemberSerializer(ModelSerializer):
             "name",
             "phone_number",
             "study_program",
+            "study_program_id",
+            "section_id",
             "registration_year",
             "status",
             "ssn",
@@ -94,7 +115,19 @@ class MemberSerializer(ModelSerializer):
             raise serializers.ValidationError(err.messages)
         return value
 
+    def validate(self, attrs):
+        section = attrs.get("section_id")
+        study_program = attrs.get("study_program")
+
+        if section and study_program and study_program.section_id != section.id:
+            raise serializers.ValidationError(
+                {"section_id": ["Section does not match selected program."]}
+            )
+
+        return attrs
+
     def create(self, validated_data):
+        validated_data.pop("section_id", None)
         password = validated_data.pop("password", None)
         if password is None:
             raise serializers.ValidationError({"password": ["Password must be set"]})
@@ -102,7 +135,7 @@ class MemberSerializer(ModelSerializer):
         user.set_password(password)
         user.save()
 
-        # TODO: Email verification here
+        send_verification_email(user)
 
         return user
 
