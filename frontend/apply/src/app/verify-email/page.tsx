@@ -125,7 +125,7 @@ function VerifyEmailForm() {
         lastAutoSubmittedCode.current = normalizedCode;
         setVerificationCode(normalizedCode);
         void handleSubmit(undefined, normalizedCode);
-    }, [codeFromQuery, t]);
+    }, [codeFromQuery, t, handleSubmit]);
 
     return (
         <div className={styles.container}>

@@ -16,7 +16,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loadingForm, setLoading] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
 
   useEffect(() => {
     if (!loading && isLoggedIn) {
