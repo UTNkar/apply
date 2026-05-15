@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import styles from "./page.module.css";
 import ApplicationCard from "./components/ApplicationCard";
+import LoadingRam from "./components/LoadingRam";
 import MyPositionCard from "./components/MyPositionCard";
 import OpenPositionCard from "./components/OpenPositionCard";
 import { positionAPI, applicationAPI } from "@/utils/api";
@@ -67,7 +68,8 @@ export default function Home() {
           setApplicationsError("homePage.failedToLoadApplications");
         }
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 5000); // JUST TESTING
+        //setLoading(false);
       }
     };
 
@@ -105,7 +107,7 @@ export default function Home() {
         </div>
       )}
 
-      {loading && <p>{t("common.loading")}</p>}
+      {loading && <LoadingRam />}
 
       {activeTab === "My Applications" && !loading && (
         <>
