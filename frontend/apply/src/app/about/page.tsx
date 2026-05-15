@@ -1,6 +1,8 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
+import { getImageUrl } from "@/utils/imageUrl";
 
 export default function About() {
   const { t } = useTranslation();
@@ -8,7 +10,11 @@ export default function About() {
     <div className="pageContainer">
       <h1 style={{ marginTop: 48 }}>{t("aboutPage.title")}</h1>
       <p>{t("aboutPage.introText")}</p>
-      <img src="/städfestival-ht24.jpg" style={{ margin: "12px 0" }}></img>
+      <Image
+        src={getImageUrl("/städfestival-ht24.jpg")}
+        style={{ margin: "12px 0" }}
+        alt="UTN members in front of our union house in winter"
+      ></Image>
 
       <p>{t("aboutPage.timeRequiredText")}</p>
 

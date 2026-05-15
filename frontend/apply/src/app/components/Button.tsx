@@ -11,6 +11,8 @@ interface ButtonProps {
   children: React.ReactNode;
   disabled?: boolean;
   loading?: boolean;
+  type?: "button" | "submit" | "reset";
+  secondaryButton?: boolean;
 }
 
 export default function Button({
@@ -20,10 +22,10 @@ export default function Button({
   disabled = false,
   loading = false,
   children,
+  type = "button",
+  secondaryButton = false,
 }: ButtonProps) {
   const button = React.useRef<HTMLButtonElement>(null);
-  if (loading) {
-  }
   const buttonWidth = button.current?.offsetWidth || 0;
   const buttonHeight = button.current?.offsetHeight || 0;
   const cornerRadius = 10;
@@ -31,13 +33,14 @@ export default function Button({
 
   return (
     <button
-      className={`button activeButton ${className} ${disabled ? "disabled" : ""} ${
+      className={`button ${secondaryButton ? "" : "activeButton"} ${className} ${disabled ? "disabled" : ""} ${
         loading ? "loading" : ""
       }`}
       onClick={onClick}
       style={style}
       ref={button}
       disabled={disabled}
+      type={type}
     >
       {buttonWidth !== 0 && (
         <svg

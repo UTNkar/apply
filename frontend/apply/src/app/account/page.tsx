@@ -224,7 +224,10 @@ export default function Account() {
           window.location.href = "/login";
         }, 1500);
       } else {
-        setPasswordError(t("accountPage.passwordChangeError"));
+        const errorData = await response.json().catch(() => ({}));
+        setPasswordError(
+          errorData?.message || t("accountPage.passwordChangeError"),
+        );
       }
     } catch {
       setPasswordError(t("accountPage.passwordChangeError"));
@@ -577,6 +580,7 @@ export default function Account() {
             name="email"
             icon={<Mail />}
             error={errors.email}
+            disabled
           />
         </div>
       </div>
@@ -603,7 +607,8 @@ export default function Account() {
         onSubmit={handlePasswordSubmit}
         title={t("accountPage.changePassword")}
         primaryButtonDisabled={passwordLoading}
-        primaryButtonText={passwordLoading ? t("common.saving") : t("accountPage.changePassword")}
+        primaryButtonText={t("accountPage.changePassword")}
+        primaryButtonLoading={passwordLoading}
         secondaryButtonDisabled={passwordLoading}
       >
         {passwordSuccess ? (
@@ -768,7 +773,8 @@ export default function Account() {
         onSubmit={handleDeleteAccount}
         title={t("accountPage.deleteAccount")}
         primaryButtonDisabled={deleteLoading}
-        primaryButtonText={deleteLoading ? t("accountPage.deleting") : t("common.delete")}
+        primaryButtonText={t("common.delete")}
+        primaryButtonLoading={deleteLoading}
         secondaryButtonDisabled={deleteLoading}
       >
         <p>{t("accountPage.deleteAccountConfirmation")}</p>

@@ -6,6 +6,10 @@
     width: 100%;
 }
 
+.text-input-container.error {
+    margin-top: 0;
+}
+
 .text-input-container .icon {
     display: flex;
     align-items: center;
@@ -30,6 +34,7 @@
     flex-direction: column;
     gap: 4px;
     flex: 1;
+    max-width: 100%;
 }
 
 .text-input-container .label {

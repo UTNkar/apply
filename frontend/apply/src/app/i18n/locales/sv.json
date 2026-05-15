@@ -64,14 +64,13 @@
     "moreInfoWebsite": "hemsidan",
     "moreInfoUrl": "https://utn.se/engagera-dig/att-engagera-sig",
     "moreInfoContinuationText": ", där vi också har svar på vanliga frågor om att engagera sig.",
-    "contactText": "Om du undrar något kan du också maila till"
+    "contactText": "Om du undrar något kan du också mejla till"
   },
   "loginPage": {
     "loginTitle": "Logga in",
     "password": "Lösenord",
     "emailRequired": "E-post krävs",
     "passwordRequired": "Lösenord krävs",
-    "signingIn": "Loggar in...",
     "signIn": "Logga in",
     "noAccount": "Har du inget konto? Registrera dig här",
     "forgotPassword": "Glömt lösenord?",
@@ -81,6 +80,18 @@
     "networkError": "Nätverksfel. Försök igen.",
     "emailPlaceholder": "din.epost@exempel.se",
     "passwordPlaceholder": "Ange ditt lösenord"
+  },
+  "verifyEmailPage": {
+    "title": "Verifiera din e-post",
+    "instructions": "Ange den sex tecken långa koden du fick till din e-post för att verifiera din e-postaddress.",
+    "verificationCode": "Verifieringskod",
+    "codeInvalid": "Ange en giltig kod med 6 tecken.",
+    "invalidOrExpired": "Verifieringskoden är ogiltig eller har gått ut.",
+    "error": "Kunde inte verifiera din e-post. Försök igen.",
+    "verifyButton": "Verifiera",
+    "resendButton": "Skicka verifieringsmejl igen",
+    "resendSuccess": "Verifieringsmejl skickades.",
+    "resendError": "Misslyckades med att skicka verifieringsmejl igen. Försök igen."
   },
   "logoutPage": {
     "doYouWantToLogOut": "Vill du logga ut?",
@@ -136,8 +147,7 @@
     "deleteAccount": "Radera konto",
     "deleteAccountConfirmation": "Är du säker på att du vill radera ditt konto? Denna åtgärd kan inte ångras.",
     "accountDeletePasswordError": "Det gick inte att radera kontot. Nuvarande lösenord är felaktigt.",
-    "accountDeleteError": "Det gick inte att radera kontot. Försök igen.",
-    "deleting": "Raderar..."
+    "accountDeleteError": "Det gick inte att radera kontot. Försök igen."
   },
   "openPositionCard": {
     "deadline": "Sista ansökningsdag",
@@ -175,6 +185,46 @@
     "submitApplication": "Skicka ansökan",
     "applicationSubmittedSuccess": "Din ansökan har skickats in.",
     "submitApplicationConfirmation": "Är du säker på att du vill skicka in denna ansökan? När den väl är inskickad kommer du inte kunna redigera den längre."
+  },
+  "registerPage": {
+    "registerTitle": "Registrera",
+    "username": "Användarnamn",
+    "usernamePlaceholder": "Välj ett användarnamn",
+    "usernameRequired": "Användarnamn krävs",
+    "usernameTooShort": "Användarnamnet måste vara minst 3 tecken",
+    "email": "E-post",
+    "emailPlaceholder": "din.epost@exempel.se",
+    "emailRequired": "E-post krävs",
+    "emailInvalid": "Ange en giltig e-postadress",
+    "password": "Lösenord",
+    "passwordPlaceholder": "Ange ett lösenord",
+    "passwordRequired": "Lösenord krävs",
+    "passwordTooShort": "Lösenordet måste vara minst 10 tecken",
+    "passwordNeedsUppercase": "Lösenordet måste innehålla minst en stor bokstav",
+    "passwordNeedsNumber": "Lösenordet måste innehålla minst en siffra",
+    "passwordConfirmation": "Bekräfta lösenord",
+    "passwordConfirmationPlaceholder": "Bekräfta ditt lösenord",
+    "passwordConfirmationRequired": "Bekräftelse av lösenord krävs",
+    "personalIdentityNumber": "Personnummer",
+    "PersonNumberPlaceholder": "ÅÅÅÅMMDD-XXXX",
+    "PersonNumberRequired": "Personnummer krävs",
+    "PersonNumberInvalid": "Ange ett giltigt personnummer (ÅÅÅÅMMDD-XXXX)",
+    "section": "Sektion",
+    "sectionPlaceholder": "Välj din sektion",
+    "selectSection": "Välj en sektion",
+    "selectProgram": "Välj ett program",
+    "selectSectionFirst": "Välj en sektion för att se dess program",
+    "sectionRequired": "Sektion krävs",
+    "program": "Program",
+    "programRequired": "Välj ett program",
+    "phoneNumber": "Telefonnummer",
+    "phoneNumberPlaceholder": "+46 12 345 67 89",
+    "phoneNumberRequired": "Telefonnummer krävs",
+    "phoneNumberInvalid": "Ange ett giltigt telefonnummer",
+    "registerAccount": "Skapa konto",
+    "registerError": "Det gick inte att skapa kontot. Kontrollera dina uppgifter och försök igen.",
+    "networkError": "Nätverksfel. Försök igen.",
+    "passwordsDoNotMatch": "Lösenorden stämmer inte överens"
   },
   "forgotPasswordPage": {
     "title": "Glömt lösenord",
