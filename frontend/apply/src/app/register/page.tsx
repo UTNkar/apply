@@ -1,14 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
-import styles from "../register/login.module.css";
+import styles from "../register/register.module.css";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import Button from "@/components/Button";
+import { signUp } from "@/utils/auth";
+import { request, Method } from "@/utils/request";
+
+interface Program {
+  id: string;
+  name_en: string;
+  name_sv: string;
+  name: string;
+  value: string;
+}
+
+interface Section {
+  id: string;
+  abbreviation: string;
+  section_en: string;
+  section_sv: string;
+  name: string;
+  value: string;
+  programs: Array<Program>;
+}
 
 export default function Signup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,12 +37,18 @@ export default function Signup() {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [personalIdentityNumber, setPersonalIdentityNumber] = useState("");
   const [sectionValue, setSectionValue] = useState("");
+  const [programValue, setProgramValue] = useState("");
   const [phoneNumberValue, setPhoneNumberValue] = useState("");
+  const [sections, setSections] = useState<Array<Section>>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [registerError, setRegisterError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
 
     if (name === "username") setUsername(value);
@@ -29,7 +56,13 @@ export default function Signup() {
     if (name === "password") setPassword(value);
     if (name === "passwordConfirmation") setPasswordConfirmation(value);
     if (name === "personalIdentityNumber") setPersonalIdentityNumber(value);
-    if (name === "section") setSectionValue(value);
+    if (name === "section") {
+      setSectionValue(value);
+      const section = sections.find((section) => section.id === value);
+      const firstProgram = section?.programs?.[0]?.id || "";
+      setProgramValue(firstProgram);
+    }
+    if (name === "program") setProgramValue(value);
     if (name === "phoneNumber") setPhoneNumberValue(value);
 
     // Clear field error on change
@@ -42,30 +75,32 @@ export default function Signup() {
     if (!username.trim()) {
       newErrors.username = t("registerPage.usernameRequired");
     } else if (username.trim().length < 3) {
-      newErrors.username = t("registerPage.usernameTooShort"); // "Username must be at least 3 characters"
+      newErrors.username = t("registerPage.usernameTooShort");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim()) {
       newErrors.email = t("registerPage.emailRequired");
     } else if (!emailRegex.test(email)) {
-      newErrors.email = t("registerPage.emailInvalid"); // "Please enter a valid email address"
+      newErrors.email = t("registerPage.emailInvalid");
     }
 
     if (!password) {
       newErrors.password = t("registerPage.passwordRequired");
-    } else if (password.length < 8) {
-      newErrors.password = t("registerPage.passwordTooShort"); // "Password must be at least 8 characters"
+    } else if (password.length < 10) {
+      newErrors.password = t("registerPage.passwordTooShort");
     } else if (!/[A-Z]/.test(password)) {
-      newErrors.password = t("registerPage.passwordNeedsUppercase"); // "Password must contain at least one uppercase letter"
+      newErrors.password = t("registerPage.passwordNeedsUppercase");
     } else if (!/[0-9]/.test(password)) {
-      newErrors.password = t("registerPage.passwordNeedsNumber"); // "Password must contain at least one number"
+      newErrors.password = t("registerPage.passwordNeedsNumber");
     }
 
     if (!passwordConfirmation) {
-      newErrors.passwordConfirmation = t("registerPage.passwordConfirmationRequired");
+      newErrors.passwordConfirmation = t(
+        "registerPage.passwordConfirmationRequired",
+      );
     } else if (password !== passwordConfirmation) {
-      newErrors.passwordConfirmation = t("registerPage.passwordsDoNotMatch"); // "Passwords do not match"
+      newErrors.passwordConfirmation = t("registerPage.passwordsDoNotMatch");
     }
 
     // Swedish personal identity number: YYYYMMDD-XXXX or YYYYMMDDXXXX
@@ -73,12 +108,17 @@ export default function Signup() {
     if (!personalIdentityNumber.trim()) {
       newErrors.personalIdentityNumber = t("registerPage.PersonNumberRequired");
     } else if (!pinRegex.test(personalIdentityNumber.trim())) {
-      newErrors.personalIdentityNumber = t("registerPage.PersonNumberInvalid"); // "Enter a valid personal identity number (YYYYMMDD-XXXX)"
+      newErrors.personalIdentityNumber = t("registerPage.PersonNumberInvalid");
     }
 
     // Section
     if (!sectionValue.trim()) {
       newErrors.section = t("registerPage.sectionRequired");
+    }
+
+    // Program
+    if (!programValue.trim()) {
+      newErrors.program = t("registerPage.programRequired");
     }
 
     // Phone number: allows +, spaces, dashes, digits; min 7 digits
@@ -92,6 +132,48 @@ export default function Signup() {
     return newErrors;
   };
 
+  const mapServerErrors = (data: unknown) => {
+    const fieldErrors: Record<string, string> = {};
+    let globalError = "";
+
+    const fieldMap: Record<string, string> = {
+      name: "username",
+      email: "email",
+      password: "password",
+      phone_number: "phoneNumber",
+      personal_identity_number: "personalIdentityNumber",
+      ssn: "personalIdentityNumber",
+      section_id: "section",
+      study_program_id: "program",
+      section: "section",
+      program: "program",
+    };
+
+    if (typeof data === "string") {
+      globalError = data;
+      return { fieldErrors, globalError };
+    }
+
+    if (typeof data === "object" && data !== null) {
+      for (const [key, value] of Object.entries(data)) {
+        const text = Array.isArray(value) ? value.join(" ") : String(value);
+        const fieldName = fieldMap[key];
+
+        if (fieldName) {
+          fieldErrors[fieldName] = text;
+        } else if (key === "message" || key === "detail") {
+          globalError = text;
+        } else if (key === "non_field_errors") {
+          globalError = text;
+        } else if (text) {
+          globalError = globalError ? `${globalError} ${text}`.trim() : text;
+        }
+      }
+    }
+
+    return { fieldErrors, globalError };
+  };
+
   const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
 
@@ -102,11 +184,64 @@ export default function Signup() {
     }
 
     setErrors({});
+    setRegisterError("");
     setLoading(true);
 
-    // TODO: Register API
-    setLoading(false);
+    try {
+      const response = await signUp({
+        email,
+        ssn: personalIdentityNumber,
+        password,
+        name: username,
+        phone_number: phoneNumberValue,
+        study_program_id: programValue,
+        section_id: sectionValue,
+      });
+
+      if (response.status === 201) {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
+
+      const data = await response.json();
+      const { fieldErrors, globalError } = mapServerErrors(data);
+      setErrors((prev) => ({ ...prev, ...fieldErrors }));
+      setRegisterError(globalError || t("registerPage.registerError"));
+    } catch {
+      setRegisterError(t("registerPage.networkError"));
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    const normalizeSections = (data: Section[]): Section[] => {
+      const isSwedish = i18n.language === "sv";
+      return data.map((section) => ({
+        ...section,
+        value: section.id,
+        name: isSwedish ? section.section_sv : section.section_en,
+        programs: section.programs.map((program) => ({
+          ...program,
+          value: program.id,
+          name: isSwedish ? program.name_sv : program.name_en,
+        })),
+      }));
+    };
+
+    request(Method.GET, "/sections/").then(async (res) => {
+      if (res.ok) {
+        const data = (await res.json()) as Section[];
+        setSections(normalizeSections(data));
+      } else {
+        const err = await res.text();
+        console.error("Failed to fetch sections", err);
+      }
+    });
+  }, [i18n.language]);
+
+  const programs_in_section =
+    sections.find((section) => section.id == sectionValue)?.programs || [];
 
   return (
     <div className={styles.loginContainer}>
@@ -171,17 +306,6 @@ export default function Signup() {
 
           <TextInput
             required
-            label={t("registerPage.section")}
-            value={sectionValue}
-            onChange={handleChange}
-            name="section"
-            type="text"
-            placeholder={t("registerPage.sectionPlaceholder")}
-            error={errors.section}
-          />
-
-          <TextInput
-            required
             label={t("registerPage.phoneNumber")}
             value={phoneNumberValue}
             onChange={handleChange}
@@ -190,7 +314,46 @@ export default function Signup() {
             placeholder={t("registerPage.phoneNumberPlaceholder")}
             error={errors.phoneNumber}
           />
+
+          <TextInput
+            required
+            label={t("registerPage.section")}
+            value={sectionValue}
+            onChange={handleChange}
+            name="section"
+            type="select"
+            options={[
+              { value: "", name: t("registerPage.selectSection") },
+              ...sections,
+            ]}
+            error={errors.section}
+          />
+
+          <TextInput
+            required
+            label={t("registerPage.program")}
+            value={programValue}
+            onChange={handleChange}
+            name="program"
+            type="select"
+            options={
+              programs_in_section.length === 0
+                ? [{ value: "", name: t("registerPage.selectSectionFirst") }]
+                : [
+                    { value: "", name: t("registerPage.selectProgram") },
+                    ...programs_in_section.map((program) => ({
+                      value: program.id,
+                      name: program.name,
+                    })),
+                  ]
+            }
+            error={errors.program}
+          />
         </form>
+
+        {registerError && (
+          <div className={styles.errorMessage}>{registerError}</div>
+        )}
 
         <div className={styles.links}>
           <Button

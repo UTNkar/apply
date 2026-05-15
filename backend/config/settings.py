@@ -29,9 +29,17 @@ DEBUG = True
 if DEBUG:
     SECRET_KEY = "django-insecure-ljadjxsm&naahk*kduro)1es8l7#d65msgqdq65o*pd)7hu+m&"
 
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    ALLOWED_HOSTS = ["localhost", "backend"]
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 25))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() in ("true", "1", "yes")
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "yes")
+ALLOWED_HOSTS = ["localhost", "backend"]
 
 
 AUTH_USER_MODEL = "backend.Member"

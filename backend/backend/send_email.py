@@ -1,23 +1,58 @@
+import secrets
+import string
+from datetime import timedelta
+
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
+from django.utils import timezone
+
+VERIFICATION_CODE_LENGTH = 6
+VERIFICATION_CODE_TTL_MINUTES = 15
+VERIFICATION_RESEND_COOLDOWN_SECONDS = 60
+
+
+def generate_verification_code(length=VERIFICATION_CODE_LENGTH):
+    characters = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(characters) for _ in range(length))
 
 
 # This needs rate limiting
-def send_verification_email(user):
+def send_verification_email(user, *, allow_rate_limit=True):
     """
-    TEMPORARY FUNCTION
-    This function sends an email verification link to the user.
-    The link contains a token that the user can use to verify their email address.
-
+    Sends an email verification code to the user.
     """
 
-    token = default_token_generator.make_token(user)
+    now = timezone.now()
+    if (
+        allow_rate_limit
+        and user.email_verification_sent_at
+        and (now - user.email_verification_sent_at).total_seconds()
+        < VERIFICATION_RESEND_COOLDOWN_SECONDS
+    ):
+        return False
+
+    code = generate_verification_code()
+    user.email_verification_code = make_password(code)
+    user.email_verification_code_expires_at = now + timedelta(
+        minutes=VERIFICATION_CODE_TTL_MINUTES
+    )
+    user.email_verification_attempts = 0
+    user.email_verification_sent_at = now
+    user.save(
+        update_fields=[
+            "email_verification_code",
+            "email_verification_code_expires_at",
+            "email_verification_attempts",
+            "email_verification_sent_at",
+        ]
+    )
 
     subject = "Verify your email address"
-    message = f"Sign in with the secure link: http://localhost:3000/auth/verify-email?id={user.id}&token={token}"
+    message = (
+        f"Verify your email address for Apply using the verification code {code}\n\n"
+        f"Or you can verify by visiting http://localhost:3000/verify-email?email={user.email}&code={code}"
+    )
 
     send_mail(
         subject,
@@ -26,19 +61,22 @@ def send_verification_email(user):
         [user.email],
     )
 
+    return True
+
 
 # This needs rate limiting
 def send_password_reset_email(user):
     """
-    TEMPORARY FUNCTION
     This function sends a password reset email to the user.
     The email contains a link to reset the user's password.
-
     """
+    if not user.verified_email:
+        return
+
     token = default_token_generator.make_token(user)
 
     subject = "Reset your password"
-    message = f"Click to reset your password: http://localhost:3000/reset-password?id={user.id}&token={token}"
+    message = f"Follow this link to reset your password:\nhttp://localhost:3000/reset-password?id={user.id}&token={token}"
     send_mail(
         subject,
         message,
