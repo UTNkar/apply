@@ -607,7 +607,8 @@ export default function Account() {
         onSubmit={handlePasswordSubmit}
         title={t("accountPage.changePassword")}
         primaryButtonDisabled={passwordLoading}
-        primaryButtonText={passwordLoading ? t("common.saving") : t("accountPage.changePassword")}
+        primaryButtonText={t("accountPage.changePassword")}
+        primaryButtonLoading={passwordLoading}
         secondaryButtonDisabled={passwordLoading}
       >
         {passwordSuccess ? (
@@ -772,7 +773,8 @@ export default function Account() {
         onSubmit={handleDeleteAccount}
         title={t("accountPage.deleteAccount")}
         primaryButtonDisabled={deleteLoading}
-        primaryButtonText={deleteLoading ? t("accountPage.deleting") : t("common.delete")}
+        primaryButtonText={t("common.delete")}
+        primaryButtonLoading={deleteLoading}
         secondaryButtonDisabled={deleteLoading}
       >
         <p>{t("accountPage.deleteAccountConfirmation")}</p>

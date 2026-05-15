@@ -16,7 +16,11 @@ python-decouple==3.8
 
 psycopg2
 Pillow>=8.0.0
+setuptools<81.0.0
 requests>=2.25.0
 
 # Admin theme
 django-unfold
+django-apscheduler==0.6.2
+apscheduler==3.10.1
+

@@ -32,6 +32,9 @@ class MemberManager(BaseUserManager):
             raise ValueError("The Email field must be set")
         if not password:
             raise ValueError("Password must be set")
+        if not ssn:
+            raise ValueError("The SSN field must be set")
+
         try:
             validate_password(password)
         except ValidationError as err:
@@ -58,6 +61,14 @@ class MemberManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    def create_superuser(self, ssn, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
+        extra_fields.setdefault("verified_email", True)
+
+        return self.create_user(ssn, email, password, **extra_fields)
 
 
 class PositionManager(Manager):
