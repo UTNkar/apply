@@ -1,9 +1,6 @@
 import styles from "./LoadingRam.module.css";
-import { useTranslation } from "react-i18next";
 
 export default function LoadingRam() {
-  const { t, i18n } = useTranslation();
-
   return (
     <div className={styles.container} aria-live="polite" aria-busy="true">
       <svg
