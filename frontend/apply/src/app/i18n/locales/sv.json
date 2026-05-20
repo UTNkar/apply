@@ -210,7 +210,7 @@
     "phoneNumberInvalid": "Ange ett giltigt telefonnummer",
     "registerAccount": "Skapa konto",
     "passwordsDoNotMatch": "Lösenorden stämmer inte överens"
-
+  },
   "forgotPasswordPage": {
     "title": "Glömt lösenord",
     "description": "Skriv din mejl så skickar vi en återställningslänk.",

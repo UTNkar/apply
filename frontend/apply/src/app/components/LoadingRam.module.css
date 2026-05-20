@@ -4,42 +4,72 @@
   justify-content: center;
   width: 100%;
   min-height: 50vh;
+  --bocken-loading-animation-duration: 0.5s;
 }
 
 .svg {
   width: 200px;
   height: auto;
-  color: #1d6fe8;
+  color: #034c97;
+  animation-name: ram-jump;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }
 
 .ram {
-  animation: ram-sway 0.6s ease-in-out infinite;
+  animation-name: ram-sway;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   transform-origin: center;
   transform-box: fill-box;
 }
 
 .head {
-  animation: head-nod 0.6s ease-in-out infinite;
+  animation-name: head-nod;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   transform-origin: 20% 50%;
   transform-box: fill-box;
 }
 
 .legFront {
-  animation: leg-front 0.6s ease-in-out infinite;
+  animation-name: leg-front;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   transform-origin: 50% 0%;
   transform-box: fill-box;
 }
 
 .legBack {
-  animation: leg-back 0.6s ease-in-out infinite;
+  animation-name: leg-back;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   transform-origin: 50% 0%;
   transform-box: fill-box;
 }
 
 .tail {
-  animation: tail-wag 0.6s ease-in-out infinite;
+  animation-name: tail-wag;
+  animation-duration: var(--bocken-loading-animation-duration);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   transform-origin: 100% 0%;
   transform-box: fill-box;
+}
+
+@keyframes ram-jump {
+  0%,
+  100% {
+    transform: translateY(-14px);
+  }
+  50% {
+    transform: translateY(0);
+  }
 }
 
 @keyframes ram-sway {
@@ -61,10 +91,10 @@
 @keyframes head-nod {
   0%,
   100% {
-    transform: rotate(0deg);
+    transform: translateX(-3px, 3px) rotate(0deg);
   }
   50% {
-    transform: rotate(-4deg);
+    transform: translate(-3px, 3px) rotate(-12deg);
   }
 }
 

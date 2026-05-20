@@ -68,7 +68,7 @@ export default function Home() {
           setApplicationsError("homePage.failedToLoadApplications");
         }
       } finally {
-        setTimeout(() => setLoading(false), 5000); // JUST TESTING
+        setTimeout(() => setLoading(false), 50000); // JUST TESTING
         //setLoading(false);
       }
     };
