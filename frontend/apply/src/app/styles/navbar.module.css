@@ -7,7 +7,12 @@
     padding: 0px 50px;
     justify-content: space-between;
     position: relative;
-    z-index: 10;
+}
+
+.logo {
+    display: block;
+    width: 200px;
+    flex-shrink: 0;
 }
 
 .navbarItems {
@@ -72,6 +77,8 @@
     cursor: pointer;
     padding: 8px;
     gap: 4px;
+    position: relative;
+    z-index: 102;
 }
 
 .hamburgerIcon {
@@ -142,14 +149,19 @@
     width: 70%;
     height: 100vh;
     background-color: white;
-    z-index: 99;
-    transition: right 0.3s ease;
+    z-index: 101;
+    /* delay visibility until slide-out finishes so focus can't reach hidden links */
+    visibility: hidden;
+    transition: right 0.3s ease, visibility 0s linear 0.3s;
     overflow-y: auto;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .mobileMenuOpen {
     right: 0;
+    visibility: visible;
+    /* make visible immediately on open, delay only on close */
+    transition: right 0.3s ease, visibility 0s linear 0s;
 }
 
 .mobileMenuContent {
@@ -201,7 +213,7 @@
     }
 
     .logo {
-        max-width: 150px;
+        width: 150px;
     }
 }
 

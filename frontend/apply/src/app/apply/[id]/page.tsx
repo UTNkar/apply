@@ -57,7 +57,7 @@ export default function ApplyPage() {
         const applicationData = await applicationAPI
           .getByPositionId(positionId)
           .catch((error) => {
-            if (error.detail === "Application not found for this position.") {
+            if (error.status === 404) {
               return null;
             }
 
@@ -66,7 +66,7 @@ export default function ApplyPage() {
               return null;
             }
 
-            throw new Error(error.detail || "Failed to load application");
+            throw error;
           });
 
         setPosition(positionData);

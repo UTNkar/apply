@@ -30,7 +30,12 @@ export default function FormTextarea({
 
   return (
     <div className={styles.formField}>
-      {label && <label className={styles.formLabel}>{label}</label>}
+      {label && (
+        <label className={styles.formLabel}>
+          {label}
+          {required && <span className={styles.requiredAsterisk}> *</span>}
+        </label>
+      )}
       <textarea
         name={name}
         value={value}

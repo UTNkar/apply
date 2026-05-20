@@ -32,7 +32,10 @@ export default function FormInput({
 
   return (
     <div className={styles.formFieldWithIcon}>
-      <label className={styles.formLabel}>{label}</label>
+      <label className={styles.formLabel}>
+        {label}
+        {required && <span className={styles.requiredAsterisk}> *</span>}
+      </label>
       <div style={{ position: "relative" }}>
         {icon && <span className={styles.inputIcon}>{icon}</span>}
         <input

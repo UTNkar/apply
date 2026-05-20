@@ -51,18 +51,15 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const error = await response
+    const errorData = await response
       .json()
       .catch(() => ({ message: "Request failed" }));
-    if (error.message) {
-      const errorObj = new Error(
-        error.message || `HTTP ${response.status}`,
-      ) as Error & { fieldErrors?: Record<string, unknown>, status: number };
-      errorObj.status = response.status;
-      throw errorObj;
-    }
-    error.status = response.status;
-    throw error;
+    const errorObj = new Error(
+      errorData.message || errorData.detail || `HTTP ${response.status}`,
+    ) as Error & { fieldErrors?: Record<string, unknown>; status: number };
+    errorObj.status = response.status;
+    errorObj.fieldErrors = errorData;
+    throw errorObj;
   }
 
   return response.json();

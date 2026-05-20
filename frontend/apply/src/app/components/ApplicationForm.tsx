@@ -23,6 +23,13 @@ type ReferenceErrors = {
   name?: string[];
   email?: string[];
   phone_num?: string[];
+  non_field_errors?: string[];
+};
+
+type FormErrors = {
+  coverLetter?: string;
+  qualifications?: string;
+  gdpr?: string;
 };
 
 export default function ApplicationForm({
@@ -35,6 +42,7 @@ export default function ApplicationForm({
   const [savingDraft, setSavingDraft] = useState(false);
   const [deletingDraft, setDeletingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [referenceErrors, setReferenceErrors] = useState<ReferenceErrors[]>([]);
   const [coverLetter, setCoverLetter] = useState(
     existingApplication?.cover_letter || "",
@@ -56,7 +64,6 @@ export default function ApplicationForm({
   );
   const [editable, setEditable] = useState(!existingApplication || isDraft);
 
-  // Load existing references when editing
   useEffect(() => {
     if (
       existingApplication?.references &&
@@ -88,6 +95,80 @@ export default function ApplicationForm({
     const updated = [...references];
     updated[index] = { ...updated[index], [field]: value };
     setReferences(updated);
+
+    // Clear errors for this field; phone/email errors are coupled so clear both
+    if (referenceErrors[index]) {
+      const updatedErrors = [...referenceErrors];
+      if (field === "phone_num" || field === "email") {
+        updatedErrors[index] = {
+          ...updatedErrors[index],
+          phone_num: undefined,
+          email: undefined,
+        };
+      } else {
+        updatedErrors[index] = { ...updatedErrors[index], [field]: undefined };
+      }
+      setReferenceErrors(updatedErrors);
+    }
+  };
+
+  const validateReferences = (): ReferenceErrors[] =>
+    references.map((ref) => {
+      const errors: ReferenceErrors = {};
+      const hasAnyField = [
+        ref.name,
+        ref.title,
+        ref.phone_num,
+        ref.email,
+        ref.comment,
+      ].some((v) => v?.trim());
+
+      if (!hasAnyField) return errors;
+
+      if (!ref.name?.trim()) {
+        errors.name = [t("applicationForm.referenceNameRequired")];
+      }
+
+      if (!ref.phone_num?.trim() && !ref.email?.trim()) {
+        const msg = t("applicationForm.referencePhoneOrEmailRequired");
+        errors.phone_num = [msg];
+        errors.email = [msg];
+      } else {
+        if (
+          ref.email?.trim() &&
+          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ref.email.trim())
+        ) {
+          errors.email = [t("applicationForm.invalidEmail")];
+        }
+        if (
+          ref.phone_num?.trim() &&
+          !/^[+\d\s\-().]{5,20}$/.test(ref.phone_num.trim())
+        ) {
+          errors.phone_num = [t("applicationForm.invalidPhone")];
+        }
+      }
+
+      return errors;
+    });
+
+  const validateAndOpenSubmitModal = () => {
+    const errors: FormErrors = {};
+
+    if (!coverLetter.trim()) errors.coverLetter = t("applicationForm.fieldRequired");
+    if (!qualifications.trim()) errors.qualifications = t("applicationForm.fieldRequired");
+    if (!gdpr) errors.gdpr = t("applicationForm.gdprRequired");
+
+    const refErrors = validateReferences();
+    const hasRefErrors = refErrors.some((e) => Object.keys(e).length > 0);
+
+    if (Object.keys(errors).length > 0 || hasRefErrors) {
+      setFormErrors(errors);
+      if (hasRefErrors) setReferenceErrors(refErrors);
+      return;
+    }
+
+    setSubmitSuccess(false);
+    setShowSubmitModal(true);
   };
 
   const handleSubmit = async (status: "draft" | "submitted") => {
@@ -98,34 +179,30 @@ export default function ApplicationForm({
     }
 
     setError(null);
-    setReferenceErrors([]);
     setShowDraftSavedMessage(false);
 
     try {
       if (!isDraft) {
-        // Create new application
         const createdApplication = await applicationAPI.create({
           position: position.id,
           cover_letter: coverLetter,
           qualifications,
           gdpr,
           status,
-          references: references,
+          references,
         });
 
         if (status === "draft") {
-          // Enter draft mode
           setIsDraft(true);
           setDraftId(createdApplication.id);
         }
       } else if (draftId !== null) {
-        // Edit existing application draft
         await applicationAPI.update(draftId, {
           cover_letter: coverLetter,
           qualifications,
           gdpr,
           status,
-          references: references,
+          references,
         });
       }
 
@@ -136,17 +213,27 @@ export default function ApplicationForm({
         setShowDraftSavedMessage(true);
       }
     } catch (err: unknown) {
-      const error = err as {
-        message?: string;
-        fieldErrors?: { references?: ReferenceErrors[] };
-        non_field_errors?: string[];
+      const error = err as Error & {
+        fieldErrors?: {
+          references?: ReferenceErrors[];
+          non_field_errors?: string[];
+        };
       };
 
-      if (error.non_field_errors) {
-        setError(error.non_field_errors.join(" "));
-      } else if (error.fieldErrors?.references) {
-        setReferenceErrors(error.fieldErrors.references);
-        setError(t("applicationForm.validationErrorsInReferences"));
+      const refErrors = error.fieldErrors?.references;
+      if (refErrors?.some((e) => Object.keys(e).length > 0)) {
+        setReferenceErrors(
+          refErrors.map((refErr) => {
+            if (!refErr.non_field_errors?.length) return refErr;
+            return {
+              ...refErr,
+              phone_num: refErr.phone_num ?? refErr.non_field_errors,
+              email: refErr.email ?? refErr.non_field_errors,
+            };
+          }),
+        );
+      } else if (error.fieldErrors?.non_field_errors) {
+        setError(error.fieldErrors.non_field_errors.join(" "));
       } else {
         setError(error.message || t("applicationForm.failedToSubmitApplication"));
       }
@@ -159,7 +246,7 @@ export default function ApplicationForm({
     }
   };
 
-  const openDeleteModal = async () => {
+  const openDeleteModal = () => {
     if (!isDraft) return;
     setShowDeleteModal(true);
   };
@@ -175,7 +262,9 @@ export default function ApplicationForm({
       window.location.reload();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : t("applicationForm.failedToDeleteApplication"),
+        err instanceof Error
+          ? err.message
+          : t("applicationForm.failedToDeleteApplication"),
       );
       setShowDeleteModal(false);
     } finally {
@@ -197,10 +286,15 @@ export default function ApplicationForm({
           <FormTextarea
             label={t("applicationForm.coverLetterPrompt")}
             value={coverLetter}
-            onChange={(e) => setCoverLetter(e.target.value)}
+            onChange={(e) => {
+              setCoverLetter(e.target.value);
+              if (formErrors.coverLetter)
+                setFormErrors((prev) => ({ ...prev, coverLetter: undefined }));
+            }}
             rows={6}
             required
             disabled={!editable}
+            error={formErrors.coverLetter}
           />
         </div>
 
@@ -209,10 +303,18 @@ export default function ApplicationForm({
           <FormTextarea
             label={t("applicationForm.qualificationsPrompt")}
             value={qualifications}
-            onChange={(e) => setQualifications(e.target.value)}
+            onChange={(e) => {
+              setQualifications(e.target.value);
+              if (formErrors.qualifications)
+                setFormErrors((prev) => ({
+                  ...prev,
+                  qualifications: undefined,
+                }));
+            }}
             rows={6}
             required
             disabled={!editable}
+            error={formErrors.qualifications}
           />
         </div>
 
@@ -238,6 +340,7 @@ export default function ApplicationForm({
                     updateReference(index, "name", e.target.value)
                   }
                   disabled={!editable}
+                  required
                   error={referenceErrors[index]?.name?.[0]}
                   icon={
                     <svg fill="currentColor" viewBox="0 0 24 24">
@@ -296,6 +399,12 @@ export default function ApplicationForm({
                 />
               </div>
 
+              {editable && (
+                <p className={styles.formDescription}>
+                  {t("applicationForm.referenceContactHint")}
+                </p>
+              )}
+
               <FormTextarea
                 label={t("applicationForm.commentLabel")}
                 value={ref.comment ?? ""}
@@ -337,21 +446,28 @@ export default function ApplicationForm({
             <input
               type="checkbox"
               checked={gdpr}
-              onChange={(e) => setGdpr(e.target.checked)}
-              required
+              onChange={(e) => {
+                setGdpr(e.target.checked);
+                if (formErrors.gdpr)
+                  setFormErrors((prev) => ({ ...prev, gdpr: undefined }));
+              }}
               disabled={!editable}
             />
             <span className={styles.checkboxLabel}>
+              <span className={styles.requiredAsterisk}>*</span>{" "}
               {t("applicationForm.gdprConsentText")}{" "}
               <a
-                href="https://utn.se/dokumentarkiv"
+                href={t("applicationForm.gdprPolicyUrl")}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                https://utn.se/dokumentarkiv
+                {t("applicationForm.gdprPolicyLinkText")}
               </a>
             </span>
           </div>
+          {formErrors.gdpr && (
+            <p className={styles.fieldError}>{formErrors.gdpr}</p>
+          )}
         </div>
 
         {error && <p className={styles.errorMessage}>{error}</p>}
@@ -363,14 +479,7 @@ export default function ApplicationForm({
                 <Button
                   type="button"
                   onClick={() => handleSubmit("draft")}
-                  disabled={
-                    savingDraft ||
-                    submittingApplication ||
-                    deletingDraft ||
-                    !coverLetter ||
-                    !qualifications ||
-                    !gdpr
-                  }
+                  disabled={savingDraft || submittingApplication || deletingDraft}
                   className={`button ${styles.draftButton}`}
                   loading={savingDraft}
                 >
@@ -393,18 +502,8 @@ export default function ApplicationForm({
 
               <Button
                 type="button"
-                onClick={() => {
-                  setSubmitSuccess(false);
-                  setShowSubmitModal(true);
-                }}
-                disabled={
-                  savingDraft ||
-                  submittingApplication ||
-                  deletingDraft ||
-                  !coverLetter ||
-                  !qualifications ||
-                  !gdpr
-                }
+                onClick={validateAndOpenSubmitModal}
+                disabled={savingDraft || submittingApplication || deletingDraft}
                 className={`button ${styles.submitButton}`}
                 loading={submittingApplication}
               >
@@ -448,14 +547,19 @@ export default function ApplicationForm({
       <Modal
         isOpen={showSubmitModal}
         onClose={() => setShowSubmitModal(false)}
-        title={submitSuccess ? t("applicationStatus.submitted") : t("applicationForm.submitApplication")}
-        primaryButtonText={submitSuccess ? t("common.backToHome") : t("common.submit")}
+        title={
+          submitSuccess
+            ? t("applicationStatus.submitted")
+            : t("applicationForm.submitApplication")
+        }
+        primaryButtonText={
+          submitSuccess ? t("common.backToHome") : t("common.submit")
+        }
         onSubmit={() => {
           if (submitSuccess) {
             router.push("/");
             return;
           }
-
           handleSubmit("submitted");
         }}
         primaryButtonDisabled={submittingApplication}
