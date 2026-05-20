@@ -112,7 +112,10 @@ export default function ApplyPage() {
 
         <div className={styles.guestLoginCard}>
           <p>{t("applyPage.loginRequiredMessage")}</p>
-          <Link href="/login" className={`button activeButton ${styles.guestLoginButton}`}>
+          <Link
+            href={`/login?next=${encodeURIComponent(`/apply/${positionId}`)}`}
+            className={`button activeButton ${styles.guestLoginButton}`}
+          >
             {t("applyPage.goToLogin")}
           </Link>
         </div>

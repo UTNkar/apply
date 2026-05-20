@@ -11,6 +11,7 @@ import "@/i18n/config";
 import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
 import Modal from "./Modal";
+import Button from "./Button";
 import PositionInfoCard from "./PositionInfoCard";
 
 type ApplicationFormProps = {
@@ -475,14 +476,15 @@ export default function ApplicationForm({
           {editable ? (
             <>
               <div className={styles.draftSaveGroup}>
-                <button
+                <Button
                   type="button"
                   onClick={() => handleSubmit("draft")}
                   disabled={savingDraft || submittingApplication || deletingDraft}
                   className={`button ${styles.draftButton}`}
+                  loading={savingDraft}
                 >
-                  {savingDraft ? t("common.saving") : t("applicationForm.saveDraft")}
-                </button>
+                  {t("applicationForm.saveDraft")}
+                </Button>
 
                 {showDraftSavedMessage && (
                   <p className={styles.draftSavedMessage}>
@@ -498,16 +500,15 @@ export default function ApplicationForm({
                 )}
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={validateAndOpenSubmitModal}
                 disabled={savingDraft || submittingApplication || deletingDraft}
                 className={`button ${styles.submitButton}`}
+                loading={submittingApplication}
               >
-                {submittingApplication
-                  ? t("applicationForm.submitting")
-                  : t("common.apply")}
-              </button>
+                {t("common.apply")}
+              </Button>
 
               {isDraft && (
                 <button
@@ -537,6 +538,7 @@ export default function ApplicationForm({
         onClose={() => setShowDeleteModal(false)}
         title={t("applicationForm.deleteDraft")}
         primaryButtonText={t("common.delete")}
+        primaryButtonLoading={deletingDraft}
         onSubmit={handleDeleteDraft}
       >
         <p>{t("applicationForm.deleteDraftConfirmation")}</p>

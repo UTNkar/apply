@@ -10,6 +10,14 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   backend:
     build:
       context: ./backend
@@ -17,6 +25,7 @@ services:
     container_name: django_backend
     depends_on:
       - db
+      - mailhog
     ports:
       - "8000:8000"
     env_file:

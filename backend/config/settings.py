@@ -29,9 +29,17 @@ DEBUG = True
 if DEBUG:
     SECRET_KEY = "django-insecure-ljadjxsm&naahk*kduro)1es8l7#d65msgqdq65o*pd)7hu+m&"
 
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-    ALLOWED_HOSTS = ["localhost", "backend"]
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 25))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() in ("true", "1", "yes")
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "yes")
+ALLOWED_HOSTS = ["localhost", "backend"]
 
 
 AUTH_USER_MODEL = "backend.Member"
@@ -39,6 +47,8 @@ AUTH_USER_MODEL = "backend.Member"
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,6 +141,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 10},
+    },
+    {
+        "NAME": "backend.utils.validators.NumberValidator",
+    },
+    {
+        "NAME": "backend.utils.validators.SpecialCharacterValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -159,6 +176,30 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Django Unfold Admin Configuration
+UNFOLD = {
+    "SITE_TITLE": "UTN Apply Admin",
+    "SITE_HEADER": "UTN Apply",
+    "SITE_SYMBOL": "diversity_3",  # Material icon
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    # Primary palette anchored on UTN blue (#034C97) at the 700 shade.
+    "COLORS": {
+        "primary": {
+            "50": "239 246 255",
+            "100": "219 234 254",
+            "200": "191 219 254",
+            "300": "147 197 253",
+            "400": "96 165 250",
+            "500": "27 111 203",
+            "600": "13 93 180",
+            "700": "3 76 151",
+            "800": "2 58 117",
+            "900": "2 43 87",
+            "950": "1 23 53",
+        },
+    },
+}
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"

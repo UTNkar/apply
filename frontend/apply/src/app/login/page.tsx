@@ -1,32 +1,60 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import TextInput from "@/components/TextInput";
+import Button from "@/components/Button";
 import styles from "./login.module.css";
-import { logIn } from "@/utils/auth";
+import { logIn, useIsLoggedIn } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 
 export default function Login() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawNext = searchParams.get("next");
+  const { isLoggedIn, loading } = useIsLoggedIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingForm, setLoadingForm] = useState(false);
+
+  useEffect(() => {
+    if (!loading && isLoggedIn) {
+      router.push("/");
+    }
+  }, [isLoggedIn, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setLoadingForm(true);
 
     try {
       const response = await logIn(email, password);
 
       if (response.status === 200) {
         window.dispatchEvent(new CustomEvent("logged-in"));
-        router.push("/");
+
+        const isSafeRedirect = (path: string | null) => {
+          if (!path) return false;
+          // Disallow absolute URLs or protocol markers
+          if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) return false;
+          // Must be a normalized absolute path within this site
+          if (!path.startsWith("/")) return false;
+          // Prevent double slashes or attempts to break out
+          if (path.includes("//")) return false;
+          // Only allow redirects under /apply (application form pages)
+          return /^\/apply(\/.*)?$/.test(path);
+        };
+
+        const next = rawNext;
+        if (isSafeRedirect(next)) {
+          router.push(next as string);
+        } else {
+          router.push("/");
+        }
       } else if (response.status === 401) {
         setError(t("loginPage.incorrectCredentials"));
       } else if (response.status === 403) {
@@ -38,7 +66,7 @@ export default function Login() {
     } catch {
       setError(t("loginPage.networkError"));
     } finally {
-      setLoading(false);
+      setLoadingForm(false);
     }
   };
 
@@ -73,22 +101,25 @@ export default function Login() {
             name="password"
             type="password"
             placeholder={t("loginPage.passwordPlaceholder")}
-            error={error && password === "" ? t("loginPage.passwordRequired") : ""}
+            error={
+              error && password === "" ? t("loginPage.passwordRequired") : ""
+            }
           />
 
           {error && <div className={styles.errorMessage}>{error}</div>}
 
-          <button
-            className="button activeButton"
-            style={{ margin: "12px auto 0" }}
-            disabled={loading}
+          <Button
+            style={{ margin: "16px auto 0" }}
+            disabled={loadingForm}
+            loading={loadingForm}
+            type={"submit"}
           >
-            {loading ? t("loginPage.signingIn") : t("loginPage.signIn")}
-          </button>
+            {t("loginPage.signIn")}
+          </Button>
         </form>
 
         <div className={styles.links}>
-          <a href="/signup" className={styles.link}>
+          <a href="/register" className={styles.link}>
             {t("loginPage.noAccount")}
           </a>
           <a href="/forgot-password" className={styles.link}>

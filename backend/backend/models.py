@@ -4,7 +4,10 @@ from datetime import date
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core import validators
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
 from .managers import MemberManager, PositionManager
 from .utils.validators import SSNValidator
@@ -70,6 +73,29 @@ class Member(AbstractBaseUser, PermissionsMixin):
     )
 
     verified_email = models.BooleanField(default=False)
+    email_verification_code = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("One-time email verification code"),
+    )
+    email_verification_code_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("When the email verification code expires"),
+    )
+    email_verification_attempts = models.PositiveSmallIntegerField(
+        default=0,
+        help_text=_("Failed email verification attempts"),
+    )
+    email_verification_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        default=None,
+        help_text=_("When the last email verification code was sent"),
+    )
 
     phone_number = models.CharField(
         max_length=20,
@@ -79,7 +105,9 @@ class Member(AbstractBaseUser, PermissionsMixin):
     )
 
     is_superuser = models.BooleanField(
-        help_text=("Designates whether the user is a superuser"))
+        default=False,
+        help_text=("Designates whether the user is a superuser"),
+    )
 
     is_staff = models.BooleanField(
         _("Staff status"),
@@ -148,20 +176,22 @@ class Member(AbstractBaseUser, PermissionsMixin):
         if not self.verified_email:
             return False
 
-        # Lets superusers and staff do anything
-        if self.is_superuser or self.is_staff:
+        # Only superusers get all permissions
+        if self.is_superuser:
             return True
 
+        # Staff and regular users: check actual permissions
         return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
         if not self.verified_email:
             return False
 
-        # Lets superusers and staff do anything
-        if self.is_superuser or self.is_staff:
+        # Only superusers get all module permissions
+        if self.is_superuser:
             return True
 
+        # Staff and regular users: check actual permissions
         return super().has_module_perms(app_label)
 
     @staticmethod
@@ -184,6 +214,10 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
             return None
 
+    def __str__(self):
+        return f"{self.name} ({self.ssn})"
+      
+
     @staticmethod
     def find_user_by_email(email):
         """
@@ -196,6 +230,30 @@ class Member(AbstractBaseUser, PermissionsMixin):
             return user
 
         return None
+
+    def get_appointer_team_ids(self, reference_date=None):
+        """Return team IDs where the member is currently an appointer."""
+        if not self.pk:
+            return []
+
+        reference_date = reference_date or timezone.now().date()
+        role_types = Role.appointer_role_types()
+
+        return list(
+            Team.objects.filter(
+                role__positions__appointments__member=self,
+                role__positions__appointments__status=Appointment.APPOINTED,
+                role__positions__term_from__lte=reference_date,
+                role__positions__term_end__gte=reference_date,
+                role__role_type__in=role_types,
+            )
+            .values_list("id", flat=True)
+            .distinct()
+        )
+
+    def is_appointer(self, reference_date=None):
+        """Return True if the member is currently an appointer."""
+        return bool(self.get_appointer_team_ids(reference_date=reference_date))
 
 
 class Position(models.Model):
@@ -241,6 +299,9 @@ class Position(models.Model):
                                    blank=True)
     comment_sv = models.TextField(verbose_name=("Comment in Swedish"),
                                   blank=True)
+
+    def __str__(self):
+        return f"{self.role} ({self.term_from} - {self.term_end})"
 
 
 class Appointment(models.Model):
@@ -381,6 +442,9 @@ class Reference(models.Model):
         blank=True,
     )
 
+    def __str__(self):
+        return f"{self.name} - {self.application}"
+
 
 class StudyProgram(models.Model):
     """
@@ -410,6 +474,9 @@ class StudyProgram(models.Model):
         verbose_name=_("Swedish section name"),
         help_text=_("Enter the name of the section in Swedish"),
     )
+
+    def __str__(self):
+        return self.name_en
 
 
 class Section(models.Model):
@@ -441,6 +508,9 @@ class Section(models.Model):
         help_text=_("Enter the name of the section in Swedish"),
         blank=False,
     )
+
+    def __str__(self):
+        return f"{self.abbreviation} - {self.section_en}"
 
 
 class Team(models.Model):
@@ -497,6 +567,9 @@ class Team(models.Model):
     #     FieldPanel('description_en'),
     #     FieldPanel('description_sv'),
     # ])]
+
+    def __str__(self):
+        return self.name_en
 
 
 class Application(models.Model):
@@ -573,6 +646,9 @@ class Application(models.Model):
                                      null=True,
                                      blank=True)
 
+    def __str__(self):
+        return f"{self.member.name} - {self.position} ({self.status})"
+
 
 class Role(models.Model):
     """
@@ -645,6 +721,17 @@ class Role(models.Model):
         # Return the corresponding level or 6 if the role_type is not in the dictionary
         return role_levels.get(role_type, 6)
 
+    @staticmethod
+    def appointer_role_types():
+        """Role types that qualify a member as an appointer."""
+        return [
+            Role.ADMIN,
+            Role.FUM,
+            Role.BOARD,
+            Role.PRESIDIUM,
+            Role.GROUP_LEADER,
+        ]
+
     archived = models.BooleanField(
         verbose_name=_("Archived"),
         help_text=_("Hide the role from menus"),
@@ -707,3 +794,29 @@ class Role(models.Model):
     #     FieldPanel('role_type'),
     #     FieldPanel('teams', widget=CheckboxSelectMultiple),
     # ])]
+
+    def __str__(self):
+        return f"{self.title_en} ({self.team})"
+
+
+def _sync_staff_status(member, reference_date=None):
+    if not member:
+        return
+
+    # Users appointed to roles above "Involved" level should be staff
+    should_be_staff = member.is_superuser or member.is_appointer(
+        reference_date=reference_date
+    )
+    if member.is_staff != should_be_staff:
+        member.is_staff = should_be_staff
+        member.save(update_fields=["is_staff"])
+
+
+@receiver(post_save, sender=Appointment)
+def _sync_staff_on_appointment_save(sender, instance, **kwargs):
+    _sync_staff_status(instance.member)
+
+
+@receiver(post_delete, sender=Appointment)
+def _sync_staff_on_appointment_delete(sender, instance, **kwargs):
+    _sync_staff_status(instance.member)

@@ -2,6 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import styles from "@/styles/modal.module.css";
+import Button from "./Button";
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface ModalProps {
   children: React.ReactNode;
   primaryButtonDisabled?: boolean;
   primaryButtonText: string;
+  primaryButtonLoading?: boolean;
   secondaryButtonDisabled?: boolean;
   secondaryButtonText?: string;
   showSecondaryButton?: boolean;
@@ -24,6 +26,7 @@ export default function Modal({
   children,
   primaryButtonDisabled,
   primaryButtonText,
+  primaryButtonLoading = false,
   secondaryButtonDisabled,
   secondaryButtonText = "",
   showSecondaryButton = true,
@@ -56,22 +59,21 @@ export default function Modal({
           {children}
           <div className={styles.modalActions}>
             {showSecondaryButton && (
-              <button
-                type="button"
-                className="button"
+              <Button
                 onClick={onClose}
                 disabled={secondaryButtonDisabled}
+                secondaryButton
               >
                 {secondaryButtonText}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="submit"
-              className="button activeButton"
               disabled={primaryButtonDisabled}
+              loading={primaryButtonLoading}
             >
               {primaryButtonText}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
