@@ -30,3 +30,29 @@ class SSNValidator(validators.RegexValidator):
                 "YYYYMMDDXXXX, YYMMDDXXXX for your ssn."
             ),
         )
+
+
+class NumberValidator:
+    def validate(self, password, user=None):
+        if not any(char.isdigit() for char in password):
+            raise validators.ValidationError(
+                _("The password must contain at least one number."),
+                code="password_no_number",
+            )
+
+    def get_help_text(self):
+        return _("Your password must contain at least one number.")
+
+
+class SpecialCharacterValidator:
+    SPECIAL_CHARACTERS = r"!@#$%^&*()_+-=[]{};':\"\\|,.<>/?`~"
+
+    def validate(self, password, user=None):
+        if not any(char in self.SPECIAL_CHARACTERS for char in password):
+            raise validators.ValidationError(
+                _("The password must contain at least one special character."),
+                code="password_no_special_character",
+            )
+
+    def get_help_text(self):
+        return _("Your password must contain at least one special character.")

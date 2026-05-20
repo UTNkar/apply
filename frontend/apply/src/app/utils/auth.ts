@@ -78,18 +78,24 @@ export function logOut() {
 }
 
 /**
- * Sends a sign-up request to the server with the provided email and password.
+ * Sends a sign-up request to the server with the provided registration data.
  *
- * @param email - The email address of the user
- * @param ssn - The national identification number of the user
- * @param password - The password of the user
+ * @param payload - The registration payload
  * @returns A promise that resolves to the JSON response from the server
  * @returns status 201:  When signup is successful
  * @returns status 400:  When provided credentials are invalid.
  * @throws Error if the request fails
  */
-export function signUp(email: string, ssn: string, password: string) {
-    return request(Method.POST, URLs.SIGNUP, { email, ssn, password });
+export function signUp(payload: {
+    email: string;
+    ssn: string;
+    password: string;
+    name: string;
+    phone_number: string;
+    study_program_id?: string;
+    section_id?: string;
+}) {
+    return request(Method.POST, URLs.SIGNUP, payload);
 }
 
 /**

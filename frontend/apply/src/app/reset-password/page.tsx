@@ -56,7 +56,10 @@ function ResetPasswordForm() {
             if (res.ok) {
                 router.push("/login?reset=success");
             } else {
-                setError(t("resetPasswordPage.invalidOrExpired"));
+                const errorData = await res.json().catch(() => ({}));
+                setError(
+                    errorData?.message || t("resetPasswordPage.invalidOrExpired"),
+                );
             }
         } catch {
             setError(t("resetPasswordPage.error"));

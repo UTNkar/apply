@@ -4,7 +4,7 @@ from rest_framework.permissions import BasePermission
 from .models import Role
 from .serializers import CreatePositionSerializer
 
-CAN_CREATE_POSITION_ROLES = ["admin", "fum", "board", "presidium", "group_leader"]
+CAN_CREATE_POSITION_ROLES = Role.appointer_role_types()
 
 
 # TODO: Should be removed if we're considering django-admin for admin functionalities

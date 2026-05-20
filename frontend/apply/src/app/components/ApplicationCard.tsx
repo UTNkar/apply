@@ -7,6 +7,7 @@ import { formatDateRange } from "@/utils/dateFormat";
 import { Application } from "@/utils/types";
 import { getImageUrl } from "@/utils/imageUrl";
 import Image from "next/image";
+import Link from "next/link";
 
 type Props = {
   application: Application;
@@ -58,12 +59,12 @@ const ApplicationCard = ({ application }: Props) => {
       </div>
 
       <div className={styles.cardButton}>
-        <a
+        <Link
           className={"smallButton"}
           href={`/apply/${application.position_details.id}`}
         >
           {t("common.viewApplication")}
-        </a>
+        </Link>
       </div>
     </div>
   );
