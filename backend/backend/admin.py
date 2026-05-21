@@ -220,6 +220,16 @@ class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
             kwargs["queryset"] = Role.objects.filter(team_id__in=team_ids)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+class ReferenceInline(admin.TabularInline):
+    model = Reference
+    extra = 0
+    readonly_fields = ("name", "phone_num", "title", "email", "comment")
+    can_delete = False
+    search_fields = ("name", "email", "application__member__name")
+    list_filter_submit = True
+
+    def has_add_permission(self, request):
+        return False
 
 @admin.register(Application)
 class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
@@ -232,6 +242,7 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
         "member__email",
     )
     list_filter_submit = True
+    inlines = [ReferenceInline]
     actions_row = ("appoint_application", "turn_down_application")
     actions_detail = ("appoint_application", "turn_down_application")
 
@@ -310,16 +321,6 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
             team_ids = self._get_appointer_team_ids(request.user)
             kwargs["queryset"] = Position.objects.filter(role__team_id__in=team_ids)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def has_add_permission(self, request):
-        return False
-
-
-@admin.register(Reference)
-class ReferenceAdmin(ModelAdmin):
-    list_display = ("name", "application", "email", "phone_num", "title")
-    search_fields = ("name", "email", "application__member__name")
-    list_filter_submit = True
 
     def has_add_permission(self, request):
         return False
