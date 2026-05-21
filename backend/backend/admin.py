@@ -225,10 +225,8 @@ class ReferenceInline(admin.TabularInline):
     extra = 0
     readonly_fields = ("name", "phone_num", "title", "email", "comment")
     can_delete = False
-    search_fields = ("name", "email", "application__member__name")
-    list_filter_submit = True
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, _obj=None):
         return False
 
 @admin.register(Application)
