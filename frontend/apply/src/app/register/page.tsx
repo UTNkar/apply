@@ -103,8 +103,8 @@ export default function Signup() {
       newErrors.passwordConfirmation = t("registerPage.passwordsDoNotMatch");
     }
 
-    // Swedish personal identity number: YYYYMMDD-XXXX or YYYYMMDDXXXX
-    const pinRegex = /^\d{8}[-]?\d{4}$/;
+    // Swedish personal identity number or T-number: YYMMDD/ YYYYMMDD with optional - or +
+    const pinRegex = /^(?:\d{2})?\d{6}[-+]?[Tt\d]\d{3}$/;
     if (!personalIdentityNumber.trim()) {
       newErrors.personalIdentityNumber = t("registerPage.PersonNumberRequired");
     } else if (!pinRegex.test(personalIdentityNumber.trim())) {
