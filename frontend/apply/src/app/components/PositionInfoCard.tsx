@@ -2,7 +2,7 @@ import type { Position } from "@/utils/types";
 import styles from "@/styles/application.module.css";
 import cardStyles from "@/styles/card.module.css";
 import { useTranslation } from "react-i18next";
-import { formatDate } from "@/utils/dateFormat";
+import { formatDate, getDeadlineUrgency } from "@/utils/dateFormat";
 
 type PositionInfoCardProps = {
   position: Position;
@@ -41,6 +41,13 @@ export default function PositionInfoCard({
   };
 
   const deadlineSuffix = getDeadlineSuffix(position.recruitment_end);
+  const deadlineUrgency = getDeadlineUrgency(position.recruitment_end);
+  const deadlineClassName =
+    deadlineUrgency === "urgent"
+      ? cardStyles.deadlineUrgent
+      : deadlineUrgency === "soon"
+        ? cardStyles.deadlineSoon
+        : cardStyles.deadlineDefault;
 
   return (
     <div className={cardStyles.cardDark}>
@@ -49,7 +56,10 @@ export default function PositionInfoCard({
       </p>
       <p>
         <strong>{t("applicationForm.applicationDeadline")}:</strong>{" "}
-        {formatDate(position.recruitment_end)} {deadlineSuffix}
+        <span className={deadlineClassName}>
+          {formatDate(position.recruitment_end)}
+        </span>{" "}
+        {deadlineSuffix}
       </p>
       <p>
         <strong>{t("common.termOfOffice")}:</strong> {formatDate(position.term_from)} —{" "}

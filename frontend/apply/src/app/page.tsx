@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import styles from "./page.module.css";
 import ApplicationCard from "./components/ApplicationCard";
 import LoadingRam from "./components/LoadingRam";
@@ -10,6 +10,7 @@ import { useIsLoggedIn } from "@/utils/auth";
 import type { Position, Application } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
+import { parseDeadlineDate } from "@/utils/dateFormat";
 
 type Tab = "Open Positions" | "My Applications" | "My Positions";
 
@@ -25,6 +26,14 @@ export default function Home() {
   const [applicationsError, setApplicationsError] = useState<string | null>(
     null,
   );
+  const sortedOpenPositions = useMemo(() => {
+    return [...openPositions].sort((a, b) => {
+      const aDeadline = parseDeadlineDate(a.recruitment_end)?.getTime();
+      const bDeadline = parseDeadlineDate(b.recruitment_end)?.getTime();
+
+      return (aDeadline ?? Infinity) - (bDeadline ?? Infinity);
+    });
+  }, [openPositions]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -137,7 +146,7 @@ export default function Home() {
             {openPositions.length === 0 ? (
               <p>{t("homePage.noOpenPositions")}</p>
             ) : (
-              openPositions.map((position) => (
+              sortedOpenPositions.map((position) => (
                 <OpenPositionCard key={position.id} position={position} />
               ))
             )}

@@ -79,6 +79,18 @@
     white-space: nowrap;
 }
 
+.deadlineDefault {
+    color: var(--black);
+}
+
+.deadlineSoon {
+    color: #FBC02D;
+}
+
+.deadlineUrgent {
+    color: var(--error-500);
+}
+
 @media screen and (max-width: 767px) {
     .cardRightSection {
         align-items: flex-start;
