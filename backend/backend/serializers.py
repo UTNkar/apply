@@ -13,6 +13,7 @@ from .models import (
     Reference,
 )
 from .send_email import send_verification_email
+from .utils.unicore import unicoremember
 
 
 def get_language_from_request(request):
@@ -123,6 +124,29 @@ class MemberSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 {"section_id": ["Section does not match selected program."]}
             )
+
+        # Check if SSN is registered in Unicore
+        ssn = attrs.get("ssn")
+        if ssn:
+            unicore = unicoremember()
+            user_data = unicore.get_user_data(ssn)
+            if user_data is None:
+                raise serializers.ValidationError(
+                    {
+                        "ssn": [
+                            "SSN is not registered in Unicore. Please register here: https://unicorestudent.com/UTN/sv/shop"
+                        ]
+                    }
+                )
+
+        # Check if email is already registered
+        email = attrs.get("email")
+        if email:
+            existing = Member.find_user_by_email(email)
+            if existing is not None:
+                raise serializers.ValidationError(
+                    {"email": ["Email is already registered"]}
+                )
 
         return attrs
 
