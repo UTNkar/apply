@@ -57,6 +57,10 @@ class AppointerTeamScopeMixin:
             return False
         if obj is None:
             return True
+        if not hasattr(obj, "_meta"):
+            obj = self.get_object(request, obj)
+            if obj is None:
+                return False
         return self.get_object_team_id(obj) in self._get_appointer_team_ids(
             request.user
         )
@@ -82,6 +86,12 @@ class AppointerTeamScopeMixin:
             return queryset.none()
 
         return queryset.filter(**self.get_team_filter(team_ids)).distinct()
+
+    def delete_queryset(self, request, queryset):
+        pk_list = list(queryset.values_list("pk", flat=True))
+        if not pk_list:
+            return
+        self.model._default_manager.filter(pk__in=pk_list).delete()
 
 
 @admin.register(Group)
@@ -220,6 +230,45 @@ class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
             kwargs["queryset"] = Role.objects.filter(team_id__in=team_ids)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+class ReferenceInline(admin.TabularInline):
+    model = Reference
+    extra = 0
+    readonly_fields = ("name", "phone_num", "title", "email", "comment")
+    can_delete = False
+
+    def _get_appointer_team_ids(self, user):
+        if not user or not user.is_authenticated or user.is_superuser:
+            return []
+
+        if hasattr(user, "get_appointer_team_ids"):
+            return user.get_appointer_team_ids()
+
+        return []
+
+    def _has_application_scope(self, request, obj=None):
+        if request.user.is_superuser:
+            return True
+
+        team_ids = self._get_appointer_team_ids(request.user)
+        if not team_ids:
+            return False
+
+        if obj is None:
+            return True
+
+        return obj.position.role.team_id in team_ids
+
+    def has_view_permission(self, request, obj=None):
+        return self._has_application_scope(request, obj)
+
+    def has_change_permission(self, request, obj=None):
+        return self._has_application_scope(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return self._has_application_scope(request, obj)
+
+    def has_add_permission(self, request, _obj=None):
+        return False
 
 @admin.register(Application)
 class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
@@ -232,6 +281,7 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
         "member__email",
     )
     list_filter_submit = True
+    inlines = [ReferenceInline]
     actions_row = ("appoint_application", "turn_down_application")
     actions_detail = ("appoint_application", "turn_down_application")
 
@@ -310,16 +360,6 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
             team_ids = self._get_appointer_team_ids(request.user)
             kwargs["queryset"] = Position.objects.filter(role__team_id__in=team_ids)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def has_add_permission(self, request):
-        return False
-
-
-@admin.register(Reference)
-class ReferenceAdmin(ModelAdmin):
-    list_display = ("name", "application", "email", "phone_num", "title")
-    search_fields = ("name", "email", "application__member__name")
-    list_filter_submit = True
 
     def has_add_permission(self, request):
         return False
