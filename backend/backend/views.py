@@ -572,14 +572,18 @@ class PositionViewSet(ReadOnlyModelViewSet):
     def list(self, request):
         """Return both open positions and user's positions"""
         if request.user.is_authenticated:
-            my_positions = Position.objects.for_member(request.user).select_related(
-                "role", "role__team"
+            my_positions = (
+                Position.objects.for_member(request.user)
+                .select_related("role")
+                .prefetch_related("role__teams")
             )
         else:
             my_positions = Position.objects.none()
 
-        open_positions = Position.objects.open_positions().select_related(
-            "role", "role__team"
+        open_positions = (
+            Position.objects.open_positions()
+            .select_related("role")
+            .prefetch_related("role__teams")
         )
 
         return Response(
@@ -608,8 +612,10 @@ class OpenPositionsAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        open_positions = Position.objects.open_positions().select_related(
-            "role", "role__team"
+        open_positions = (
+            Position.objects.open_positions()
+            .select_related("role")
+            .prefetch_related("role__teams")
         )
         serializer = PositionSerializer(
             open_positions, many=True, context={"request": request}

@@ -44,8 +44,9 @@ class AppointerTeamScopeMixin:
     def get_team_filter(self, team_ids):
         return {}
 
-    def get_object_team_id(self, obj):
-        return None
+    def get_object_team_ids(self, obj):
+        """Team ids an object belongs to (a role may now belong to several)."""
+        return []
 
     def has_module_permission(self, request):
         return request.user.is_superuser or self._is_appointer(request.user)
@@ -61,9 +62,8 @@ class AppointerTeamScopeMixin:
             obj = self.get_object(request, obj)
             if obj is None:
                 return False
-        return self.get_object_team_id(obj) in self._get_appointer_team_ids(
-            request.user
-        )
+        appointer_team_ids = set(self._get_appointer_team_ids(request.user))
+        return bool(set(self.get_object_team_ids(obj)) & appointer_team_ids)
 
     def has_add_permission(self, request):
         if request.user.is_superuser:
@@ -101,6 +101,7 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin):
     list_filter_submit = True
 
 
+@admin.register(Member)
 class MemberAdmin(BaseUserAdmin, ModelAdmin):
     """
     Custom admin interface for the Member model.
@@ -178,29 +179,34 @@ class TeamAdmin(ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
-    list_display = ("title_en", "title_sv", "team", "role_type", "archived")
-    list_filter = ("team", "role_type", "archived")
+    list_display = ("title_en", "title_sv", "display_teams", "role_type", "archived")
+    list_filter = ("teams", "role_type", "archived")
     search_fields = (
         "title_en",
         "title_sv",
         "description_en",
         "description_sv",
-        "team__name_en",
-        "team__name_sv",
+        "teams__name_en",
+        "teams__name_sv",
     )
     list_filter_submit = True
+    filter_horizontal = ("teams",)
+
+    @admin.display(description=_("Teams"))
+    def display_teams(self, obj):
+        return ", ".join(obj.teams.values_list("name_en", flat=True))
 
     def get_team_filter(self, team_ids):
-        return {"team_id__in": team_ids}
+        return {"teams__id__in": team_ids}
 
-    def get_object_team_id(self, obj):
-        return obj.team_id
+    def get_object_team_ids(self, obj):
+        return list(obj.teams.values_list("id", flat=True))
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if not request.user.is_superuser and db_field.name == "team":
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if not request.user.is_superuser and db_field.name == "teams":
             team_ids = self._get_appointer_team_ids(request.user)
             kwargs["queryset"] = Team.objects.filter(id__in=team_ids)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
 @admin.register(Position)
@@ -213,21 +219,21 @@ class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
         "term_end",
         "appointed",
     )
-    list_filter = ("role__team", "recruitment_start", "term_from")
+    list_filter = ("role__teams", "recruitment_start", "term_from")
     search_fields = ("role__title_en", "role__title_sv", "comment_eng", "comment_sv")
     list_filter_submit = True
     date_hierarchy = "recruitment_start"
 
     def get_team_filter(self, team_ids):
-        return {"role__team_id__in": team_ids}
+        return {"role__teams__id__in": team_ids}
 
-    def get_object_team_id(self, obj):
-        return obj.role.team_id
+    def get_object_team_ids(self, obj):
+        return list(obj.role.teams.values_list("id", flat=True))
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "role":
             team_ids = self._get_appointer_team_ids(request.user)
-            kwargs["queryset"] = Role.objects.filter(team_id__in=team_ids)
+            kwargs["queryset"] = Role.objects.filter(teams__id__in=team_ids).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 class ReferenceInline(admin.TabularInline):
@@ -256,7 +262,7 @@ class ReferenceInline(admin.TabularInline):
         if obj is None:
             return True
 
-        return obj.position.role.team_id in team_ids
+        return obj.position.role.teams.filter(id__in=team_ids).exists()
 
     def has_view_permission(self, request, obj=None):
         return self._has_application_scope(request, obj)
@@ -273,7 +279,7 @@ class ReferenceInline(admin.TabularInline):
 @admin.register(Application)
 class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
     list_display = ("position", "member", "status", "decision_date")
-    list_filter = ("status", "position__role__team")
+    list_filter = ("status", "position__role__teams")
     search_fields = (
         "position__role__title_en",
         "position__role__title_sv",
@@ -324,22 +330,24 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
         return redirect(reverse("admin:backend_application_change", args=[object_id]))
 
     def get_team_filter(self, team_ids):
-        return {"position__role__team_id__in": team_ids}
+        return {"position__role__teams__id__in": team_ids}
 
-    def get_object_team_id(self, obj):
-        return obj.position.role.team_id
+    def get_object_team_ids(self, obj):
+        return list(obj.position.role.teams.values_list("id", flat=True))
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
             team_ids = self._get_appointer_team_ids(request.user)
-            kwargs["queryset"] = Position.objects.filter(role__team_id__in=team_ids)
+            kwargs["queryset"] = Position.objects.filter(
+                role__teams__id__in=team_ids
+            ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(Appointment)
 class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
     list_display = ("member", "position", "status", "appointed_date", "appointed_by")
-    list_filter = ("status", "position__role__team")
+    list_filter = ("status", "position__role__teams")
     search_fields = (
         "member__name",
         "member__email",
@@ -350,37 +358,39 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
     date_hierarchy = "appointed_date"
 
     def get_team_filter(self, team_ids):
-        return {"position__role__team_id__in": team_ids}
+        return {"position__role__teams__id__in": team_ids}
 
-    def get_object_team_id(self, obj):
-        return obj.position.role.team_id
+    def get_object_team_ids(self, obj):
+        return list(obj.position.role.teams.values_list("id", flat=True))
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
             team_ids = self._get_appointer_team_ids(request.user)
-            kwargs["queryset"] = Position.objects.filter(role__team_id__in=team_ids)
+            kwargs["queryset"] = Position.objects.filter(
+                role__teams__id__in=team_ids
+            ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def has_add_permission(self, request):
         return False
-
-class StudyProgramInline(admin.TabularInline):
-    model = StudyProgram
-    extra = 1
 
 
 @admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
     list_display = ("abbreviation", "section_en", "section_sv")
     search_fields = ("abbreviation", "section_en", "section_sv")
-    inlines = [StudyProgramInline]
     list_filter_submit = True
 
 
 @admin.register(StudyProgram)
 class StudyProgramAdmin(admin.ModelAdmin):
-    list_display = ("name_en", "name_sv", "section")
-    search_fields = ("name_en", "name_sv", "section__abbreviation")
-    list_filter = ("section",)
+    list_display = ("name_en", "name_sv", "degree", "display_sections")
+    search_fields = ("name_en", "name_sv", "sections__abbreviation")
+    list_filter = ("sections", "degree")
     list_filter_submit = True
+    filter_horizontal = ("sections",)
+
+    @admin.display(description=_("Sections"))
+    def display_sections(self, obj):
+        return ", ".join(obj.sections.values_list("abbreviation", flat=True))
 
