@@ -481,14 +481,6 @@ export default function Account() {
       name: p.name || (i18n.language === "sv" ? p.name_sv : p.name_en),
     })) || [];
   
-  console.log({programsInSelectedSection, state, sections})
-
-  const programName = state.study_program
-    ? i18n.language === "sv"
-      ? state.study_program.name_sv
-      : state.study_program.name_en
-    : programsInSelectedSection.find((p) => p.value === state.program)?.name || "";
-
   const membershipText = (memberSince: string) => {
     if (memberSince === "Not a member") {
       return t("accountPage.notMemberInfo");
