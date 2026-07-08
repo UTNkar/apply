@@ -196,6 +196,44 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def display_teams(self, obj):
         return ", ".join(obj.teams.values_list("name_en", flat=True))
 
+    def _get_user_max_role_level(self, user):
+        """Return the highest privilege level (lowest number) the user holds as an appointer."""
+        if not user or not user.is_authenticated or user.is_superuser:
+            return 0
+
+        today = date.today()
+        appointer_types = Role.appointer_role_types()
+
+        user_role_levels = list(
+            Role.objects.filter(
+                positions__appointments__member=user,
+                positions__appointments__status=Appointment.APPOINTED,
+                positions__term_from__lte=today,
+                positions__term_end__gte=today,
+                role_type__in=appointer_types,
+            )
+            .values_list("role_type", flat=True)
+            .distinct()
+        )
+
+        if not user_role_levels:
+            return 6 # Not an appointer so no roles accessible
+
+        return min(Role.role_type_to_level(rt) for rt in user_role_levels)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+
+        user_level = self._get_user_max_role_level(request.user)
+        allowed_types = [
+            rt
+            for rt, _ in Role.TYPE_CHOICES
+            if Role.role_type_to_level(rt) >= user_level
+        ]
+        return queryset.filter(role_type__in=allowed_types)
+
     def get_team_filter(self, team_ids):
         return {"teams__id__in": team_ids}
 
@@ -207,6 +245,17 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
             team_ids = self._get_appointer_team_ids(request.user)
             kwargs["queryset"] = Team.objects.filter(id__in=team_ids)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "role_type" and not request.user.is_superuser:
+            user_level = self._get_user_max_role_level(request.user)
+            allowed_types = [
+                (rt, label)
+                for rt, label in Role.TYPE_CHOICES
+                if Role.role_type_to_level(rt) >= user_level
+            ]
+            kwargs["choices"] = allowed_types
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
 @admin.register(Position)

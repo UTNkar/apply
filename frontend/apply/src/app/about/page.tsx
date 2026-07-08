@@ -12,9 +12,12 @@ export default function About() {
       <p>{t("aboutPage.introText")}</p>
       <Image
         src={getImageUrl("/städfestival-ht24.jpg")}
-        style={{ margin: "12px 0" }}
+        style={{ margin: "12px 0", width: "100%", height: "auto" }}
         alt="UTN members in front of our union house in winter"
-      ></Image>
+        width={0}
+        height={0}
+        sizes="100vw"
+      />
 
       <p>{t("aboutPage.timeRequiredText")}</p>
 

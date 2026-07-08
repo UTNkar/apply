@@ -144,6 +144,14 @@ class Member(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
 
+    section = models.ForeignKey(
+        "Section",
+        verbose_name=_("Section"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
     registration_year = models.CharField(
         max_length=4,
         verbose_name=_("Registration year"),

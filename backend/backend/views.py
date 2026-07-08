@@ -496,9 +496,9 @@ class ApplicationViewSet(ModelViewSet):
     """
     ViewSet for managing applications.
 
-    - List: Get all applications (public)
+    - List: Get all applications for the current user
     - Create: Create a new application for a position
-    - Retrieve: Get a specific application (public)
+    - Retrieve: Get a specific application
     - Update: Update own application (only draft/submitted status)
     - Destroy: Delete own application (only if draft status)
     """
@@ -506,10 +506,10 @@ class ApplicationViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Get all applications with optimized queries"""
+        """Get applications for the current user with optimized queries"""
         queryset = Application.objects.select_related(
             "member", "position", "position__role"
-        )
+        ).filter(member=self.request.user)
 
         # Filter by position if position_id is provided
         position_id = self.request.query_params.get("position_id", None)
@@ -650,18 +650,13 @@ class MyAccountAPIView(APIView):
     def post(self, request):
         user = request.user
 
-        # Handle study_program update if 'program' is provided in request
+        # Map frontend field names to serializer field names
         if "program" in request.data:
-            program_id = request.data.pop("program")
-            try:
-                program = StudyProgram.objects.get(id=program_id)
-                user.study_program = program
-                user.save()
-            except StudyProgram.DoesNotExist:
-                return Response({"program": ["Invalid study program ID"]}, status=400)
+            request.data["study_program_id"] = request.data.pop("program")
+        if "section" in request.data:
+            request.data["section_id"] = request.data.pop("section")
 
         serializer = MemberSerializer(user, data=request.data, partial=True)
-
         if serializer.is_valid():
             serializer.save()
             return Response(
