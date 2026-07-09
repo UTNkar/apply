@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import TextInput from "../components/TextInput";
 import styles from "@/styles/account.module.css";
@@ -20,33 +20,29 @@ import Modal from "@/components/Modal";
 import modalStyles from "@/styles/modal.module.css";
 
 interface Program {
-  id: string;
+  id: string | number;
   name_en: string;
   name_sv: string;
-  name: string;
-  value: string;
+  name?: string;
+  value?: string;
 }
 
 interface Section {
-  id: string;
+  id: number | string;
   abbreviation: string;
   section_en: string;
   section_sv: string;
-  name: string;
-  value: string;
-  programs: Array<Program>;
+  name?: string;
+  value?: string;
+  programs?: Array<Program>;
 }
 
 interface AccountStudyProgram {
   id: number | string;
   name_en: string;
   name_sv: string;
-  section: {
-    id: number | string;
-    abbreviation: string;
-    section_en: string;
-    section_sv: string;
-  };
+  degree: string;
+  sections: Array<Section>;
 }
 
 interface AccountResponse {
@@ -56,6 +52,7 @@ interface AccountResponse {
   phone_number: string;
   registration_year: number | string;
   study_program: AccountStudyProgram | null;
+  section: Section | null;
 }
 
 interface FormState {
@@ -64,7 +61,7 @@ interface FormState {
   name: string;
   phone_number: string;
   registration_year: number;
-  study_program: { id: string; section: string } | null;
+  study_program: AccountStudyProgram | null;
   section: string;
   program: string;
 }
@@ -236,32 +233,11 @@ export default function Account() {
     }
   };
 
-  const setProgramNames = useCallback(() => {
-    const isSwedish = i18n.language === "sv";
-    setSections((prev: Array<Section>) =>
-      prev.map((section: Section) => {
-        return {
-          ...section,
-          name: isSwedish ? section.section_sv : section.section_en,
-          programs: section.programs.map((program) => ({
-            ...program,
-            name: isSwedish ? program.name_sv : program.name_en,
-          })),
-        };
-      }),
-    );
-  }, [i18n.language]);
-
   const handleNewUserData = (data: AccountResponse) => {
+    const sectionId = data.section ? String(data.section.id) : "";
     const programId = data.study_program?.id
       ? String(data.study_program.id)
       : "";
-    const sectionId = data.study_program?.section?.id
-      ? String(data.study_program.section.id)
-      : "";
-    const normalizedStudyProgram = data.study_program
-      ? { id: programId, section: sectionId }
-      : null;
     const registrationYear = parseInt(String(data.registration_year), 10) || 0;
 
     setState((prevState: FormState) => ({
@@ -271,7 +247,7 @@ export default function Account() {
       name: data.name,
       phone_number: data.phone_number,
       registration_year: registrationYear,
-      study_program: normalizedStudyProgram,
+      study_program: data.study_program || null,
       section: sectionId,
       program: programId,
     }));
@@ -282,33 +258,27 @@ export default function Account() {
       name: data.name,
       phone_number: data.phone_number,
       registration_year: registrationYear,
-      study_program: normalizedStudyProgram,
+      study_program: data.study_program || null,
       section: sectionId,
       program: programId,
     }));
   };
 
   useEffect(() => {
-    const normalizeSections = (data: Section[]): Section[] => {
-      return data.map((section) => ({
-        ...section,
-        id: section.id,
-        value: section.id,
-        name: i18n.language === "sv" ? section.section_sv : section.section_en,
-        programs: section.programs.map((program) => ({
-          ...program,
-          id: program.id,
-          value: program.id,
-          name: i18n.language === "sv" ? program.name_sv : program.name_en,
-        })),
-      }));
-    };
-
     // Fetch sections and programs
     request(Method.GET, "/sections/").then(async (res) => {
       if (res.ok) {
         const data = (await res.json()) as Section[];
-        setSections(normalizeSections(data));
+        setSections(data.map((section) => ({
+          ...section,
+          value: String(section.id),
+          name: i18n.language === "sv" ? section.section_sv : section.section_en,
+          programs: (section.programs || []).map((program) => ({
+            ...program,
+            value: String(program.id),
+            name: i18n.language === "sv" ? program.name_sv : program.name_en,
+          })),
+        })));
       } else {
         const err = await res.text();
         console.error("Failed to fetch sections");
@@ -337,13 +307,7 @@ export default function Account() {
         console.error(err);
       }
     });
-  }, [setProgramNames, i18n.language]);
-
-  useEffect(() => {
-    if (sections.length > 0) {
-      setProgramNames();
-    }
-  }, [i18n.language, setProgramNames, sections.length]);
+  }, []);
 
   const useDebounce = <T,>(value: T, delay: number): T => {
     const [debounceValue, setDebounceValue] = useState<T>(value);
@@ -426,16 +390,13 @@ export default function Account() {
       [name]: value,
     }));
     if (name === "section") {
-      // Make sure the first program in the dropdown is selected. Otherwise,
-      // state.program and the shown program in the dropdown won't match.
-      const program = sections.find((section) => section.id == value)
-        ?.programs[0]?.id;
-      if (program) {
-        setState((prevState: FormState) => ({
-          ...prevState,
-          program: program,
-        }));
-      }
+      const section = sections.find((s) => String(s.id) === value);
+      const firstProgram = section?.programs?.[0];
+      setState((prevState: FormState) => ({
+        ...prevState,
+        section: value,
+        program: firstProgram ? String(firstProgram.id) : "",
+      }));
     }
     clearError(name);
     validateInput(name, value, event.target);
@@ -460,7 +421,15 @@ export default function Account() {
 
     setShowSaveMessage(false);
 
-    const payload = { ...state, study_program: state.program };
+    const payload = {
+      ssn: state.ssn,
+      email: state.email,
+      name: state.name,
+      phone_number: state.phone_number,
+      registration_year: state.registration_year,
+      program: state.program || null,
+      section: state.section,
+    };
     request(Method.POST, "/account/", payload).then((resp) => {
       if (!resp.ok) {
         resp.json().then((err) => {
@@ -501,16 +470,17 @@ export default function Account() {
     );
   };
 
-  const programs_in_section =
-    sections
-      .find((s) => s.id == state.section)
-      ?.programs.map((p) => ({ value: p.id, name: p.name })) || [];
+  const sectionOptions = sections.map((section) => ({
+    value: String(section.id),
+    name: section.name || (i18n.language === "sv" ? section.section_sv : section.section_en),
+  }));
 
-  const no_programs = {
-    value: "N/A",
-    name: t("accountPage.selectSectionFirst"),
-  };
-
+  const programsInSelectedSection: { value: string; name: string }[] =
+    sections.find((s) => String(s.id) === state.section)?.programs?.map((p) => ({
+      value: String(p.id),
+      name: p.name || (i18n.language === "sv" ? p.name_sv : p.name_en),
+    })) || [];
+  
   const membershipText = (memberSince: string) => {
     if (memberSince === "Not a member") {
       return t("accountPage.notMemberInfo");
@@ -667,15 +637,15 @@ export default function Account() {
 
       <div className={cardStyles.cardSection}>
         <h3>{t("accountPage.studyDetails")}</h3>
-        <TextInput
-          label={t("accountPage.section")}
-          value={state.section}
-          onChange={onChange}
-          name="section"
-          icon={<Section />}
-          type="select"
-          options={sections}
-        />
+          <TextInput
+            label={t("accountPage.program")}
+            value={state.program}
+            onChange={onChange}
+            name="program"
+            icon={<StudentHat />}
+            type="select"
+            options={programsInSelectedSection}
+          />
         <div
           style={{
             display: "grid",
@@ -684,22 +654,13 @@ export default function Account() {
           }}
         >
           <TextInput
-            label={t("accountPage.program")}
-            value={
-              programs_in_section.length === 0
-                ? no_programs.value
-                : state.program
-            }
+            label={t("accountPage.section")}
+            value={state.section}
             onChange={onChange}
-            name="program"
-            icon={<StudentHat />}
+            name="section"
+            icon={<Section />}
             type="select"
-            disabled={programs_in_section.length === 0}
-            options={
-              programs_in_section.length === 0
-                ? [no_programs]
-                : programs_in_section
-            }
+            options={sectionOptions}
           />
           <TextInput
             required

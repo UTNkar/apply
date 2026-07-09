@@ -13,6 +13,7 @@ from .models import (
     Reference,
 )
 from .send_email import send_verification_email
+from .utils.unicore import unicoremember
 
 
 def get_language_from_request(request):
@@ -28,11 +29,11 @@ class SectionSerializer(ModelSerializer):
 
 
 class StudyProgramSerializer(ModelSerializer):
-    section = SectionSerializer(read_only=True)
+    sections = SectionSerializer(many=True, read_only=True)
 
     class Meta:
         model = StudyProgram
-        fields = ["id", "name_en", "name_sv", "section"]
+        fields = ["id", "name_en", "name_sv", "degree", "sections"]
         read_only_fields = ["id"]
 
 
@@ -71,8 +72,10 @@ class MemberSerializer(ModelSerializer):
         required=False,
         allow_null=True,
     )
+    section = SectionSerializer(read_only=True)
     section_id = serializers.PrimaryKeyRelatedField(
         queryset=Section.objects.all(),
+        source="section",
         write_only=True,
         required=False,
         allow_null=True,
@@ -82,6 +85,7 @@ class MemberSerializer(ModelSerializer):
         super().__init__(*args, **kwargs)
         if self.instance is not None:
             self.fields["email"].read_only = True
+            self.fields["ssn"].read_only = True
 
     class Meta:
         model = Member
@@ -90,6 +94,7 @@ class MemberSerializer(ModelSerializer):
             "phone_number",
             "study_program",
             "study_program_id",
+            "section",
             "section_id",
             "registration_year",
             "status",
@@ -116,18 +121,47 @@ class MemberSerializer(ModelSerializer):
         return value
 
     def validate(self, attrs):
-        section = attrs.get("section_id")
+        section = attrs.get("section")
         study_program = attrs.get("study_program")
 
-        if section and study_program and study_program.section_id != section.id:
+        if (
+            section
+            and study_program
+            and not study_program.sections.filter(id=section.id).exists()
+        ):
             raise serializers.ValidationError(
-                {"section_id": ["Section does not match selected program."]}
+                {"section": ["Section does not match selected program."]}
             )
+
+        # Only run these checks on account creation, not updates
+        if not self.instance:
+            # Check if SSN is registered in Unicore
+            ssn = attrs.get("ssn")
+            if ssn:
+                unicore = unicoremember()
+                user_data = unicore.get_user_data(ssn)
+                if user_data is None:
+                    raise serializers.ValidationError(
+                        {
+                            "ssn": [
+                                "SSN is not registered in Unicore. Please register here: https://unicorestudent.com/UTN/sv/shop"
+                            ]
+                        }
+                    )
+
+            # Check if email is already registered
+            email = attrs.get("email")
+            if email:
+                existing = Member.find_user_by_email(email)
+                if existing is not None:
+                    raise serializers.ValidationError(
+                        {"email": ["Email is already registered"]}
+                    )
 
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop("section_id", None)
+        password = validated_data.pop("password", None)
         password = validated_data.pop("password", None)
         if password is None:
             raise serializers.ValidationError({"password": ["Password must be set"]})
@@ -142,14 +176,16 @@ class MemberSerializer(ModelSerializer):
 
 class RoleDetailSerializer(ModelSerializer):
     team_name = serializers.SerializerMethodField()
+    team_names = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
-    team_logo = serializers.ImageField(source="team.logo", read_only=True)
+    team_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
         fields = [
             "team_name",
+            "team_names",
             "team_logo",
             "title",
             "description",
@@ -157,9 +193,31 @@ class RoleDetailSerializer(ModelSerializer):
             "contact_email",
         ]
 
+    @staticmethod
+    def _primary_team(obj):
+        # A role can now belong to several teams; expose the first as the
+        # representative one for backwards compatibility with the frontend.
+        return obj.teams.first()
+
     def get_team_name(self, obj):
+        team = self._primary_team(obj)
+        if team is None:
+            return None
         lang = get_language_from_request(self.context.get("request"))
-        return obj.team.name_sv if lang == "sv" else obj.team.name_en
+        return team.name_sv if lang == "sv" else team.name_en
+
+    def get_team_names(self, obj):
+        lang = get_language_from_request(self.context.get("request"))
+        field = "name_sv" if lang == "sv" else "name_en"
+        return list(obj.teams.values_list(field, flat=True))
+
+    def get_team_logo(self, obj):
+        team = self._primary_team(obj)
+        if team is None or not team.logo:
+            return None
+        request = self.context.get("request")
+        url = team.logo.url
+        return request.build_absolute_uri(url) if request else url
 
     def get_title(self, obj):
         lang = get_language_from_request(self.context.get("request"))
@@ -263,38 +321,6 @@ class ReferenceNestedSerializer(ModelSerializer):
                 )
 
         return data
-
-
-class ListApplicationSerializer(ModelSerializer):
-    """Serializer for Application model with nested position details (read-only)"""
-
-    position_details = PositionSerializer(source="position", read_only=True)
-    phone_number = serializers.CharField(source="member.phone_number", read_only=True)
-    email = serializers.CharField(source="member.email", read_only=True)
-    study_program = serializers.CharField(source="member.study_program", read_only=True)
-    references = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Application
-        fields = [
-            "id",
-            "position_details",
-            "email",
-            "phone_number",
-            "study_program",
-            "status",
-            "cover_letter",
-            "qualifications",
-            "gdpr",
-            "decision_date",
-            "references",
-        ]
-        read_only_fields = ["id", "status"]
-
-    def get_references(self, obj):
-        """Get references for the application"""
-        references = Reference.objects.filter(application=obj)
-        return ReferenceNestedSerializer(references, many=True).data
 
 
 class ListApplicationSerializer(ModelSerializer):
