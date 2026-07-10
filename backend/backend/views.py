@@ -650,12 +650,6 @@ class MyAccountAPIView(APIView):
     def post(self, request):
         user = request.user
 
-        # Map frontend field names to serializer field names
-        if "program" in request.data:
-            request.data["study_program_id"] = request.data.pop("program")
-        if "section" in request.data:
-            request.data["section_id"] = request.data.pop("section")
-
         serializer = MemberSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()

@@ -187,7 +187,8 @@
     "deleteAccount": "Delete Account",
     "deleteAccountConfirmation": "Are you sure you want to delete your account? This action cannot be undone.",
     "accountDeletePasswordError": "Failed to delete account. Current password is incorrect.",
-    "accountDeleteError": "Failed to delete account. Please try again."
+    "accountDeleteError": "Failed to delete account. Please try again.",
+    "accountSaveError": "Failed to save account details. Please check your inputs."
   },
   "openPositionCard": {
     "deadline": "Deadline",
