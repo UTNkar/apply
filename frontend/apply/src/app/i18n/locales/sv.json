@@ -147,7 +147,8 @@
     "deleteAccount": "Radera konto",
     "deleteAccountConfirmation": "Är du säker på att du vill radera ditt konto? Denna åtgärd kan inte ångras.",
     "accountDeletePasswordError": "Det gick inte att radera kontot. Nuvarande lösenord är felaktigt.",
-    "accountDeleteError": "Det gick inte att radera kontot. Försök igen."
+    "accountDeleteError": "Det gick inte att radera kontot. Försök igen.",
+    "accountSaveError": "Det gick inte att spara kontouppgifterna. Kontrollera dina inmatningar."
   },
   "openPositionCard": {
     "deadline": "Sista ansökningsdag",

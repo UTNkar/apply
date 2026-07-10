@@ -62,8 +62,8 @@ interface FormState {
   phone_number: string;
   registration_year: number;
   study_program: AccountStudyProgram | null;
-  section: string;
-  program: string;
+  section_id: string;
+  study_program_id: string;
 }
 
 type Errors = {
@@ -79,27 +79,33 @@ export default function Account() {
     phone_number: "",
     registration_year: 0,
     study_program: null,
-    section: "",
-    program: "",
+    section_id: "",
+    study_program_id: "",
   } as FormState;
+  // Account form
   const [state, setState] = useState<FormState>(default_state);
   const [originalState, setOriginalState] = useState<FormState>(default_state);
   const [errors, setErrors] = useState<Errors>({});
   const [intermediateErrors, setIntermediateErrors] = useState<Errors>({});
+  const [saveError, setSaveError] = useState("");
   const [sections, setSections] = useState<Array<Section>>([]);
   const [unicoreLoading, setUnicoreLoading] = useState<boolean>(false);
   const [memberSince, setMemberSince] = useState<string>("");
+  const [showSaveMessage, setShowSaveMessage] = useState(false);
 
+  // Password modal
   const [isPasswordModalOpen, setIsPasswordModalOpen] =
     useState<boolean>(false);
   const [passwordError, setPasswordError] = useState("");
   const [newPasswordError, setNewPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Delete modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const [showSaveMessage, setShowSaveMessage] = useState(false);
+
   const passwordSpecialCharRegex = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
 
   const validateNewPassword = (password: string) => {
@@ -248,8 +254,8 @@ export default function Account() {
       phone_number: data.phone_number,
       registration_year: registrationYear,
       study_program: data.study_program || null,
-      section: sectionId,
-      program: programId,
+      section_id: sectionId,
+      study_program_id: programId,
     }));
     setOriginalState((prevState: FormState) => ({
       ...prevState,
@@ -259,8 +265,8 @@ export default function Account() {
       phone_number: data.phone_number,
       registration_year: registrationYear,
       study_program: data.study_program || null,
-      section: sectionId,
-      program: programId,
+      section_id: sectionId,
+      study_program_id: programId,
     }));
   };
 
@@ -389,13 +395,11 @@ export default function Account() {
       ...prevState,
       [name]: value,
     }));
-    if (name === "section") {
-      const section = sections.find((s) => String(s.id) === value);
-      const firstProgram = section?.programs?.[0];
+    if (name === "section_id") {
       setState((prevState: FormState) => ({
         ...prevState,
-        section: value,
-        program: firstProgram ? String(firstProgram.id) : "",
+        section_id: value,
+        study_program_id: "",
       }));
     }
     clearError(name);
@@ -406,6 +410,7 @@ export default function Account() {
     setState(originalState);
     setErrors({});
     setIntermediateErrors({});
+    setSaveError("");
   };
 
   const formHasErrors = Object.values(intermediateErrors).some(
@@ -419,7 +424,21 @@ export default function Account() {
       return;
     }
 
+    // Validate section and program after save button is pressed
+    const newErrors: Errors = {};
+    if (!state.section_id) {
+      newErrors.section_id = t("registerPage.sectionRequired");
+    }
+    if (!state.study_program_id) {
+      newErrors.study_program_id = t("registerPage.programRequired");
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setShowSaveMessage(false);
+    setSaveError("");
 
     const payload = {
       ssn: state.ssn,
@@ -427,18 +446,35 @@ export default function Account() {
       name: state.name,
       phone_number: state.phone_number,
       registration_year: state.registration_year,
-      program: state.program || null,
-      section: state.section,
+      section_id: state.section_id,
+      study_program_id: state.study_program_id || null,
     };
     request(Method.POST, "/account/", payload).then((resp) => {
       if (!resp.ok) {
         resp.json().then((err) => {
-          setErrors(err);
+          // Convert backend error arrays to strings and map field names
+          const parsed: Record<string, string> = {};
+          const formFieldKeys = new Set<keyof FormState>(["ssn", "email", "name", "phone_number", "registration_year", "study_program", "section_id", "study_program_id"]);
+          const nonFieldErrors: string[] = [];
+          for (const [key, value] of Object.entries(err)) {
+            const mappedKey = key === "section" ? "section_id" : key;
+            const message = Array.isArray(value) ? value.join(" ") : String(value);
+            if (formFieldKeys.has(mappedKey as keyof FormState)) {
+              parsed[mappedKey] = message;
+            } else {
+              nonFieldErrors.push(message);
+            }
+          }
+          setErrors(parsed);
+          // Only show non-field errors near the save button
+          setSaveError(nonFieldErrors.join(" ") || t("accountPage.accountSaveError"));
           console.error(err);
         });
       } else {
         resp.json().then((data) => {
           handleNewUserData(data.user);
+          setErrors({});
+          setIntermediateErrors({});
           setShowSaveMessage(true);
           setTimeout(() => setShowSaveMessage(false), 3000);
         });
@@ -470,16 +506,26 @@ export default function Account() {
     );
   };
 
-  const sectionOptions = sections.map((section) => ({
-    value: String(section.id),
-    name: section.name || (i18n.language === "sv" ? section.section_sv : section.section_en),
-  }));
+  const sectionOptions = [
+    { value: "", name: t("registerPage.selectSection") },
+    ...sections.map((section) => ({
+      value: String(section.id),
+      name: section.name || (i18n.language === "sv" ? section.section_sv : section.section_en),
+    })),
+  ];
 
   const programsInSelectedSection: { value: string; name: string }[] =
-    sections.find((s) => String(s.id) === state.section)?.programs?.map((p) => ({
-      value: String(p.id),
-      name: p.name || (i18n.language === "sv" ? p.name_sv : p.name_en),
-    })) || [];
+    !state.section_id
+      ? [{ value: "", name: t("accountPage.selectSectionFirst") }]
+      : [
+          { value: "", name: t("registerPage.selectProgram") },
+          ...(sections
+            .find((s) => String(s.id) === state.section_id)
+            ?.programs?.map((p) => ({
+              value: String(p.id),
+              name: p.name || (i18n.language === "sv" ? p.name_sv : p.name_en),
+            })) || []),
+        ];
   
   const membershipText = (memberSince: string) => {
     if (memberSince === "Not a member") {
@@ -493,6 +539,7 @@ export default function Account() {
     }
     return `${t("accountPage.memberSince")} ${formatDate(memberSince)}.`;
   };
+  console.log("User data:", state);
 
   return (
     <div className="pageContainer">
@@ -639,12 +686,13 @@ export default function Account() {
         <h3>{t("accountPage.studyDetails")}</h3>
           <TextInput
             label={t("accountPage.program")}
-            value={state.program}
+            value={state.study_program_id}
             onChange={onChange}
-            name="program"
+            name="study_program_id"
             icon={<StudentHat />}
             type="select"
             options={programsInSelectedSection}
+            error={errors.study_program_id}
           />
         <div
           style={{
@@ -655,12 +703,13 @@ export default function Account() {
         >
           <TextInput
             label={t("accountPage.section")}
-            value={state.section}
+            value={state.section_id}
             onChange={onChange}
-            name="section"
+            name="section_id"
             icon={<Section />}
             type="select"
             options={sectionOptions}
+            error={errors.section_id}
           />
           <TextInput
             required
@@ -708,6 +757,10 @@ export default function Account() {
             </span>
             <span>{t("accountPage.accountDetailsSaved")}</span>
           </p>
+
+          {saveError && (
+            <p className={styles.saveErrorMessage}>{saveError}</p>
+          )}
         </div>
 
         <button className={`button`} onClick={resetForm}>

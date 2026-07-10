@@ -133,6 +133,12 @@ class MemberSerializer(ModelSerializer):
                 {"section": ["Section does not match selected program."]}
             )
 
+        # On account updates, reject clearing the study program
+        if self.instance and "study_program" in attrs and attrs["study_program"] is None:
+            raise serializers.ValidationError(
+                {"study_program_id": ["Study program cannot be empty."]}
+            )
+
         # Only run these checks on account creation, not updates
         if not self.instance:
             # Check if SSN is registered in Unicore
