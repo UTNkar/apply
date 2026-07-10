@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('backend', '0012_remove_role_team_remove_studyprogram_section_and_more'),
+        ('backend', '0013_remove_role_team_remove_studyprogram_section_and_more'),
     ]
 
     operations = [
