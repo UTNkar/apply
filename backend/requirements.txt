@@ -1,12 +1,12 @@
 # async functionality
-asgiref==3.6.0
+asgiref==3.11.1
 
 # Websockets
 channels[daphne]==4.0.0
 channels_redis==4.1.0
 
 # Django
-Django[argon2]==4.1.7
+Django[argon2]==6.0.5
 django-cors-headers==3.14.0
 django-filter==23.2
 djangorestframework==3.14.0
@@ -20,7 +20,7 @@ setuptools<81.0.0
 requests>=2.25.0
 
 # Admin theme
-django-unfold
+django-unfold==0.94.0
 django-apscheduler==0.6.2
 apscheduler==3.10.1
 

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('backend', '0009_add_email_verification_code'),
+        ('backend', '0010_alter_member_positions'),
     ]
 
     operations = [
