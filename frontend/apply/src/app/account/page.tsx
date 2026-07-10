@@ -495,7 +495,6 @@ export default function Account() {
           });
         } else {
           resp.json().then((data) => {
-            console.log("Unicore data updated:", data);
             handleNewUserData(data);
             setTimeout(() => {
               setUnicoreLoading(false);
@@ -539,7 +538,6 @@ export default function Account() {
     }
     return `${t("accountPage.memberSince")} ${formatDate(memberSince)}.`;
   };
-  console.log("User data:", state);
 
   return (
     <div className="pageContainer">
