@@ -39,7 +39,27 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() in ("true", "1", "yes")
 EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "yes")
-ALLOWED_HOSTS = ["localhost", "backend"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "backend",
+    os.getenv("ALLOWED_HOST", ""),
+]
+
+# CORS / CSRF — derived from ALLOWED_HOST env, defaults to localhost:3000
+_EXTERNAL_HOST = os.getenv("ALLOWED_HOST", "localhost:3000")
+
+CORS_ALLOW_CREDENTIALS = True
+if "localhost" in _EXTERNAL_HOST or "127.0.0.1" in _EXTERNAL_HOST:
+    CORS_ALLOWED_ORIGINS = [f"http://{_EXTERNAL_HOST}", f"https://{_EXTERNAL_HOST}"]
+    CSRF_TRUSTED_ORIGINS = [f"http://{_EXTERNAL_HOST}", f"https://{_EXTERNAL_HOST}"]
+else:
+    CORS_ALLOWED_ORIGINS = [f"https://{_EXTERNAL_HOST}"]
+    CSRF_TRUSTED_ORIGINS = [f"https://{_EXTERNAL_HOST}"]
+
+# CSRF cookie domain from the external host
+parts = _EXTERNAL_HOST.split(":")[0].split(".")
+if len(parts) >= 2 and "localhost" not in _EXTERNAL_HOST:
+    CSRF_COOKIE_DOMAIN = "." + ".".join(parts[-2:])
 
 
 AUTH_USER_MODEL = "backend.Member"
@@ -76,24 +96,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-# CORS
-CORS_ALLOW_CREDENTIALS = True
-if DEBUG:
-    CORS_ALLOWED_ORIGINS = [
-        # based on nextjs dev default
-        "http://localhost:3000",
-    ]
-
-# CSRF
-# TODO non-debug mode
-if DEBUG:
-    CSRF_COOKIE_DOMAIN = ".localhost"
-    CSRF_TRUSTED_ORIGINS = [
-        # based on nextjs dev default
-        "http://localhost:3000",
-    ]
-
 
 ROOT_URLCONF = "config.urls"
 
