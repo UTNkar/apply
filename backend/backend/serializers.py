@@ -220,9 +220,10 @@ class RoleDetailSerializer(ModelSerializer):
         team = self._primary_team(obj)
         if team is None or not team.logo:
             return None
-        request = self.context.get("request")
-        url = team.logo.url
-        return request.build_absolute_uri(url) if request else url
+        # Return the relative path (e.g. "/media/team_logos/dg.png").
+        # The frontend prepends the correct backend base URL depending on
+        # the environment (Docker, production, local dev, etc.).
+        return team.logo.url
 
     def get_title(self, obj):
         lang = get_language_from_request(self.context.get("request"))
