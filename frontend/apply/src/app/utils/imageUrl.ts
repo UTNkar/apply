@@ -3,8 +3,10 @@
  * Next.js Image Optimization fetches the source server-side, so we must
  * prepend an absolute base URL that the Next.js server can reach.
  *
- * Set NEXT_PUBLIC_API_URL in production (e.g. "https://applytest.utn.se/api").
- * The default "http://backend:8000" is the Docker Compose service name.
+ * Production        → set NEXT_PUBLIC_API_URL to a full absolute URL
+ *                     (e.g. "https://applytest.utn.se/api"), or the
+ *                     current origin is used when running on the client.
+ * Docker Compose    → defaults to "http://backend:8000"
  */
 export function getImageUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -12,9 +14,17 @@ export function getImageUrl(url: string): string {
   }
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const base = apiUrl
-    ? apiUrl.replace(/\/api\/?$/, "")
-    : "http://backend:8000";
 
-  return `${base}${url}`;
+  // 1. Absolute env var – derive backend base from it
+  if (apiUrl && (apiUrl.startsWith("http://") || apiUrl.startsWith("https://"))) {
+    return `${apiUrl.replace(/\/api\/?$/, "")}${url}`;
+  }
+
+  // 2. Server-side rendering (Docker Compose)
+  if (typeof window === "undefined") {
+    return `http://backend:8000${url}`;
+  }
+
+  // 3. Client-side production – nginx proxies /media/ to Django
+  return `${window.location.origin}${url}`;
 }
