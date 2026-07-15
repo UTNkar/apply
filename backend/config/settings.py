@@ -204,7 +204,8 @@ UNFOLD = {
     },
 }
 
-MEDIA_ROOT = BASE_DIR / "media"
+# Where images are stored
+MEDIA_ROOT = os.getenv("MEDIA_ROOT", BASE_DIR / "media")
 MEDIA_URL = "/media/"
 
 # Unicore API Configuration
