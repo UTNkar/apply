@@ -49,7 +49,7 @@ const OpenPositionCard = ({ position }: Props) => {
         <div className={styles.cardRightSection}>
           <h4>
             {t("openPositionCard.deadline")}:{" "}
-            <span className={deadlineClassName}>
+            <span className={deadlineClassName + " " + styles.deadlineText}>
               {formatDate(position.recruitment_end)}
             </span>
           </h4>

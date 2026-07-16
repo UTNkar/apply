@@ -79,16 +79,24 @@
     white-space: nowrap;
 }
 
+.deadlineText {
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
 .deadlineDefault {
     color: var(--black);
 }
 
 .deadlineSoon {
-    color: #FBC02D;
+    background: #ffa00b;
+    color: #fff;
 }
 
 .deadlineUrgent {
-    color: var(--error-500);
+    background: var(--error-500);
+    color: #fff;
 }
 
 @media screen and (max-width: 767px) {
