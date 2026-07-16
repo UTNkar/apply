@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Position } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
-import { formatDate } from "@/utils/dateFormat";
+import { formatDate, getDeadlineUrgency } from "@/utils/dateFormat";
 import Image from "next/image";
 import { getImageUrl } from "@/utils/imageUrl";
 import Link from "next/link";
@@ -16,6 +16,13 @@ type Props = {
 const OpenPositionCard = ({ position }: Props) => {
   const [showInfo, setShowInfo] = useState(false);
   const { t } = useTranslation();
+  const deadlineUrgency = getDeadlineUrgency(position.recruitment_end);
+  const deadlineClassName =
+    deadlineUrgency === "urgent"
+      ? styles.deadlineUrgent
+      : deadlineUrgency === "soon"
+        ? styles.deadlineSoon
+        : styles.deadlineDefault;
 
   return (
     <div className={styles.card}>
@@ -41,7 +48,10 @@ const OpenPositionCard = ({ position }: Props) => {
 
         <div className={styles.cardRightSection}>
           <h4>
-            {t("openPositionCard.deadline")}: {formatDate(position.recruitment_end)}
+            {t("openPositionCard.deadline")}:{" "}
+            <span className={deadlineClassName + " " + styles.deadlineText}>
+              {formatDate(position.recruitment_end)}
+            </span>
           </h4>
           <Link
             className="smallButton"
