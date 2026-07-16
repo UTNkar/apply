@@ -144,6 +144,14 @@ class Member(AbstractBaseUser, PermissionsMixin):
         blank=True,
     )
 
+    section = models.ForeignKey(
+        "Section",
+        verbose_name=_("Section"),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
     registration_year = models.CharField(
         max_length=4,
         verbose_name=_("Registration year"),
@@ -241,11 +249,11 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
         return list(
             Team.objects.filter(
-                role__positions__appointments__member=self,
-                role__positions__appointments__status=Appointment.APPOINTED,
-                role__positions__term_from__lte=reference_date,
-                role__positions__term_end__gte=reference_date,
-                role__role_type__in=role_types,
+                roles__positions__appointments__member=self,
+                roles__positions__appointments__status=Appointment.APPOINTED,
+                roles__positions__term_from__lte=reference_date,
+                roles__positions__term_end__gte=reference_date,
+                roles__role_type__in=role_types,
             )
             .values_list("id", flat=True)
             .distinct()
@@ -453,13 +461,27 @@ class StudyProgram(models.Model):
         section (ForeignKey): A foreign key to the Section model, representing the section to which the study program belongs.
         name_en (CharField): The name of the study program in English.
         name_sv (CharField): The name of the study program in Swedish.
+        degree (CharField): The degree awarded by the study program (e.g. bachelor, master).
     """
 
-    section = models.ForeignKey(
+    BSC = "bsc"
+    MSC = "msc"
+    MSCENG = "msceng"
+    BE = "be"
+
+    DEGREE_CHOICES = (
+        (BSC, _("Bachelor of Science")),
+        (MSC, _("Master of Science")),
+        (MSCENG, _("Master of Science in Engineering")),
+        (BE, _("Bachelor of Engineering")),
+    )
+
+    sections = models.ManyToManyField(
         "Section",
         related_name="study_programs",
-        on_delete=models.CASCADE,
-        blank=False,
+        verbose_name=_("Sections"),
+        help_text=_("The sections this study program belongs to"),
+        blank=True,
     )
 
     name_en = models.CharField(
@@ -473,6 +495,15 @@ class StudyProgram(models.Model):
         max_length=255,
         verbose_name=_("Swedish section name"),
         help_text=_("Enter the name of the section in Swedish"),
+    )
+
+    degree = models.CharField(
+        max_length=20,
+        choices=DEGREE_CHOICES,
+        verbose_name=_("Degree"),
+        help_text=_("The degree awarded by this study program"),
+        blank=True,
+        default="",
     )
 
     def __str__(self):
@@ -680,11 +711,12 @@ class Role(models.Model):
         (INVOLVED, _("Involved")),
     )
 
-    team = models.ForeignKey(
+    teams = models.ManyToManyField(
         "Team",
-        related_name="role",
-        on_delete=models.CASCADE,
-        blank=False,
+        related_name="roles",
+        verbose_name=_("Teams"),
+        help_text=_("The teams this role belongs to"),
+        blank=True,
     )
 
     role_type = models.CharField(
@@ -776,6 +808,13 @@ class Role(models.Model):
         help_text=_("The email address for the current position holder"),
         blank=False,
     )
+
+    election_email = models.EmailField(
+        verbose_name=_("Election email address"),
+        help_text=_("The email address used for nominations/elections to this role"),
+        blank=True,
+        default="",
+    )
     # ------ Administrator settings ------
     # panels = [MultiFieldPanel([
     #     FieldRowPanel([
@@ -796,7 +835,8 @@ class Role(models.Model):
     # ])]
 
     def __str__(self):
-        return f"{self.title_en} ({self.team})"
+        team_names = ", ".join(self.teams.values_list("name_en", flat=True))
+        return f"{self.title_en} ({team_names})" if team_names else self.title_en
 
 
 def _sync_staff_status(member, reference_date=None):

@@ -12,7 +12,6 @@ import FormInput from "./FormInput";
 import FormTextarea from "./FormTextarea";
 import Modal from "./Modal";
 import PositionInfoCard from "./PositionInfoCard";
-import Button from "./Button";
 
 type ApplicationFormProps = {
   position: Position;

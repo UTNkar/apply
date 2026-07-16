@@ -496,9 +496,9 @@ class ApplicationViewSet(ModelViewSet):
     """
     ViewSet for managing applications.
 
-    - List: Get all applications (public)
+    - List: Get all applications for the current user
     - Create: Create a new application for a position
-    - Retrieve: Get a specific application (public)
+    - Retrieve: Get a specific application
     - Update: Update own application (only draft/submitted status)
     - Destroy: Delete own application (only if draft status)
     """
@@ -506,10 +506,10 @@ class ApplicationViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Get all applications with optimized queries"""
+        """Get applications for the current user with optimized queries"""
         queryset = Application.objects.select_related(
             "member", "position", "position__role"
-        )
+        ).filter(member=self.request.user)
 
         # Filter by position if position_id is provided
         position_id = self.request.query_params.get("position_id", None)
@@ -572,14 +572,18 @@ class PositionViewSet(ReadOnlyModelViewSet):
     def list(self, request):
         """Return both open positions and user's positions"""
         if request.user.is_authenticated:
-            my_positions = Position.objects.for_member(request.user).select_related(
-                "role", "role__team"
+            my_positions = (
+                Position.objects.for_member(request.user)
+                .select_related("role")
+                .prefetch_related("role__teams")
             )
         else:
             my_positions = Position.objects.none()
 
-        open_positions = Position.objects.open_positions().select_related(
-            "role", "role__team"
+        open_positions = (
+            Position.objects.open_positions()
+            .select_related("role")
+            .prefetch_related("role__teams")
         )
 
         return Response(
@@ -608,8 +612,10 @@ class OpenPositionsAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        open_positions = Position.objects.open_positions().select_related(
-            "role", "role__team"
+        open_positions = (
+            Position.objects.open_positions()
+            .select_related("role")
+            .prefetch_related("role__teams")
         )
         serializer = PositionSerializer(
             open_positions, many=True, context={"request": request}
@@ -644,18 +650,7 @@ class MyAccountAPIView(APIView):
     def post(self, request):
         user = request.user
 
-        # Handle study_program update if 'program' is provided in request
-        if "program" in request.data:
-            program_id = request.data.pop("program")
-            try:
-                program = StudyProgram.objects.get(id=program_id)
-                user.study_program = program
-                user.save()
-            except StudyProgram.DoesNotExist:
-                return Response({"program": ["Invalid study program ID"]}, status=400)
-
         serializer = MemberSerializer(user, data=request.data, partial=True)
-
         if serializer.is_valid():
             serializer.save()
             return Response(

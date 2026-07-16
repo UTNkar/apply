@@ -147,7 +147,8 @@
     "deleteAccount": "Radera konto",
     "deleteAccountConfirmation": "Är du säker på att du vill radera ditt konto? Denna åtgärd kan inte ångras.",
     "accountDeletePasswordError": "Det gick inte att radera kontot. Nuvarande lösenord är felaktigt.",
-    "accountDeleteError": "Det gick inte att radera kontot. Försök igen."
+    "accountDeleteError": "Det gick inte att radera kontot. Försök igen.",
+    "accountSaveError": "Det gick inte att spara kontouppgifterna. Kontrollera dina inmatningar."
   },
   "openPositionCard": {
     "deadline": "Sista ansökningsdag",
@@ -215,9 +216,9 @@
     "passwordConfirmationPlaceholder": "Bekräfta ditt lösenord",
     "passwordConfirmationRequired": "Bekräftelse av lösenord krävs",
     "personalIdentityNumber": "Personnummer",
-    "PersonNumberPlaceholder": "ÅÅÅÅMMDD-XXXX",
+    "PersonNumberPlaceholder": "ÅÅÅÅMMDD-XXXX eller ÅÅÅÅMMDD-TXXX",
     "PersonNumberRequired": "Personnummer krävs",
-    "PersonNumberInvalid": "Ange ett giltigt personnummer (ÅÅÅÅMMDD-XXXX)",
+    "PersonNumberInvalid": "Ange ett giltigt personnummer eller T-nummer (ÅÅÅÅMMDD-XXXX eller ÅÅÅÅMMDD-TXXX)",
     "section": "Sektion",
     "sectionPlaceholder": "Välj din sektion",
     "selectSection": "Välj en sektion",
