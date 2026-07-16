@@ -149,13 +149,15 @@ FROM legacy.involvement_position;
 --    ssn (= old person_nr); empty/NULL -> synthetic unique 'MIG##########'.
 --    verified_email = TRUE: pre-existing accounts that predate the
 --    email-verification feature.
---    Dropped: username, date_joined, status_changed, section_id (member's
---    section is derived via study_program in the new schema).
+--    study_program_id falls back to a study linked to the member's section
+--    if m.study_id is NULL. section_id is carried across directly.
+--    Dropped: username, date_joined, status_changed.
 -- ---------------------------------------------------------------------------
 INSERT INTO backend_member
     (id, password, last_login, unicore_id, email, verified_email, phone_number,
      is_superuser, is_staff, is_active, name, ssn, registration_year, status,
-     study_program_id, email_verification_code, email_verification_code_expires_at,
+     study_program_id, section_id,
+     email_verification_code, email_verification_code_expires_at,
      email_verification_attempts, email_verification_sent_at)
 SELECT map.new_id,
        coalesce(m.password, ''),
@@ -173,7 +175,12 @@ SELECT map.new_id,
             ELSE m.person_nr END,
        coalesce(m.registration_year, ''),
        coalesce(m.status, 'unknown'),
-       m.study_id,
+       coalesce(m.study_id,
+                (SELECT ssp.studyprogram_id
+                 FROM legacy.members_section_studies ssp
+                 WHERE ssp.section_id = m.section_id
+                 LIMIT 1)),
+       m.section_id,
        NULL, NULL, 0, NULL
 FROM legacy.members_member m
 JOIN member_id_map map ON map.old_id = m.id;

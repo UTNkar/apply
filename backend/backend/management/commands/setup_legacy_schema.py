@@ -8,6 +8,14 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+"""
+Before you run, set these variables:
+export POSTGRES_DB=apply
+export POSTGRES_USER=apply
+export POSTGRES_PORT=5436
+export POSTGRES_HOST=localhost
+export POSTGRES_PASSWORD=<vault_apply_db_password>
+"""
 
 class Command(BaseCommand):
     help = (
@@ -83,6 +91,8 @@ class Command(BaseCommand):
                 self._terminate_connections(env, target_db)
                 self._run(env, ["dropdb", "--if-exists", target_db], allow_failure=True)
                 self._run(env, ["createdb", target_db])
+                self.stdout.write(self.style.NOTICE("Applying Django migrations to fresh target DB..."))
+                self._run(env, ["python", "manage.py", "migrate"], stream_output=True)
 
             self._terminate_connections(env, scratch_db)
             self._run(env, ["dropdb", "--if-exists", scratch_db], allow_failure=True)
