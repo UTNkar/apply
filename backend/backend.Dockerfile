@@ -7,6 +7,8 @@ WORKDIR /app
 # Needed to run manage.py setup_legacy_schema.py
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    openssh-client \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # copy dependencies file and install dependencies, requirements.txt is taken from old project

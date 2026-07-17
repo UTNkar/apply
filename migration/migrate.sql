@@ -91,16 +91,24 @@ FROM legacy.members_section_studies;
 
 -- ---------------------------------------------------------------------------
 -- 3. Team  (legacy.involvement_team -> backend_team)
---    NOTE: old logo (wagtail image FK) has no destination -> logo = ''.
+--    Logo: JOINs legacy.wagtailimages_image via logo_id, extracts the
+--    filename from the stored path (e.g. original_images/foo.png → foo.png),
+--    prefixes "team_logos/" and inserts the square size before the extension
+--    so the database points to e.g. "team_logos/BAS160x160.png".
+--    After migration, files must be placed in MEDIA_ROOT/team_logos/.
 -- ---------------------------------------------------------------------------
 INSERT INTO backend_team (id, name_en, name_sv, logo, desc_en, desc_sv)
-SELECT id,
-       coalesce(name_en, ''),
-       coalesce(name_sv, ''),
-       '',
-       coalesce(description_en, ''),
-       coalesce(description_sv, '')
-FROM legacy.involvement_team;
+SELECT t.id,
+       coalesce(t.name_en, ''),
+       coalesce(t.name_sv, ''),
+       CASE WHEN i.file IS NOT NULL
+            THEN 'team_logos/' || replace(split_part(i.file, '/', 2), '.', '160x160.')
+            ELSE ''
+       END,
+       coalesce(t.description_en, ''),
+       coalesce(t.description_sv, '')
+FROM legacy.involvement_team t
+LEFT JOIN legacy.wagtailimages_image i ON t.logo_id = i.id;
 
 -- ---------------------------------------------------------------------------
 -- 4. Role  (legacy.involvement_role -> backend_role)
