@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 import shlex
+import sys
 from pathlib import Path
 
 from django.conf import settings
@@ -46,12 +47,33 @@ class Command(BaseCommand):
             action="store_true",
             help="Drop and recreate the target database before running",
         )
+        parser.add_argument(
+            "--moore-connection",
+            nargs="?",
+            const="",
+            default=None,
+            help="SSH connection string (user@host) for pulling team logos from "
+            "the old Wagtail server.  If given without a value you will be "
+            "prompted interactively.  Omit to skip logo pulling entirely.\n"
+            "If the moore server requires SSH key authentication, mount your "
+            "~/.ssh directory:\n"
+            '  docker compose run --rm -v "$HOME/.ssh:/root/.ssh:ro" '
+            "backend python manage.py setup_legacy_schema --moore-connection …",
+        )
+        parser.add_argument(
+            "--moore-remote-dir",
+            default="/var/www/moore/src/media/images",
+            help="Remote directory on the moore server containing Wagtail original "
+            "images (default: /var/www/moore/src/media/images).",
+        )
 
     def handle(self, *args, **options):
         dump_file = Path(options["dump_file"])
         scratch_db = options["scratch_db"]
         target_db = options["target_db"]
         recreate_target = options["recreate_target"]
+        moore_connection: str | None = options["moore_connection"]
+        moore_remote_dir: str = options["moore_remote_dir"]
 
         if not dump_file.exists():
             raise CommandError(f"Dump file not found: {dump_file}")
@@ -136,6 +158,7 @@ class Command(BaseCommand):
                 "set -o pipefail && "
                 f"pg_dump -d {shlex.quote(scratch_db)} --section=pre-data --section=data --no-owner "
                 "-t 'legacy.involvement_*' -t 'legacy.members_*' -t legacy.auth_group "
+                "-t 'legacy.wagtailimages_image' "
                 "| sed '/transaction_timeout/d' "
                 f"| psql -d {shlex.quote(target_db)} -v ON_ERROR_STOP=1"
             )
@@ -199,6 +222,16 @@ class Command(BaseCommand):
                 ],
             )
 
+            # ------------------------------------------------------------------
+            # Optional: pull team logo images from the old moore server
+            # ------------------------------------------------------------------
+            if moore_connection is not None:
+                if moore_connection == "":
+                    moore_connection = self._prompt(
+                        "SSH connection string (user@host) for pulling team logos"
+                    )
+                self._pull_team_logos(moore_connection, moore_remote_dir)
+
         finally:
             self.stdout.write(self.style.NOTICE("Cleaning up scratch DB..."))
             self._terminate_connections(env, scratch_db)
@@ -236,3 +269,138 @@ class Command(BaseCommand):
             raise CommandError(
                 f"Command failed with exit code {result.returncode}: {' '.join(command)}"
             )
+
+    # ------------------------------------------------------------------
+    # Team logo pulling helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _wagtail_original_path(filename: str) -> str:
+        """Insert ``.original`` before the file extension.
+
+        Wagtail stores the raw upload as ``foo.original.png`` while the
+        ``file`` column in ``wagtailimages_image`` points to ``foo.png``.
+        """
+        filename = filename.replace("160x160", "") # Remove size suffix
+        stem, dot, ext = filename.rpartition(".")
+        return f"{stem}.original{dot}{ext}"
+
+    def _pull_team_logos(self, connection: str, remote_dir: str) -> None:
+        """SCP team logo originals from moore, then crop a left-aligned square
+        and resize to 160x160 px (retina-ready for 80x80 display) with ffmpeg.
+
+        The database points to ``team_logos/foo.png`` (cropped square).
+        The original is kept as ``team_logos/foo.original.png`` for reference.
+
+        .. note::
+
+            If the moore server requires SSH key authentication, mount your
+            ``~/.ssh`` directory into the container when running this command::
+
+                docker compose -f docker-compose.yml \\
+                    run --rm -v "$HOME/.ssh:/root/.ssh:ro" \\
+                    backend python manage.py setup_legacy_schema --moore-connection …
+        """
+        from backend.models import Team
+
+        SQUARE_SIZE = 160  # 2× for retina, displayed at 80×80
+
+        self.stdout.write(self.style.NOTICE("Pulling team logos from moore server..."))
+
+        teams = Team.objects.exclude(logo="").values_list("logo", flat=True)
+        logo_paths = sorted(set(teams))
+
+        if not logo_paths:
+            self.stdout.write(self.style.WARNING("No team logos found in the database."))
+            return
+
+        self.stdout.write(f"Found {len(logo_paths)} unique logo filenames.")
+
+        dest_dir = Path(settings.MEDIA_ROOT) / "team_logos"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        succeeded = 0
+        failed = 0
+        auth_failures = 0
+
+        for logo_path in logo_paths:
+            # logo_path is e.g. "team_logos/BAS.png"
+            filename = Path(logo_path).name  # "BAS.png"
+            original_name = self._wagtail_original_path(filename)  # "BAS.original.png"
+
+            remote = f"{connection}:{remote_dir}/{original_name}"
+            original_dest = dest_dir / original_name   # kept for reference
+            # Insert size suffix before extension: BAS.png → BAS160x160.png
+            square_dest = dest_dir / filename   # cropped version → DB
+
+            self.stdout.write(f"  {remote}", ending="")
+
+            try:
+                # 1. Pull the Wagtail original from moore
+                result = subprocess.run(
+                    ["scp", "-F", "/dev/null", "-o", "ConnectTimeout=10",
+                     "-o", "StrictHostKeyChecking=no", remote, str(original_dest)],
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    stderr = result.stderr.strip()
+                    if "Permission denied" in stderr:
+                        auth_failures += 1
+                        if auth_failures == 1:
+                            # Only print the help message once
+                            self.stdout.write(self.style.ERROR("  PERMISSION DENIED"))
+                            self.stderr.write(
+                                "\n"
+                                + self.style.ERROR(
+                                    "SSH key authentication failed. "
+                                    "Mount your ~/.ssh directory and try again:\n"
+                                    "  docker compose -f docker-compose.yml \\\n"
+                                    "    run --rm -v \"$HOME/.ssh:/root/.ssh:ro\" \\\n"
+                                    "    backend python manage.py setup_legacy_schema "
+                                    "--moore-connection …\n"
+                                )
+                            )
+                        continue
+                    raise subprocess.CalledProcessError(
+                        result.returncode, ["scp", "...", remote, str(original_dest)],
+                        output=result.stdout, stderr=result.stderr,
+                    )
+
+                # 2. Crop largest possible square from the left edge, resize
+                #    The \\, escapes commas inside min() for ffmpeg's filter parser.
+                subprocess.run(
+                    [
+                        "ffmpeg",
+                        "-y", "-v", "error",
+                        "-i", str(original_dest),
+                        "-vf",
+                        f"crop=min(in_w\\,in_h):min(in_w\\,in_h):0:0,scale={SQUARE_SIZE}:{SQUARE_SIZE}",
+                        str(square_dest),
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+
+                self.stdout.write(self.style.SUCCESS("  OK"))
+                succeeded += 1
+            except subprocess.CalledProcessError as exc:
+                self.stdout.write(self.style.ERROR("  FAILED"))
+                err = exc.stderr.strip() if exc.stderr else str(exc)
+                if err:
+                    self.stderr.write(f"    {err}")
+                failed += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Team logo pull done: {succeeded} pulled & cropped, {failed} failed."
+            )
+        )
+
+    @staticmethod
+    def _prompt(text: str) -> str:
+        """Print a prompt to stderr and return the user's answer."""
+        sys.stderr.write(f"{text}: ")
+        sys.stderr.flush()
+        return sys.stdin.readline().rstrip("\n")
