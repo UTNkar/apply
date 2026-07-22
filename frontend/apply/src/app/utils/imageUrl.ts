@@ -1,39 +1,29 @@
 /**
  * The backend returns relative paths like "/media/team_logos/dg.png".
- * Next.js Image Optimization fetches the source server-side, so we must
- * prepend an absolute base URL that the Next.js server can reach.
  *
- *   NEXT_PUBLIC_API_URL  →  derived base (strip "/api")
- *   Client-side          →  window.location.origin  (nginx proxies /media/)
- *   SSR (Docker dev)     →  http://backend:8000
+ * The URL returned here is used as the `src` of Next.js `<Image>`.  The
+ * browser never loads this URL directly — it only sees the optimized
+ * `/_next/image?url=…` endpoint.  So the URL must be reachable from
+ * wherever the Next.js **server** runs:
  *
- * In production without NEXT_PUBLIC_API_URL set to an absolute URL,
- * SSR-rendered pages will briefly reference "http://backend:8000" which
- * won't resolve.  The client hydration fixes it immediately, but the
- * proper fix is to set the env var.
+ *   Docker Compose   → http://backend:8000   (default)
+ *   Local dev        → set NEXT_PUBLIC_API_URL=http://localhost:8000/api
+ *   Production       → set NEXT_PUBLIC_API_URL=https://applytest.utn.se/api
  */
 export function getImageUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) {
     return url;
   }
 
-  // Relative paths must start with /media/ – otherwise treat as local
+  // Paths that don't start with /media/ are local files – return as-is
   if (!url.startsWith("/media/")) {
     return url;
   }
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const base = (apiUrl && (apiUrl.startsWith("http://") || apiUrl.startsWith("https://")))
+    ? apiUrl.replace(/\/api\/?$/, "")
+    : "http://backend:8000";
 
-  // Absolute env var – derive backend base from it
-  if (apiUrl && (apiUrl.startsWith("http://") || apiUrl.startsWith("https://"))) {
-    return `${apiUrl.replace(/\/api\/?$/, "")}${url}`;
-  }
-
-  // Client-side – nginx proxies /media/ to Django on the same domain
-  if (typeof window !== "undefined") {
-    return `${window.location.origin}${url}`;
-  }
-
-  // SSR without absolute env var – assume Docker Compose dev
-  return `http://backend:8000${url}`;
+  return `${base}${url}`;
 }
