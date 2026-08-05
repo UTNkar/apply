@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
@@ -80,6 +81,8 @@ class MemberSerializer(ModelSerializer):
         required=False,
         allow_null=True,
     )
+    # Set from Unicore on creation
+    unicore_id = serializers.IntegerField(read_only=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -104,6 +107,7 @@ class MemberSerializer(ModelSerializer):
             "is_active",
             "is_staff",
             "verified_email",
+            "unicore_id",
         )
         extra_kwargs = {
             "password": {"write_only": True},
@@ -155,6 +159,16 @@ class MemberSerializer(ModelSerializer):
                         }
                     )
 
+                # Normalize to Unicore's canonical SSN and record its member id.
+                attrs["ssn"] = user_data["ssn"].strip()
+                attrs["unicore_id"] = user_data["unicore_id"]
+
+                # Check if this Unicore member already has an account
+                if Member.objects.filter(unicore_id=attrs["unicore_id"]).exists():
+                    raise serializers.ValidationError(
+                        {"ssn": ["An account with this SSN already exists."]}
+                    )
+
             # Check if email is already registered
             email = attrs.get("email")
             if email:
@@ -172,7 +186,13 @@ class MemberSerializer(ModelSerializer):
             raise serializers.ValidationError({"password": ["Password must be set"]})
         user = Member(**validated_data)
         user.set_password(password)
-        user.save()
+
+        try:
+            user.save()
+        except IntegrityError:
+            raise serializers.ValidationError(
+                {"ssn": ["An account with this SSN already exists."]}
+            )
 
         send_verification_email(user)
 

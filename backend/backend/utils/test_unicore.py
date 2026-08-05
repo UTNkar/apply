@@ -17,7 +17,7 @@ class TestUnicoremember(unittest.TestCase):
             "Fornamn": "John",
             "Efternamn": "Doe",
             "Epost": "john.doe@example.com",
-            "Telefon": "555-1234",
+            "Tele1": "555-1234",
             "Id": "123",
         }
         mock_get.return_value = fake_response
