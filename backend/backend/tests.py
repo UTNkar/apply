@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.urls import reverse
@@ -53,3 +55,87 @@ class PasswordResetTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class SignupTests(TestCase):
+    """Tests for the signup endpoint and duplicate-account prevention."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.signup_url = reverse("signup")
+
+    def _fake_user_data(self, ssn="200001011234", unicore_id=42):
+        return {
+            "ssn": ssn,
+            "firstname": "Kalle",
+            "lastname": "Sprätt",
+            "email": "kalle.spratt@kb.se",
+            "phone_number": "0700000000",
+            "unicore_id": unicore_id,
+        }
+
+    def _signup(self, ssn, email):
+        return self.client.post(
+            self.signup_url,
+            {
+                "ssn": ssn,
+                "email": email,
+                "password": "KB@Bappelsin1337",
+                "name": "Kalle Sprätt",
+                "phone_number": "0700000000",
+            },
+            format="json",
+        )
+
+    @patch("backend.serializers.unicoremember")
+    def test_signup_stores_canonical_ssn_and_unicore_id(self, mock_unicore):
+        mock_unicore.return_value.get_user_data.return_value = self._fake_user_data()
+
+        response = self._signup("20000101-1234", "kalle.spratt@kb.se")
+
+        self.assertEqual(response.status_code, 201)
+        member = get_user_model().objects.get(email="kalle.spratt@kb.se")
+        self.assertEqual(member.unicore_id, 42)
+        # Stored SSN is normalized to Unicore's canonical form
+        self.assertEqual(member.ssn, "200001011234")
+
+    @patch("backend.serializers.unicoremember")
+    def test_signup_rejects_duplicate_unicore_id_with_different_ssn_format(
+        self, mock_unicore
+    ):
+        # The dash variant is a *different raw string*, so the field-level
+        # unique check passes; only the unicore_id dedup can catch it.
+        mock_unicore.return_value.get_user_data.side_effect = [
+            self._fake_user_data(),
+            self._fake_user_data(),
+        ]
+
+        first = self._signup("200001011234", "kalle.spratt@kb.se")
+        self.assertEqual(first.status_code, 201)
+
+        second = self._signup("20000101-1234", "other@example.com")
+        self.assertEqual(second.status_code, 400)
+        self.assertIn("ssn", second.data)
+
+    @patch("backend.serializers.unicoremember")
+    def test_signup_rejects_duplicate_unicore_id_same_ssn(self, mock_unicore):
+        mock_unicore.return_value.get_user_data.side_effect = [
+            self._fake_user_data(),
+            self._fake_user_data(),
+        ]
+
+        first = self._signup("200001011234", "kalle.spratt@kb.se")
+        self.assertEqual(first.status_code, 201)
+
+        second = self._signup("200001011234", "other@example.com")
+        self.assertEqual(second.status_code, 400)
+        self.assertIn("ssn", second.data)
+
+    @patch("backend.serializers.unicoremember")
+    def test_signup_rejects_unregistered_ssn(self, mock_unicore):
+        mock_unicore.return_value.get_user_data.return_value = None
+
+        response = self._signup("200001011234", "kalle.spratt@kb.se")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("SSN", str(response.data))
