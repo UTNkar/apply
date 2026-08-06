@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+frontend/apply/node_modules
+
+# Python
+__pycache__
+*$py.class
+.Python
+backend/venv
+backend/env
+*.egg-info
+dist
+
+# Next.js
+.next
+.next/
+out/
+frontend/apply/.next
+
+# Testing
+coverage
+.coverage
+htmlcov
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log

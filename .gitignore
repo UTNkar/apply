@@ -1,1 +1,14 @@
 /env
+__pycache__
+.vscode
+.env
+venv
+.claude
+.idea
+.junie
+.cursor
+.DS_Store
+node_modules
+team_logos
+.venv/
+backend/.venv/

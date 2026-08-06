@@ -1,0 +1,342 @@
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.pageHeader h1 {
+  margin-bottom: 0.5rem;
+}
+
+.statusBadge {
+  display: inline-block;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.statusBadge.draft {
+  color: var(--grey-600);
+}
+
+.statusBadge.submitted {
+  color: var(--blue-500);
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-family: var(--text);
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.formDescription {
+  display: block;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  font-family: var(--text);
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.formInput,
+.formTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--form-field-border-radius);
+  border: 1px solid var(--grey-300);
+  font-family: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.formInput:focus,
+.formTextarea:focus {
+  outline: none;
+  border-color: var(--blue-500);
+}
+
+.formInput:disabled,
+.formTextarea:disabled {
+  background-color: var(--grey-50);
+  cursor: not-allowed;
+  color: var(--text-secondary);
+}
+
+.formInput::placeholder,
+.formTextarea::placeholder {
+  color: var(--grey-400);
+}
+
+.referenceCard {
+  padding: 1.5rem;
+  border: 1px solid var(--grey-300);
+  border-radius: var(--form-field-border-radius);
+  margin-top: 1rem;
+  background-color: var(--grey-50);
+  overflow: hidden;
+}
+
+.referenceCard h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 16px;
+  font-weight: 600;
+  display: none;
+}
+
+.formField {
+  margin-bottom: 8px;
+}
+
+.formFieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media screen and (max-width: 767px) {
+  .formFieldRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formFieldWithIcon {
+  position: relative;
+}
+
+.inputWithIcon {
+  width: 100%;
+  padding: 0.75rem 0.75rem 0.75rem 3rem;
+  border-radius: var(--form-field-border-radius);
+  border: 1px solid var(--grey-300);
+  font-family: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  transition: border-color 0.2s ease;
+  background-color: var(--white);
+}
+
+.inputWithIcon:focus {
+  outline: none;
+  border-color: var(--blue-500);
+}
+
+.inputWithIcon:disabled {
+  background-color: var(--grey-50);
+  cursor: not-allowed;
+  color: var(--text-secondary);
+}
+
+.inputIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grey-600);
+  pointer-events: none;
+}
+
+.inputIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fieldError {
+  color: var(--error-500);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.requiredAsterisk {
+  color: var(--error-500);
+  margin-left: 2px;
+}
+
+.inputError,
+.textareaError {
+  border-color: var(--error-500);
+}
+
+.inputError:focus,
+.textareaError:focus {
+  border-color: var(--error-500);
+}
+
+.addReferenceButton {
+  margin: 1rem 0;
+  background-color: var(--blue-100);
+  color: var(--blue-500);
+}
+
+.addReferenceButton:hover {
+  background-color: var(--blue-300);
+}
+
+.removeButtonContainer {
+  text-align: right;
+  margin-top: 1rem;
+}
+
+.removeButton {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--error-500);
+  color: var(--white);
+  border: none;
+  border-radius: var(--button-corner-radius);
+  cursor: pointer;
+  font-family: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.removeButton:hover {
+  opacity: 0.9;
+}
+
+.removeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.checkboxContainer {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.checkboxContainer input[type="checkbox"] {
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkboxContainer input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+}
+
+.checkboxLabel {
+  font-family: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.checkboxLabel a {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.errorMessage {
+  color: var(--error-500);
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: #ffe5df;
+  border-radius: var(--form-field-border-radius);
+  font-family: var(--text);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.draftSaveGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.draftSavedMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-family: var(--text);
+  font-size: 14px;
+  color: var(--blue-500);
+}
+
+.draftSavedIcon {
+  flex-shrink: 0;
+}
+
+.submitButton {
+  background-color: var(--blue-500);
+  color: var(--white);
+}
+
+.submitButton:hover {
+  background-color: var(--blue-700);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.draftButton {
+  background-color: var(--blue-100);
+  color: var(--blue-500);
+}
+
+.draftButton:hover {
+  background-color: var(--blue-300);
+}
+
+.draftButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.deleteButton {
+  background-color: var(--error-500);
+  color: var(--white);
+}
+
+.deleteButton:hover {
+  opacity: 0.9;
+}
+
+.deleteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.backButton {
+  background-color: var(--grey-200);
+  color: var(--text-primary);
+}
+
+.guestLoginCard {
+  border-radius: var(--paper-border-radius);
+  border: 2px solid var(--grey-200);
+  padding: 24px 32px;
+  margin-bottom: 32px;
+}
+
+.guestLoginButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.backButton:hover {
+  background-color: var(--grey-300);
+}

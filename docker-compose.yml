@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    env_file:
+      - .env  # load environment variables from .env
+    environment:
+      - PGPORT=5434
+    ports:
+      - "5434:5434"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: backend.Dockerfile
+    container_name: django_backend
+    depends_on:
+      - db
+      - mailhog
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # load environment variables from .env
+    volumes:
+      - .:/app
+    command: >
+      bash -c "python manage.py makemigrations
+      && python manage.py migrate
+      && python manage.py runserver 0.0.0.0:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    container_name: nextjs_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/apply:/app
+      - /app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    command: ["npm", "run", "dev"]
+
+volumes:
+  pg_data:
