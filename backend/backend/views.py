@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .models import Application, Position, Member, Section, StudyProgram
-from .send_email import send_password_reset_email, send_verification_email
+from .send_email import send_password_reset_email
 from .permissions import CanCreatePosition
 from .serializers import (
     ApplicationSerializer,
@@ -37,11 +37,8 @@ class LoginAPIView(APIView):
     """
     LoginAPIView handles user authentication through the API.
 
-    This view processes login requests, authenticating users by email and password.
-    It verifies that users have confirmed their email and that their account is active
-    before granting login access.
-
-    DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING
+    This view processes login requests, authenticating users by email or SSN
+    plus password. It checks that the account is active before granting access.
 
     Methods
     -------
@@ -55,22 +52,32 @@ class LoginAPIView(APIView):
         Responds with HTTP 401
             When provided credentials are invalid.
         Responds with HTTP 403
-            When user's email is not verified or account is inactive.
+            When the user's account is inactive.
 
     """
 
     def post(self, request):
-        email = request.data.get("email")
+        identifier = (request.data.get("identifier") or "").strip()
         password = request.data.get("password")
 
-        member = Member.find_user_by_email(email)
-        if member is None:
+        if not identifier:
             return Response({"message": "Invalid credentials"}, status=401)
+
+        # The single field accepts either the member's email or their SSN.
+        member = Member.find_user_by_email(identifier)
+        if member is None:
+            # Stored SSNs are canonical (no dashes/spaces), so normalize the
+            # input before matching.
+            normalized_ssn = identifier.replace("-", "").replace(" ", "")
+            member = Member.objects.filter(ssn=normalized_ssn).first()
+
+            if member is None:
+                return Response({"message": "Invalid credentials"}, status=401)
 
         user = authenticate(request, username=member.ssn, password=password)
 
         if user is not None:
-            if user.is_active and user.verified_email:
+            if user.is_active:
                 login(request, user)
                 csrf_token = get_token(request)
                 return Response(
@@ -81,11 +88,7 @@ class LoginAPIView(APIView):
                     }
                 )
 
-            elif not user.verified_email:
-                return Response({"message": "Email not verified"}, status=403)
-
-            elif not user.is_active:
-                return Response({"message": "User is inactive"}, status=403)
+            return Response({"message": "User is inactive"}, status=403)
 
         return Response({"message": "Invalid credentials"}, status=401)
 
@@ -93,8 +96,8 @@ class LoginAPIView(APIView):
 class SignupAPIView(APIView):
     """
     SignupAPIView handles user registration through the API.
-    This view processes signup requests, creating new users with the provided email and password.
-    It also handles email verification in the serializer by generating a unique token and sending a verification email i.
+    This view processes signup requests. The email, phone number and
+    verification status are sourced from Unicore via the serializer.
 
     Methods
     -------
@@ -113,10 +116,13 @@ class SignupAPIView(APIView):
     def post(self, request):
         serializer = MemberSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
             return Response(
                 {
                     "message": "User created successfully",
+                    # The user's email is sourced from Unicore, so surface it
+                    # so they know what to log in with.
+                    "email": user.email,
                 },
                 status=201,
             )
@@ -181,8 +187,7 @@ class InitiatePasswordResetViewAPIView(APIView):
                 status=200,
             )
 
-        if user.verified_email:
-            send_password_reset_email(user)
+        send_password_reset_email(user)
 
         return Response(
             {
@@ -293,164 +298,6 @@ class ChangePasswordAPIView(APIView):
             return Response({"message": "Password changed successfully"}, status=200)
         else:
             return Response({"message": "Current password is incorrect"}, status=400)
-
-
-class EmailVerificationAPIView(APIView):
-    """
-    EmailVerificationAPIView handles email verification through the API.
-    This view processes GET requests to verify user email addresses using a code and ID.
-
-    DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING
-
-    Methods
-    -------
-        get(request)
-            Process email verification requests and return appropriate responses based on verification status.
-
-    Returns
-    -------
-        Responds with HTTP 200
-            When email verification is successful.
-        Responds with HTTP 400
-            When verification link is invalid or expired.
-    """
-
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        code = (request.GET.get("code") or "").strip().upper()
-        email = (request.GET.get("email") or "").strip()
-
-        try:
-            user = get_user_model().objects.get(email=email)
-        except get_user_model().DoesNotExist:
-            user = None
-
-        if user is None:
-            return Response({"message": "No account found for this email."}, status=400)
-
-        if not code:
-            return Response({"message": "Verification code is required."}, status=400)
-
-        if not user.email_verification_code or not user.email_verification_code_expires_at:
-            return Response({"message": "No active verification code. Please request a new one."}, status=400)
-
-        if user.email_verification_code_expires_at < timezone.now():
-            return Response({"message": "Verification code has expired. Please request a new one."}, status=400)
-
-        if user.email_verification_attempts >= 5:
-            return Response({"message": "Too many failed attempts. Please request a new code."}, status=400)
-
-        if not check_password(code, user.email_verification_code):
-            user.email_verification_attempts += 1
-            user.save(update_fields=["email_verification_attempts"])
-            remaining_attempts = max(0, 5 - user.email_verification_attempts)
-            return Response(
-                {"message": f"Invalid verification code. Attempts remaining: {remaining_attempts}."},
-                status=400,
-            )
-
-        user.verified_email = True
-        user.email_verification_code = None
-        user.email_verification_code_expires_at = None
-        user.email_verification_attempts = 0
-        user.email_verification_sent_at = None
-        user.save(
-            update_fields=[
-                "verified_email",
-                "email_verification_code",
-                "email_verification_code_expires_at",
-                "email_verification_attempts",
-                "email_verification_sent_at",
-            ]
-        )
-        login(request, user)
-        return Response({"message": "Email verified successfully"}, status=200)
-
-
-class ResendVerificationEmailAPIView(APIView):
-    """
-    ResendVerificationEmailAPIView handles requests to resend email verification links.
-    This view processes requests to resend the verification email to the user.
-
-    Methods
-    -------
-        post(request)
-            Process resend verification email requests and return appropriate responses based on validation status.
-
-    Returns
-    -------
-        Responds with HTTP 200
-            When verification email is resent successfully.
-        Responds with HTTP 400
-            When provided data is invalid or user does not exist.
-    """
-
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        # Email or SSN or both?
-        email = request.data.get("email")
-        # ssn = request.data.get('ssn')
-
-        try:
-            user = get_user_model().objects.get(email=email)
-            # user = get_user_model().objects.get(ssn=ssn, email=email)
-        except get_user_model().DoesNotExist:
-            return Response(
-                {"message": "An error occurred while sending the password reset email"},
-                status=400,
-            )
-
-        if user.verified_email:
-            return Response({"message": "Email already verified"}, status=400)
-
-        sent = send_verification_email(user, allow_rate_limit=True)
-        if not sent:
-            return Response(
-                {"message": "Verification email sent recently. Try again shortly."},
-                status=429,
-            )
-
-        return Response({"message": "Verification email resent"}, status=200)
-
-
-class ChangeEmailAPIView(APIView):
-    """
-    ChangeEmailAPIView handles requests to change the user's email address.
-    This view processes requests to change the user's email address.
-
-    THIS CURRENTLY DOES NOT SEND A VERIFICATION EMAIL
-    SHOULD PROBABLY SEND A VERIFICATION EMAIL
-
-    Methods
-    -------
-        post(request)
-            Process change email requests and return appropriate responses based on validation status.
-
-    Returns
-    -------
-        Responds with HTTP 200
-            When email is changed successfully.
-        Responds with HTTP 400
-            When provided data is invalid or user does not exist.
-    """
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        new_email = request.data.get("new_email")
-        user = request.user
-
-        if user.verified_email:
-            user.email = new_email
-            user.verified_email = False
-            user.save()
-            return Response({"message": "Email changed successfully"}, status=200)
-
-        return Response(
-            {"message": "An error occurred while changing the email"}, status=400
-        )
 
 
 #### END OF AUTHENTICATION VIEWS ####

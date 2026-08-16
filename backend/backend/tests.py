@@ -46,7 +46,7 @@ class PasswordResetTests(TestCase):
         self.assertIn("reset-password", mail.outbox[0].body)
         self.assertEqual(mail.outbox[0].to, [self.verified_user.email])
 
-    def test_password_reset_email_not_sent_for_unverified_user(self):
+    def test_password_reset_email_sent_for_unverified_user(self):
         response = self.client.post(
             reverse("reset-password"),
             {"email": self.unverified_user.email},
@@ -54,7 +54,8 @@ class PasswordResetTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.unverified_user.email])
 
 
 class SignupTests(TestCase):
@@ -74,30 +75,58 @@ class SignupTests(TestCase):
             "unicore_id": unicore_id,
         }
 
-    def _signup(self, ssn, email):
+    def _signup(self, ssn):
         return self.client.post(
             self.signup_url,
             {
                 "ssn": ssn,
-                "email": email,
                 "password": "KB@Bappelsin1337",
-                "name": "Kalle Sprätt",
-                "phone_number": "0700000000",
             },
             format="json",
         )
 
     @patch("backend.serializers.unicoremember")
-    def test_signup_stores_canonical_ssn_and_unicore_id(self, mock_unicore):
+    def test_signup_sources_email_phone_and_status_from_unicore(
+        self, mock_unicore
+    ):
         mock_unicore.return_value.get_user_data.return_value = self._fake_user_data()
 
-        response = self._signup("20000101-1234", "kalle.spratt@kb.se")
+        response = self._signup("20000101-1234")
 
         self.assertEqual(response.status_code, 201)
         member = get_user_model().objects.get(email="kalle.spratt@kb.se")
         self.assertEqual(member.unicore_id, 42)
         # Stored SSN is normalized to Unicore's canonical form
         self.assertEqual(member.ssn, "200001011234")
+        # Contact details and verification status come from Unicore
+        self.assertEqual(member.name, "Kalle Sprätt")
+        self.assertEqual(member.email, "kalle.spratt@kb.se")
+        self.assertEqual(member.phone_number, "0700000000")
+        self.assertTrue(member.verified_email)
+
+    @patch("backend.serializers.unicoremember")
+    def test_signup_ignores_client_supplied_name_email_and_phone(
+        self, mock_unicore
+    ):
+        mock_unicore.return_value.get_user_data.return_value = self._fake_user_data()
+
+        response = self.client.post(
+            self.signup_url,
+            {
+                "ssn": "200001011234",
+                "password": "KB@Bappelsin1337",
+                "name": "Client Chosen Name",
+                "email": "client@example.com",
+                "phone_number": "1111111111",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        member = get_user_model().objects.get(ssn="200001011234")
+        self.assertEqual(member.name, "Kalle Sprätt")
+        self.assertEqual(member.email, "kalle.spratt@kb.se")
+        self.assertEqual(member.phone_number, "0700000000")
 
     @patch("backend.serializers.unicoremember")
     def test_signup_rejects_duplicate_unicore_id_with_different_ssn_format(
@@ -110,10 +139,10 @@ class SignupTests(TestCase):
             self._fake_user_data(),
         ]
 
-        first = self._signup("200001011234", "kalle.spratt@kb.se")
+        first = self._signup("200001011234")
         self.assertEqual(first.status_code, 201)
 
-        second = self._signup("20000101-1234", "other@example.com")
+        second = self._signup("20000101-1234")
         self.assertEqual(second.status_code, 400)
         self.assertIn("ssn", second.data)
 
@@ -124,10 +153,10 @@ class SignupTests(TestCase):
             self._fake_user_data(),
         ]
 
-        first = self._signup("200001011234", "kalle.spratt@kb.se")
+        first = self._signup("200001011234")
         self.assertEqual(first.status_code, 201)
 
-        second = self._signup("200001011234", "other@example.com")
+        second = self._signup("200001011234")
         self.assertEqual(second.status_code, 400)
         self.assertIn("ssn", second.data)
 
@@ -135,7 +164,62 @@ class SignupTests(TestCase):
     def test_signup_rejects_unregistered_ssn(self, mock_unicore):
         mock_unicore.return_value.get_user_data.return_value = None
 
-        response = self._signup("200001011234", "kalle.spratt@kb.se")
+        response = self._signup("200001011234")
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn("SSN", str(response.data))
+        self.assertIn("ssn", response.data)
+
+
+class LoginTests(TestCase):
+    """Tests for login by email or personal identity number."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.login_url = reverse("login")
+        User = get_user_model()
+        self.user = User.objects.create(
+            email="login@example.com",
+            name="Login User",
+            phone_number="+4600000000",
+            ssn="200001011234",
+            verified_email=True,
+            is_active=True,
+        )
+        self.user.set_password("StrongPass123!")
+        self.user.save()
+
+    def _login(self, identifier, password="StrongPass123!"):
+        return self.client.post(
+            self.login_url,
+            {"identifier": identifier, "password": password},
+            format="json",
+        )
+
+    def test_login_with_email(self):
+        response = self._login("login@example.com")
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_with_email_case_insensitive(self):
+        response = self._login("LOGIN@example.com")
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_with_ssn(self):
+        response = self._login("200001011234")
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_with_ssn_containing_dashes(self):
+        response = self._login("20000101-1234")
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_with_username_is_rejected(self):
+        # Username (name) login is not supported
+        response = self._login("Login User")
+        self.assertEqual(response.status_code, 401)
+
+    def test_login_with_unknown_identifier(self):
+        response = self._login("nobody")
+        self.assertEqual(response.status_code, 401)
+
+    def test_login_with_wrong_password(self):
+        response = self._login("login@example.com", "WrongPass123!")
+        self.assertEqual(response.status_code, 401)

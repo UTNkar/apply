@@ -2,6 +2,7 @@ import secrets
 import string
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -51,13 +52,13 @@ def send_verification_email(user, *, allow_rate_limit=True):
     subject = "Verify your email address"
     message = (
         f"Verify your email address for Apply using the verification code {code}\n\n"
-        f"Or you can verify by visiting http://localhost:3000/verify-email?email={user.email}&code={code}"
+        f"Or you can verify by visiting https://{settings._EXTERNAL_HOST}/verify-email?email={user.email}&code={code}"
     )
 
     send_mail(
         subject,
         message,
-        "webmaster@localhost",
+        settings.EMAIL_HOST_USER,
         [user.email],
     )
 
@@ -70,16 +71,19 @@ def send_password_reset_email(user):
     This function sends a password reset email to the user.
     The email contains a link to reset the user's password.
     """
-    if not user.verified_email:
-        return
-
     token = default_token_generator.make_token(user)
 
     subject = "Reset your password"
-    message = f"Follow this link to reset your password:\nhttp://localhost:3000/reset-password?id={user.id}&token={token}"
+    message = f"""You have requested to reset your password for UTN Apply.
+Follow this link to reset your password:
+https://{settings._EXTERNAL_HOST}/reset-password?id={user.id}&token={token}
+
+If you did not request a password reset, please ignore this email.
+This link will expire in {VERIFICATION_CODE_TTL_MINUTES} minutes.
+If you have any questions, please contact us at admin@utn.se"""
     send_mail(
         subject,
         message,
-        "webmaster@localhost",
+        settings.EMAIL_HOST_USER,
         [user.email],
     )

@@ -94,7 +94,7 @@ function ResetPasswordForm() {
 
                     {error && <p className={styles.errorMessage}>{error}</p>}
 
-                    <Button loading={loading} disabled={loading} style={{ margin: "0 auto" }}>
+                    <Button loading={loading} disabled={loading} style={{ margin: "0 auto" }} type="submit">
                         {t("resetPasswordPage.submit")}
                     </Button>
                 </form>

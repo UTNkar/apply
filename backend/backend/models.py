@@ -181,9 +181,6 @@ class Member(AbstractBaseUser, PermissionsMixin):
     )
 
     def has_perm(self, perm, obj=None):
-        if not self.verified_email:
-            return False
-
         # Only superusers get all permissions
         if self.is_superuser:
             return True
@@ -192,9 +189,6 @@ class Member(AbstractBaseUser, PermissionsMixin):
         return super().has_perm(perm, obj)
 
     def has_module_perms(self, app_label):
-        if not self.verified_email:
-            return False
-
         # Only superusers get all module permissions
         if self.is_superuser:
             return True
