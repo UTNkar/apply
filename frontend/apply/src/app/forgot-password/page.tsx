@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
                         <Link href="/login" className={styles.link}>
                             {t("forgotPasswordPage.backToLogin")}
                         </Link>
-                        <Button loading={loading} disabled={loading}>
+                        <Button loading={loading} disabled={loading} type="submit">
                             {t("forgotPasswordPage.submit")}
                         </Button>
                     </div>

@@ -6,12 +6,9 @@ const URLs = Object.freeze({
     LOGIN: "/auth/login",
     LOGOUT: "/auth/logout",
     SIGNUP: "/auth/signup",
-    VERIFY_EMAIL: "/auth/verify-email",
-    RESEND_VERIFICATION: "/auth/resend-verification-email",
     RESET_PASSWORD_EMAIL: "/auth/reset-password",
     RESET_PASSWORD: "/auth/reset",
     CHANGE_PASSWORD: "/auth/change-password",
-    CHANGE_EMAIL: "/auth/change-email",
 });
 
 /**
@@ -53,17 +50,17 @@ export function useIsLoggedIn() {
 }
 
 /**
- * Sends a sign-in request to the server with the provided email and password.
+ * Sends a sign-in request to the server with the provided identifier and password.
  *
- * @param email - The email address of the user
+ * @param identifier - The email address or personal identity number of the user
  * @param password - The password of the user
  * @returns status 200:  When login is successful
  * @returns status 401:  When provided credentials are invalid.
  * @returns status 403:  When user is not allowed to login.
  * @throws Error if the request fails
  */
-export function logIn(email: string, password: string) {
-    return request(Method.POST, URLs.LOGIN, { email, password });
+export function logIn(identifier: string, password: string) {
+    return request(Method.POST, URLs.LOGIN, { identifier, password });
 }
 
 /**
@@ -87,43 +84,12 @@ export function logOut() {
  * @throws Error if the request fails
  */
 export function signUp(payload: {
-    email: string;
     ssn: string;
     password: string;
-    name: string;
-    phone_number: string;
     study_program_id?: string;
     section_id?: string;
 }) {
     return request(Method.POST, URLs.SIGNUP, payload);
-}
-
-/**
- * Verifies the email address and logs in a user using the provided token and user ID.
- *
- * @param id - The ID of the verification, exists in the magic link
- * @param token - The verification token of the magic link sent to the user's email
- * @returns A promise that resolves to the JSON response from the server
- * @returns status 200:  When email verification is successful
- * @returns status 400:  When link is invalid or expired
- * @returns
- */
-export function verifyEmail(id: string, token: string) {
-    return request(Method.GET, `${URLs.VERIFY_EMAIL}?id=${id}&token=${token}`);
-}
-
-/**
- * UNSTABLE: May change in the future to use or include SSN
- * Resends the verification email to the user.
- *
- * @param email - The email address of the user
- * @returns A promise that resolves to the JSON response from the server
- * @returns status 200:  When email is sent successfully
- * @returns status 400:  When provided credentials are invalid.
- * @throws Error if the request fails
- */
-export function resendVerificationEmail(email: string) {
-    return request(Method.POST, URLs.RESEND_VERIFICATION, { email });
 }
 
 /**
@@ -170,16 +136,4 @@ export function changePassword(oldPassword: string, newPassword: string) {
     return request(Method.POST, URLs.CHANGE_PASSWORD, { oldPassword, newPassword });
 }
 
-/**
- * Changes the user's email address using the provided new email.
- * Requires the user to be logged in.
- *
- * @param newEmail - The new email address for the user
- * @returns A promise that resolves to the JSON response from the server
- * @returns status 200:  When email change is successful
- * @returns status 400:  When provided credentials are invalid.
- * @throws Error if the request fails
- */
-export function changeEmail(newEmail: string) {
-    return request(Method.POST, URLs.CHANGE_EMAIL, { newEmail });
-}
+

@@ -15,7 +15,7 @@ export default function Login() {
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next");
   const { isLoggedIn, loading } = useIsLoggedIn();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loadingForm, setLoadingForm] = useState(false);
@@ -32,7 +32,7 @@ export default function Login() {
     setLoadingForm(true);
 
     try {
-      const response = await logIn(email, password);
+      const response = await logIn(identifier, password);
 
       if (response.status === 200) {
         window.dispatchEvent(new CustomEvent("logged-in"));
@@ -59,7 +59,7 @@ export default function Login() {
         setError(t("loginPage.incorrectCredentials"));
       } else if (response.status === 403) {
         const data = await response.json();
-        setError(data.message || t("loginPage.emailNotVerified"));
+        setError(data.message || t("loginPage.loginError"));
       } else {
         setError(t("loginPage.loginError"));
       }
@@ -72,7 +72,7 @@ export default function Login() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "email") setEmail(value);
+    if (name === "identifier") setIdentifier(value);
     if (name === "password") setPassword(value);
   };
 
@@ -84,13 +84,17 @@ export default function Login() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
             required
-            label={t("common.email")}
-            value={email}
+            label={t("loginPage.identifier")}
+            value={identifier}
             onChange={handleChange}
-            name="email"
-            type="email"
-            placeholder={t("loginPage.emailPlaceholder")}
-            error={error && email === "" ? t("loginPage.emailRequired") : ""}
+            name="identifier"
+            type="text"
+            placeholder={t("loginPage.identifierPlaceholder")}
+            error={
+              error && identifier === ""
+                ? t("loginPage.identifierRequired")
+                : ""
+            }
           />
 
           <TextInput

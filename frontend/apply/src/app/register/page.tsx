@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { useRouter } from "next/navigation";
 import TextInput from "@/components/TextInput";
 import styles from "../register/register.module.css";
 import { useTranslation } from "react-i18next";
@@ -31,28 +30,23 @@ interface Section {
 export default function Signup() {
   const { t, i18n } = useTranslation();
 
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [personalIdentityNumber, setPersonalIdentityNumber] = useState("");
   const [sectionValue, setSectionValue] = useState("");
   const [programValue, setProgramValue] = useState("");
-  const [phoneNumberValue, setPhoneNumberValue] = useState("");
   const [sections, setSections] = useState<Array<Section>>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [registerError, setRegisterError] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
 
-    if (name === "username") setUsername(value);
-    if (name === "email") setEmail(value);
     if (name === "password") setPassword(value);
     if (name === "passwordConfirmation") setPasswordConfirmation(value);
     if (name === "personalIdentityNumber") setPersonalIdentityNumber(value);
@@ -63,7 +57,6 @@ export default function Signup() {
       setProgramValue(firstProgram);
     }
     if (name === "program") setProgramValue(value);
-    if (name === "phoneNumber") setPhoneNumberValue(value);
 
     // Clear field error on change
     setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -71,19 +64,6 @@ export default function Signup() {
 
   const validate = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
-
-    if (!username.trim()) {
-      newErrors.username = t("registerPage.usernameRequired");
-    } else if (username.trim().length < 3) {
-      newErrors.username = t("registerPage.usernameTooShort");
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.trim()) {
-      newErrors.email = t("registerPage.emailRequired");
-    } else if (!emailRegex.test(email)) {
-      newErrors.email = t("registerPage.emailInvalid");
-    }
 
     if (!password) {
       newErrors.password = t("registerPage.passwordRequired");
@@ -121,14 +101,6 @@ export default function Signup() {
       newErrors.program = t("registerPage.programRequired");
     }
 
-    // Phone number: allows +, spaces, dashes, digits; min 7 digits
-    const phoneRegex = /^[+\d][\d\s\-()]{6,}$/;
-    if (!phoneNumberValue.trim()) {
-      newErrors.phoneNumber = t("registerPage.phoneNumberRequired");
-    } else if (!phoneRegex.test(phoneNumberValue.trim())) {
-      newErrors.phoneNumber = t("registerPage.phoneNumberInvalid"); // "Enter a valid phone number"
-    }
-
     return newErrors;
   };
 
@@ -137,11 +109,7 @@ export default function Signup() {
     let globalError = "";
 
     const fieldMap: Record<string, string> = {
-      name: "username",
-      email: "email",
       password: "password",
-      phone_number: "phoneNumber",
-      personal_identity_number: "personalIdentityNumber",
       ssn: "personalIdentityNumber",
       section_id: "section",
       study_program_id: "program",
@@ -189,17 +157,17 @@ export default function Signup() {
 
     try {
       const response = await signUp({
-        email,
         ssn: personalIdentityNumber,
         password,
-        name: username,
-        phone_number: phoneNumberValue,
         study_program_id: programValue,
         section_id: sectionValue,
       });
 
       if (response.status === 201) {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        // Email is sourced from Unicore.
+        // Display it so the user knows what to log in with.
+        const data = await response.json();
+        setSignupEmail((data as { email?: string })?.email || "");
         return;
       }
 
@@ -243,6 +211,25 @@ export default function Signup() {
   const programs_in_section =
     sections.find((section) => section.id == sectionValue)?.programs || [];
 
+  if (signupEmail) {
+    // Show success message after successful registration
+    return (
+      <div className={styles.loginContainer}>
+        <div className={styles.loginCard} style={{ maxWidth: "500px" }}>
+          <h1 className={styles.title}>
+            {t("registerPage.registerSuccessTitle")}
+          </h1>
+          <p>{t("registerPage.registerSuccessMessage", { email: signupEmail })}</p>
+          <div className={styles.links}>
+            <a href="/login" className={styles.link} style={{ padding: 0 }}>
+              {t("navbar.login")}
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.loginContainer}>
       <div className={styles.loginCard}>
@@ -251,25 +238,15 @@ export default function Signup() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <TextInput
             required
-            label={t("registerPage.username")}
-            value={username}
+            label={t("registerPage.personalIdentityNumber")}
+            value={personalIdentityNumber}
             onChange={handleChange}
-            name="username"
+            name="personalIdentityNumber"
             type="text"
-            placeholder={t("registerPage.usernamePlaceholder")}
-            error={errors.username}
+            placeholder={t("registerPage.PersonNumberPlaceholder")}
+            error={errors.personalIdentityNumber}
           />
-
-          <TextInput
-            required
-            label={t("registerPage.email")}
-            value={email}
-            onChange={handleChange}
-            name="email"
-            type="email"
-            placeholder={t("registerPage.emailPlaceholder")}
-            error={errors.email}
-          />
+          <br/>
 
           <TextInput
             required
@@ -291,28 +268,6 @@ export default function Signup() {
             type="password"
             placeholder={t("registerPage.passwordConfirmationPlaceholder")}
             error={errors.passwordConfirmation}
-          />
-
-          <TextInput
-            required
-            label={t("registerPage.personalIdentityNumber")}
-            value={personalIdentityNumber}
-            onChange={handleChange}
-            name="personalIdentityNumber"
-            type="text"
-            placeholder={t("registerPage.PersonNumberPlaceholder")}
-            error={errors.personalIdentityNumber}
-          />
-
-          <TextInput
-            required
-            label={t("registerPage.phoneNumber")}
-            value={phoneNumberValue}
-            onChange={handleChange}
-            name="phoneNumber"
-            type="tel"
-            placeholder={t("registerPage.phoneNumberPlaceholder")}
-            error={errors.phoneNumber}
           />
 
           <TextInput

@@ -13,7 +13,6 @@ from .models import (
     Application,
     Reference,
 )
-from .send_email import send_verification_email
 from .utils.unicore import unicoremember
 
 
@@ -54,14 +53,15 @@ class SectionWithProgramsSerializer(ModelSerializer):
 class MemberSerializer(ModelSerializer):
     """
     Serializer for Member model.
-    This serializer handles the creation of new members and includes
-    functionality for email verification.
+
+    On creation the member's email, phone number and verification status are
+    sourced from Unicore (the client only supplies ssn, password and study
+    details). On updates the account page may still edit email/phone.
 
     Methods
     -------
     create(validated_data)
-        Creates a new member instance, sets the password, and sends a verification email.
-        Also invalidates any previous verification tokens for the user.
+        Creates a new member instance and sets the password.
         Returns the created member instance.
     """
 
@@ -86,8 +86,13 @@ class MemberSerializer(ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance is not None:
+        if self.instance is None:
+            # On creation, name, email and phone are sourced from Unicore
+            # rather than accepted from the client.
+            self.fields["name"].read_only = True
             self.fields["email"].read_only = True
+            self.fields["phone_number"].read_only = True
+        else:
             self.fields["ssn"].read_only = True
 
     class Meta:
@@ -159,23 +164,35 @@ class MemberSerializer(ModelSerializer):
                         }
                     )
 
-                # Normalize to Unicore's canonical SSN and record its member id.
+                # Normalize to Unicore's canonical SSN and record its member
+                # id. Email, phone and verification status are also sourced
+                # from Unicore, so the user doesn't have to supply contact
+                # details and formatting variants can't create duplicates.
                 attrs["ssn"] = user_data["ssn"].strip()
                 attrs["unicore_id"] = user_data["unicore_id"]
+                attrs["name"] = "{} {}".format(
+                    (user_data.get("firstname") or "").strip(),
+                    (user_data.get("lastname") or "").strip(),
+                ).strip()
+                attrs["email"] = (user_data.get("email") or "").strip()
+                attrs["phone_number"] = (user_data.get("phone_number") or "").strip()
+                # No email-verification needed since the email comes from the
+                # already-verified Unicore account.
+                attrs["verified_email"] = True
+
+                if not attrs["email"]:
+                    raise serializers.ValidationError(
+                        {
+                            "email": [
+                                "No email address was found for this SSN in Unicore."
+                            ]
+                        }
+                    )
 
                 # Check if this Unicore member already has an account
                 if Member.objects.filter(unicore_id=attrs["unicore_id"]).exists():
                     raise serializers.ValidationError(
                         {"ssn": ["An account with this SSN already exists."]}
-                    )
-
-            # Check if email is already registered
-            email = attrs.get("email")
-            if email:
-                existing = Member.find_user_by_email(email)
-                if existing is not None:
-                    raise serializers.ValidationError(
-                        {"email": ["Email is already registered"]}
                     )
 
         return attrs
@@ -193,8 +210,6 @@ class MemberSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 {"ssn": ["An account with this SSN already exists."]}
             )
-
-        send_verification_email(user)
 
         return user
 

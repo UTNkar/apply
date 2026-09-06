@@ -4,9 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     ApplicationViewSet,
-    ChangeEmailAPIView,
     ChangePasswordAPIView,
-    EmailVerificationAPIView,
     InitiatePasswordResetViewAPIView,
     LoginAPIView,
     LogoutAPIView,
@@ -14,7 +12,6 @@ from .views import (
     OpenPositionsAPIView,
     PasswordResetAPIView,
     PositionViewSet,
-    ResendVerificationEmailAPIView,
     SectionsAPIView,
     SignupAPIView,
     UnicoreDataAPIView,
@@ -30,14 +27,6 @@ urlpatterns = [
     path("api/auth/login", LoginAPIView.as_view(), name="login"),
     path("api/auth/logout", LogoutAPIView.as_view(), name="logout"),
     path("api/auth/signup", SignupAPIView.as_view(), name="signup"),
-    path("api/auth/verify-email",
-         EmailVerificationAPIView.as_view(),
-         name="verify-email"),
-    path(
-        "api/auth/resend-verification-email",
-        ResendVerificationEmailAPIView.as_view(),
-        name="resend-verification-email",
-    ),
     path(
         "api/auth/reset-password",
         InitiatePasswordResetViewAPIView.as_view(),
@@ -49,9 +38,6 @@ urlpatterns = [
         ChangePasswordAPIView.as_view(),
         name="change-password",
     ),
-    path("api/auth/change-email",
-         ChangeEmailAPIView.as_view(),
-         name="change-email"),
     path("api/account/", MyAccountAPIView.as_view(), name="my-account"),
     path("api/sections/", SectionsAPIView.as_view(), name="sections"),
     path("api/open-positions/", OpenPositionsAPIView.as_view(), name="open-positions"),
