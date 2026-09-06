@@ -16,10 +16,8 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from .models import Application, Position, Member, Section, StudyProgram
 from .send_email import send_password_reset_email
-from .permissions import CanCreatePosition
 from .serializers import (
     ApplicationSerializer,
-    CreatePositionSerializer,
     ListApplicationSerializer,
     MemberSerializer,
     PositionSerializer,
@@ -301,42 +299,6 @@ class ChangePasswordAPIView(APIView):
 
 
 #### END OF AUTHENTICATION VIEWS ####
-
-
-# TODO: Should be removed if we're considering django-admin for admin functionalities
-class CreatePositionAPIView(APIView):
-    """
-    CreatePositionAPIView handles creating new positions.
-    Only authenticated users with appropriate permissions can create positions.
-
-    Methods
-    -------
-        post(request)
-            Process position creation requests and return appropriate responses.
-
-    Returns
-    -------
-        Responds with HTTP 201
-            When position is created successfully.
-        Responds with HTTP 400
-            When provided data is invalid.
-    """
-
-    permission_classes = [IsAuthenticated, CanCreatePosition]
-
-    def post(self, request):
-        serializer = CreatePositionSerializer(data=request.data)
-        if serializer.is_valid():
-            position = serializer.save()
-            return Response(
-                {
-                    "message": "Position created successfully",
-                    "position": PositionSerializer(position).data,
-                },
-                status=201,
-            )
-
-        return Response(serializer.errors, status=400)
 
 
 class ApplicationViewSet(ModelViewSet):
