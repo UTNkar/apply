@@ -4,12 +4,19 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import AdminPasswordChangeForm as BaseAdminPasswordChangeForm
+from django.contrib.auth.forms import AdminUserCreationForm as BaseAdminUserCreationForm
+from django.contrib.auth.forms import ReadOnlyPasswordHashWidget as BaseReadOnlyPasswordHashWidget
+from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import action
+from unfold.widgets import UnfoldAdminPasswordToggleWidget
 
 from .models import (
     Application,
@@ -40,6 +47,38 @@ class AppointerTeamScopeMixin:
 
     def _is_appointer(self, user):
         return len(self._get_appointer_team_ids(user)) > 0
+
+    def _get_user_max_role_level(self, user):
+        """Return the highest privilege level (lowest number) the user holds as an appointer."""
+        if not user or not user.is_authenticated or user.is_superuser:
+            return 0
+
+        today = date.today()
+        user_role_levels = list(
+            Role.objects.filter(
+                positions__appointments__member=user,
+                positions__appointments__status=Appointment.APPOINTED,
+                positions__term_from__lte=today,
+                positions__term_end__gte=today,
+                role_type__in=Role.appointer_role_types(),
+            )
+            .values_list("role_type", flat=True)
+            .distinct()
+        )
+
+        if not user_role_levels:
+            return 6  # Not an appointer, no appointer roles accessible.
+
+        return min(Role.role_type_to_level(rt) for rt in user_role_levels)
+
+    def _allowed_role_types(self, user):
+        """Role types the user may create / appoint to: their own level or lower."""
+        user_level = self._get_user_max_role_level(user)
+        return [
+            rt
+            for rt, _ in Role.TYPE_CHOICES
+            if Role.role_type_to_level(rt) >= user_level
+        ]
 
     def get_team_filter(self, team_ids):
         return {}
@@ -101,6 +140,56 @@ class GroupAdmin(BaseGroupAdmin, ModelAdmin):
     list_filter_submit = True
 
 
+class MemberPasswordWidget(BaseReadOnlyPasswordHashWidget):
+    """Force render password widgett instead of using the default _render, which
+    would just output the HTML"""
+
+    def _render(self, template_name, context, renderer=None):
+        return mark_safe(render_to_string(template_name, context).strip())
+
+
+class MemberPasswordChangeForm(BaseAdminPasswordChangeForm):
+    """Admin change-password form for Member, applying Unfold styling to its
+    password inputs since they're unstyled by default.
+    """
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        for field_name in ("password1", "password2"):
+            field = self.fields.get(field_name)
+            if field is not None:
+                field.widget = UnfoldAdminPasswordToggleWidget(
+                    attrs={"autocomplete": "new-password"}
+                )
+
+
+class MemberChangeForm(BaseUserChangeForm):
+    """Change form for Member. Point the password field at the widget that
+    exposes a link to the change-password view."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        password = self.fields.get("password")
+        if password:
+            password.widget = MemberPasswordWidget()
+
+
+class MemberAddForm(BaseAdminUserCreationForm):
+    """The default AdminUserCreationForm declares password1/password2 with a
+    bare PasswordInput, so they bypass Unfold's formfield_overrides and render
+    unstyled. Point them at Unfold's password widget instead.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ("password1", "password2"):
+            field = self.fields.get(field_name)
+            if field is not None:
+                field.widget = UnfoldAdminPasswordToggleWidget(
+                    attrs={"autocomplete": "new-password"}
+                )
+
+
 @admin.register(Member)
 class MemberAdmin(BaseUserAdmin, ModelAdmin):
     """
@@ -110,6 +199,9 @@ class MemberAdmin(BaseUserAdmin, ModelAdmin):
     """
 
     model = Member
+    add_form = MemberAddForm
+    form = MemberChangeForm
+    change_password_form = MemberPasswordChangeForm
     list_display = (
         "ssn",
         "email",
@@ -126,7 +218,7 @@ class MemberAdmin(BaseUserAdmin, ModelAdmin):
     filter_horizontal = ("groups", "user_permissions")
 
     def has_add_permission(self, request):
-        return False
+        return request.user.is_superuser
 
     fieldsets = (
         (None, {"fields": ("ssn", "email", "password")}),
@@ -196,43 +288,12 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def display_teams(self, obj):
         return ", ".join(obj.teams.values_list("name_en", flat=True))
 
-    def _get_user_max_role_level(self, user):
-        """Return the highest privilege level (lowest number) the user holds as an appointer."""
-        if not user or not user.is_authenticated or user.is_superuser:
-            return 0
-
-        today = date.today()
-        appointer_types = Role.appointer_role_types()
-
-        user_role_levels = list(
-            Role.objects.filter(
-                positions__appointments__member=user,
-                positions__appointments__status=Appointment.APPOINTED,
-                positions__term_from__lte=today,
-                positions__term_end__gte=today,
-                role_type__in=appointer_types,
-            )
-            .values_list("role_type", flat=True)
-            .distinct()
-        )
-
-        if not user_role_levels:
-            return 6 # Not an appointer so no roles accessible
-
-        return min(Role.role_type_to_level(rt) for rt in user_role_levels)
-
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         if request.user.is_superuser:
             return queryset
 
-        user_level = self._get_user_max_role_level(request.user)
-        allowed_types = [
-            rt
-            for rt, _ in Role.TYPE_CHOICES
-            if Role.role_type_to_level(rt) >= user_level
-        ]
-        return queryset.filter(role_type__in=allowed_types)
+        return queryset.filter(role_type__in=self._allowed_role_types(request.user))
 
     def get_team_filter(self, team_ids):
         return {"teams__id__in": team_ids}
@@ -248,13 +309,12 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == "role_type" and not request.user.is_superuser:
-            user_level = self._get_user_max_role_level(request.user)
-            allowed_types = [
+            allowed_types = set(self._allowed_role_types(request.user))
+            kwargs["choices"] = [
                 (rt, label)
                 for rt, label in Role.TYPE_CHOICES
-                if Role.role_type_to_level(rt) >= user_level
+                if rt in allowed_types
             ]
-            kwargs["choices"] = allowed_types
         return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
@@ -282,7 +342,11 @@ class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "role":
             team_ids = self._get_appointer_team_ids(request.user)
-            kwargs["queryset"] = Role.objects.filter(teams__id__in=team_ids).distinct()
+            allowed_types = self._allowed_role_types(request.user)
+            kwargs["queryset"] = Role.objects.filter(
+                teams__id__in=team_ids,
+                role_type__in=allowed_types,
+            ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 class ReferenceInline(admin.TabularInline):
@@ -349,7 +413,24 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
         permissions=["change"],
     )
     def appoint_application(self, request, object_id):
-        application = Application.objects.select_related("position", "member").get(pk=object_id)
+        application = Application.objects.select_related(
+            "position", "member", "position__role"
+        ).get(pk=object_id)
+
+        if not request.user.is_superuser:
+            role_level = Role.role_type_to_level(application.position.role.role_type)
+            if role_level < self._get_user_max_role_level(request.user):
+                messages.error(
+                    request,
+                    _(
+                        "You can only appoint to roles at the same or lower "
+                        "level as your own."
+                    ),
+                )
+                return redirect(
+                    reverse("admin:backend_application_change", args=[object_id])
+                )
+
         application.status = Application.APPOINTED
         application.decision_date = date.today()
         application.save(update_fields=["status", "decision_date"])
@@ -387,8 +468,10 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
             team_ids = self._get_appointer_team_ids(request.user)
+            allowed_types = self._allowed_role_types(request.user)
             kwargs["queryset"] = Position.objects.filter(
-                role__teams__id__in=team_ids
+                role__teams__id__in=team_ids,
+                role__role_type__in=allowed_types,
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -415,8 +498,10 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
             team_ids = self._get_appointer_team_ids(request.user)
+            allowed_types = self._allowed_role_types(request.user)
             kwargs["queryset"] = Position.objects.filter(
-                role__teams__id__in=team_ids
+                role__teams__id__in=team_ids,
+                role__role_type__in=allowed_types,
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -425,19 +510,25 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
 
 
 @admin.register(Section)
-class SectionAdmin(admin.ModelAdmin):
+class SectionAdmin(ModelAdmin):
     list_display = ("abbreviation", "section_en", "section_sv")
     search_fields = ("abbreviation", "section_en", "section_sv")
     list_filter_submit = True
 
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
 
 @admin.register(StudyProgram)
-class StudyProgramAdmin(admin.ModelAdmin):
+class StudyProgramAdmin(ModelAdmin):
     list_display = ("name_en", "name_sv", "degree", "display_sections")
     search_fields = ("name_en", "name_sv", "sections__abbreviation")
     list_filter = ("sections", "degree")
     list_filter_submit = True
     filter_horizontal = ("sections",)
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
 
     @admin.display(description=_("Sections"))
     def display_sections(self, obj):

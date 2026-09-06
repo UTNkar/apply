@@ -307,22 +307,6 @@ class PositionSerializer(ModelSerializer):
         return status
 
 
-# TODO: Should be removed if we're considering django-admin for admin functionalities
-class CreatePositionSerializer(ModelSerializer):
-    class Meta:
-        model = Position
-        fields = [
-            "role",
-            "recruitment_start",
-            "recruitment_end",
-            "appointed",
-            "term_from",
-            "term_end",
-            "comment_eng",
-            "comment_sv",
-        ]
-
-
 class ReferenceNestedSerializer(ModelSerializer):
     """Nested serializer for references in application creation"""
 
