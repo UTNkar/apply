@@ -9,6 +9,7 @@ from django.contrib.auth.forms import AdminUserCreationForm as BaseAdminUserCrea
 from django.contrib.auth.forms import ReadOnlyPasswordHashWidget as BaseReadOnlyPasswordHashWidget
 from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from django.contrib.auth.models import Group
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -31,6 +32,102 @@ from .models import (
 )
 
 admin.site.unregister(Group)
+
+
+def _get_user_team_scopes(user):
+    """Return {team_id: {"max_level": best appointer level, "baseline": earliest appointment date}}.
+
+    A member appointed to presidium / group leader may only see applications for
+    positions in that team whose recruitment window ends on or after their
+    appointment date. Board+ appointers see all applications for the team.
+    Returns {} for anonymous / superuser users.
+    """
+    if not user or not user.is_authenticated or user.is_superuser:
+        return {}
+
+    today = date.today()
+    rows = (
+        Role.objects.filter(
+            positions__appointments__member=user,
+            positions__appointments__status=Appointment.APPOINTED,
+            positions__term_from__lte=today,
+            positions__term_end__gte=today,
+            role_type__in=Role.appointer_role_types(),
+        )
+        .values_list(
+            "teams__id",
+            "role_type",
+            "positions__appointments__appointed_date",
+        )
+        .distinct()
+    )
+
+    scopes = {}
+    for team_id, role_type, appointed_date in rows:
+        if team_id is None:
+            continue
+        scope = scopes.setdefault(team_id, {"max_level": 6, "baseline": None})
+        level = Role.role_type_to_level(role_type)
+        if level < scope["max_level"]:
+            scope["max_level"] = level
+        if appointed_date and (
+            scope["baseline"] is None or appointed_date < scope["baseline"]
+        ):
+            scope["baseline"] = appointed_date
+    return scopes
+
+
+def _application_viewable(application, scopes):
+    """Return True if `application` is visible to a user with the given team scopes.
+
+    Board+ level users see every application for the team. Presidium / group
+    leader users only see applications for positions whose recruitment window
+    ends on or after their appointment date.
+    """
+    board_level = Role.role_type_to_level(Role.BOARD)
+    team_ids = list(application.position.role.teams.values_list("id", flat=True))
+    recruitment_end = application.position.recruitment_end
+    for team_id in team_ids:
+        scope = scopes.get(team_id)
+        if not scope:
+            continue
+        if scope["max_level"] <= board_level:
+            return True
+        if (
+            scope["baseline"] is not None
+            and recruitment_end is not None
+            and recruitment_end >= scope["baseline"]
+        ):
+            return True
+    return False
+
+
+def _application_visibility_filter(scopes):
+    """Return a Q filter selecting applications visible to a user with the given
+    team scopes, or None when nothing is visible."""
+    board_level = Role.role_type_to_level(Role.BOARD)
+    visibility = Q()
+    has_condition = False
+    for team_id, scope in scopes.items():
+        if scope["max_level"] <= board_level:
+            visibility |= Q(position__role__teams=team_id)
+            has_condition = True
+        elif scope["baseline"] is not None:
+            visibility |= Q(
+                position__role__teams=team_id,
+                position__recruitment_end__gte=scope["baseline"],
+            )
+            has_condition = True
+    return visibility if has_condition else None
+
+
+def _application_any_viewable(scopes):
+    """Return True if the changelist is accessible given the user's team scopes."""
+    board_level = Role.role_type_to_level(Role.BOARD)
+    return any(
+        scope["max_level"] <= board_level or scope["baseline"] is not None
+        for scope in scopes.values()
+    )
 
 
 class AppointerTeamScopeMixin:
@@ -368,14 +465,14 @@ class ReferenceInline(admin.TabularInline):
         if request.user.is_superuser:
             return True
 
-        team_ids = self._get_appointer_team_ids(request.user)
-        if not team_ids:
+        scopes = _get_user_team_scopes(request.user)
+        if not scopes or not _application_any_viewable(scopes):
             return False
 
         if obj is None:
             return True
 
-        return obj.position.role.teams.filter(id__in=team_ids).exists()
+        return _application_viewable(obj, scopes)
 
     def has_view_permission(self, request, obj=None):
         return self._has_application_scope(request, obj)
@@ -406,6 +503,38 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+    def has_view_permission(self, request, obj=None):
+        """Users appointed to presidium / group leader only see applications
+        submitted from their appointment date onward. Board+ appointers and
+        superusers see all."""
+        if request.user.is_superuser:
+            return True
+
+        scopes = _get_user_team_scopes(request.user)
+        if not scopes or not _application_any_viewable(scopes):
+            return False
+
+        if obj is None:
+            return True
+        if not hasattr(obj, "_meta"):
+            obj = self.get_object(request, obj)
+            if obj is None:
+                return False
+
+        return _application_viewable(obj, scopes)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+
+        scopes = _get_user_team_scopes(request.user)
+        visibility = _application_visibility_filter(scopes)
+        if visibility is None:
+            return queryset.none()
+
+        return queryset.filter(visibility).distinct()
 
     @action(
         description=_("Appoint"),
