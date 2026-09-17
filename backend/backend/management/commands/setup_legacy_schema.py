@@ -7,6 +7,9 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+
+from backend.models import Member, _sync_staff_status
 
 """
 Before you run, set these variables:
@@ -186,6 +189,8 @@ class Command(BaseCommand):
                 ],
             )
 
+            self._sync_staff_statuses()
+
             self.stdout.write(self.style.NOTICE("Dropping legacy schema after migration..."))
             self._run(
                 env,
@@ -206,6 +211,37 @@ class Command(BaseCommand):
             self._run(env, ["dropdb", "--if-exists", scratch_db], allow_failure=True)
 
         self.stdout.write(self.style.SUCCESS("Legacy data migration completed successfully."))
+
+    def _sync_staff_statuses(self) -> None:
+        """Replicate the new-interface appointment side effects for the dump.
+
+        ``migrate.sql`` inserts the Appointment rows with raw SQL, so the
+        post_save/post_delete receivers that normally keep ``Member.is_staff``
+        in sync never fire. Applying ``_sync_staff_status`` to every member
+        leaves the migrated accounts in exactly the state they would be in if
+        each appointment had been made through the new admin interface.
+        """
+        self.stdout.write(
+            self.style.NOTICE("Syncing staff status from migrated appointments...")
+        )
+
+        updated = 0
+        with transaction.atomic():
+            for member in Member.objects.all():
+                was_staff = member.is_staff
+                _sync_staff_status(member)
+                if member.is_staff != was_staff:
+                    updated += 1
+                    self.stdout.write(
+                        f"  {member.name} ({member.ssn}): is_staff "
+                        f"{was_staff} -> {member.is_staff}"
+                    )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Staff status synced from appointments; {updated} member(s) updated."
+            )
+        )
 
     def _terminate_connections(self, env: dict, database_name: str) -> None:
         query = (
