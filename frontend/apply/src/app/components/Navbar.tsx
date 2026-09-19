@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { useIsLoggedIn } from "@/utils/auth";
+import { useIsLoggedIn, getAdminURL } from "@/utils/auth";
 import { useTranslation } from "react-i18next";
 import "@/i18n/config";
 import { setLanguageCookie } from "@/utils/language";
@@ -17,7 +17,7 @@ const Navbar = () => {
   const [mounted, setMounted] = useState(false);
 
   const pathname = usePathname();
-  const { isLoggedIn, loading } = useIsLoggedIn();
+  const { isLoggedIn, isStaff, loading } = useIsLoggedIn();
 
   useEffect(() => {
     setMounted(true);
@@ -37,7 +37,7 @@ const Navbar = () => {
 
   // Generate navigation links based on auth state
   const navLinks = useMemo(() => {
-    const links = [
+    const links: { href: string; label: string; external?: boolean }[] = [
       { href: "/", label: t("navbar.home") },
       { href: "/about", label: t("navbar.about") },
     ];
@@ -48,13 +48,22 @@ const Navbar = () => {
           { href: "/account", label: t("navbar.account") },
           { href: "/logout", label: t("navbar.logOut") }
         );
+
+        // Staff members can access the Django admin panel
+        if (isStaff) {
+          links.push({
+            href: getAdminURL(),
+            label: t("navbar.admin"),
+            external: true,
+          });
+        }
       } else {
         links.push({ href: "/login", label: t("navbar.login") });
       }
     }
 
     return links;
-  }, [isLoggedIn, loading, t]);
+  }, [isLoggedIn, isStaff, loading, t]);
 
   const handleLanguageChange = (newLang: string) => {
     setLang(newLang);
@@ -125,17 +134,23 @@ const Navbar = () => {
 
             {/* Desktop Navigation */}
             <div className={styles.navbarItems}>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`${styles.navLink} ${
-                    pathname === link.href ? styles.activeNavLink : ""
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const className = `${styles.navLink} ${
+                  !link.external && pathname === link.href
+                    ? styles.activeNavLink
+                    : ""
+                }`;
+
+                return link.external ? (
+                  <a key={link.href} href={link.href} className={className}>
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link key={link.href} href={link.href} className={className}>
+                    {link.label}
+                  </Link>
+                );
+              })}
               <LanguageButtons />
             </div>
           </>
@@ -155,18 +170,33 @@ const Navbar = () => {
           }`}
         >
           <div className={styles.mobileMenuContent}>
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`${styles.mobileNavLink} ${
-                  pathname === link.href ? styles.activeMobileNavLink : ""
-                }`}
-                onClick={closeMenu}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const className = `${styles.mobileNavLink} ${
+                !link.external && pathname === link.href
+                  ? styles.activeMobileNavLink
+                  : ""
+              }`;
+
+              return link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={className}
+                  onClick={closeMenu}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={className}
+                  onClick={closeMenu}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             <LanguageButtons mobile />
           </div>
         </div>
