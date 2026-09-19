@@ -1,5 +1,6 @@
 "use client";
 import { request, Method } from "@/utils/request";
+import { getAPIURL } from "@/utils/api";
 import { useState, useEffect } from "react";
 
 const URLs = Object.freeze({
@@ -17,20 +18,31 @@ const URLs = Object.freeze({
  * 
  * @returns Object containing:
  *   - isLoggedIn: boolean indicating if user is logged in
+ *   - isStaff: boolean indicating if the user may access the admin panel
  *   - loading: boolean indicating if the check is in progress
  *   - recheck: function to manually trigger a recheck
  */
 export function useIsLoggedIn() {
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+    const [isStaff, setIsStaff] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
 
     const checkLoginStatus = async () => {
         setLoading(true);
         try {
             const response = await request(Method.GET, "/account");
-            setIsLoggedIn(response.status === 200);
+            const loggedIn = response.status === 200;
+            setIsLoggedIn(loggedIn);
+
+            if (loggedIn) {
+                const account = await response.json();
+                setIsStaff(account?.is_staff === true);
+            } else {
+                setIsStaff(false);
+            }
         } catch {
             setIsLoggedIn(false);
+            setIsStaff(false);
         } finally {
             setLoading(false);
         }
@@ -46,7 +58,16 @@ export function useIsLoggedIn() {
         };
     }, []);
 
-    return { isLoggedIn, loading, recheck: checkLoginStatus };
+    return { isLoggedIn, isStaff, loading, recheck: checkLoginStatus };
+}
+
+/**
+ * Returns the URL to the Django admin panel, derived from the API URL.
+ *
+ * @returns The absolute or root-relative URL to the admin panel
+ */
+export function getAdminURL() {
+    return `${getAPIURL().replace(/\/api\/?$/, "")}/admin/`;
 }
 
 /**
