@@ -6,7 +6,7 @@ import TranslationProvider from "./i18n/TranslationProvider";
 
 export const metadata: Metadata = {
   title: "Apply",
-  description: "Application page for engagements in UTN",
+  description: "Application page for involvement in UTN",
 };
 
 export default async function RootLayout({
