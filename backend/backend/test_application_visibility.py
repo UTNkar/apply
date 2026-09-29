@@ -41,22 +41,59 @@ class ApplicationVisibilityTests(TestCase):
         )
         self.presidium_role.teams.add(self.team_b)
 
+        # Roles that sit below the appointer's own level. The scope model
+        # never lets an appointer see their own level (no horizontal access).
+        self.involved_a_role = Role.objects.create(
+            role_type=Role.INVOLVED,
+            title_en="Involved A",
+            title_sv="Involved A",
+            description_en="Involved role A",
+            description_sv="Involved roll A",
+            contact_email="involved-a@example.com",
+        )
+        self.involved_a_role.teams.add(self.team_a)
+        self.involved_b_role = Role.objects.create(
+            role_type=Role.INVOLVED,
+            title_en="Involved B",
+            title_sv="Involved B",
+            description_en="Involved role B",
+            description_sv="Involved roll B",
+            contact_email="involved-b@example.com",
+        )
+        self.involved_b_role.teams.add(self.team_b)
+
+        # Positions the appointer themselves holds (board in team A, presidium
+        # in team B).
         self.board_position = Position.objects.create(
             role=self.board_role,
             recruitment_end=date(2020, 6, 1),
             term_from=self.today - timedelta(days=100),
             term_end=self.today + timedelta(days=365),
         )
-        # Two presidium positions in team B: one whose recruitment ended before
-        # the appointment, one that ends after it.
-        self.presidium_position_old = Position.objects.create(
+        self.presidium_position = Position.objects.create(
             role=self.presidium_role,
             recruitment_end=date(2020, 6, 1),
             term_from=self.today - timedelta(days=100),
             term_end=self.today + timedelta(days=365),
         )
-        self.presidium_position_new = Position.objects.create(
-            role=self.presidium_role,
+
+        # Positions the appointer manages. Team A is board-owned (no date
+        # filter); team B has one position recruiting before the appointment and
+        # one after it.
+        self.involved_a_position = Position.objects.create(
+            role=self.involved_a_role,
+            recruitment_end=date(2020, 6, 1),
+            term_from=self.today - timedelta(days=100),
+            term_end=self.today + timedelta(days=365),
+        )
+        self.involved_b_position_old = Position.objects.create(
+            role=self.involved_b_role,
+            recruitment_end=date(2020, 6, 1),
+            term_from=self.today - timedelta(days=100),
+            term_end=self.today + timedelta(days=365),
+        )
+        self.involved_b_position_new = Position.objects.create(
+            role=self.involved_b_role,
             recruitment_end=date(2021, 6, 1),
             term_from=self.today - timedelta(days=100),
             term_end=self.today + timedelta(days=365),
@@ -83,7 +120,7 @@ class ApplicationVisibilityTests(TestCase):
         )
         Appointment.objects.create(
             member=self.user,
-            position=self.presidium_position_old,
+            position=self.presidium_position,
             appointed_by=self.user,
             appointed_date=self.presidium_base,
             status=Appointment.APPOINTED,
@@ -108,19 +145,19 @@ class ApplicationVisibilityTests(TestCase):
             ssn="19900101-4444",
         )
 
-        # Application for the board team (board+ users see all applications).
+        # Application for the board-owned team A (board+ users see all of it).
         self.app_a = Application.objects.create(
-            position=self.board_position,
+            position=self.involved_a_position,
             member=self.applicant_a,
             status=Application.SUBMITTED,
             cover_letter="cover A",
             qualifications="qual A",
             gdpr=True,
         )
-        # Applications in the presidium team for positions recruiting before/after
-        # the 2021 appointment.
+        # Applications in the presidium team B for positions recruiting
+        # before/after the 2021 appointment.
         self.app_b_before = Application.objects.create(
-            position=self.presidium_position_old,
+            position=self.involved_b_position_old,
             member=self.applicant_b,
             status=Application.SUBMITTED,
             cover_letter="cover B before",
@@ -128,7 +165,7 @@ class ApplicationVisibilityTests(TestCase):
             gdpr=True,
         )
         self.app_b_after = Application.objects.create(
-            position=self.presidium_position_new,
+            position=self.involved_b_position_new,
             member=self.applicant_c,
             status=Application.SUBMITTED,
             cover_letter="cover B after",
@@ -204,7 +241,7 @@ class ApplicationVisibilityTests(TestCase):
         )
         Appointment.objects.create(
             member=pres_only,
-            position=self.presidium_position_old,
+            position=self.presidium_position,
             appointed_by=self.user,
             appointed_date=self.presidium_base,
             status=Appointment.APPOINTED,
