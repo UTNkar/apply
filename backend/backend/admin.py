@@ -13,6 +13,7 @@ from django.db.models import Q
 from django.shortcuts import redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
@@ -128,66 +129,195 @@ def _application_any_viewable(scopes):
         scope["max_level"] <= board_level or scope["baseline"] is not None
         for scope in scopes.values()
     )
+def _current_appointer_roles(user):
+    """Return the user's currently held roles with appointer access."""
+    if not user or not user.is_authenticated:
+        return []
+
+    today = timezone.now().date()
+    return list(
+        Role.objects.filter(
+            positions__appointments__member=user,
+            positions__appointments__status=Appointment.APPOINTED,
+            positions__term_from__lte=today,
+            positions__term_end__gte=today,
+            role_type__in=Role.appointer_role_types(),
+        )
+        .prefetch_related("teams")
+        .distinct()
+    )
+
+
+def _strictly_below_role_types(level):
+    """Role types that sit strictly below the given level.
+
+    "Below" means a larger role level number. Involved is the lowest privilege.
+    Excluding the level prevents horizontal access. A board member will never see
+    or manage another board member's role.
+    """
+    return [
+        role_type
+        for role_type, _ in Role.TYPE_CHOICES
+        if Role.role_type_to_level(role_type) > level
+    ]
+
+
+def role_scope_q(user, prefix=""):
+    """Build the Q object (expressed over Role) that the user may see.
+
+    Rules:
+    - Superusers / the admin role type: everything.
+    - FUM (election committee): can only access roles flagged with fum_managed.
+      This is the special case that cuts across levels and teams.
+    - Board: everything strictly below board, organisation-wide, except
+      for roles flagged fum_managed.
+    - Presidium / group leaders: only roles strictly below their own level,
+      limited to the teams they belong to.
+
+    prefix lets the same filter be applied to related models, e.g.
+    "role__" for Position or "position__role__" for Application.
+    """
+    if not user or not user.is_authenticated:
+        return Q(pk__in=[])
+
+    # Superusers are not restricted at all.
+    if getattr(user, "is_superuser", False):
+        return Q()
+
+    roles = _current_appointer_roles(user)
+    if not roles:
+        return Q(pk__in=[])
+
+    # An admin-level appointer is not restricted at all.
+    if any(role.role_type == Role.ADMIN for role in roles):
+        return Q()
+
+    def field(lookup):
+        return f"{prefix}{lookup}" if prefix else lookup
+
+    scope = Q(**{field("pk__in"): []})
+    board_level = Role.role_type_to_level(Role.BOARD)
+
+    for role in roles:
+        if role.role_type == Role.FUM:
+            scope |= Q(**{field("fum_managed"): True})
+            continue
+
+        level = Role.role_type_to_level(role.role_type)
+        sub = Q(**{field("role_type__in"): _strictly_below_role_types(level)})
+        if level == board_level:
+            # Board must not touch what the election committee (FUM) owns.
+            sub &= ~Q(**{field("fum_managed"): True})
+        elif level > board_level:
+            # Presidium / group leaders only act within their own teams.
+            team_ids = list(role.teams.values_list("id", flat=True))
+            sub &= Q(**{field("teams__id__in"): team_ids})
+        scope |= sub
+
+    return scope
+
+
+def _previous_appointments_hidden_q(user):
+    """Q matching applications the user must not see because they predate their
+    own appointment, or None when nothing needs hiding.
+
+    Presidium / group leader appointers may not see applications for positions in
+    their team whose recruitment window closed before they were appointed (GDPR:
+    don't reveal who competed for their own role). Board+ appointers are not
+    affected. Expressed as a Q over Application.
+    """
+    scopes = _get_user_team_scopes(user)
+    board_level = Role.role_type_to_level(Role.BOARD)
+    hidden = None
+    for team_id, scope in scopes.items():
+        if scope["max_level"] <= board_level:
+            continue
+        baseline = scope["baseline"]
+        if baseline is not None:
+            condition = Q(
+                position__role__teams=team_id,
+                position__recruitment_end__lt=baseline,
+            )
+            hidden = condition if hidden is None else hidden | condition
+    return hidden
 
 
 class AppointerTeamScopeMixin:
-    """Restrict admin access to objects within the teams the appointer is a part of."""
+    """Level-based, non-horizontal admin access for appointers.
+
+    Access is derived from the role_type of the roles a member currently
+    holds, never from being on the same level as the object:
+
+    - Group leaders see/manage only involved roles within their own teams.
+    - Presidium sees/manages group leaders and involved roles in their teams.
+    - Board sees/manages everything strictly below board, organisation-wide,
+      except roles flagged fum_managed (the election committee owns those).
+    - FUM (election committee) is special and only sees/manages roles flagged
+      fum_managed.
+
+    No user can see or manage roles at their own level (no horizontal access)
+    except for FUM and superuser.
+    """
+
+    # Path from the admin's model to Role (e.g. "", "role", "position__role").
+    # Subclasses set this.
+    role_lookup = ""
 
     def _get_appointer_team_ids(self, user):
         if not user or not user.is_authenticated or user.is_superuser:
             return []
 
-        if hasattr(user, "get_appointer_team_ids"):
-            return user.get_appointer_team_ids()
-
-        return []
+        team_ids = set()
+        for role in _current_appointer_roles(user):
+            team_ids.update(role.teams.values_list("id", flat=True))
+        return list(team_ids)
 
     def _is_appointer(self, user):
-        return len(self._get_appointer_team_ids(user)) > 0
+        return bool(_current_appointer_roles(user))
 
     def _get_user_max_role_level(self, user):
-        """Return the highest privilege level (lowest number) the user holds as an appointer."""
+        """Return the highest privilege level (lowest number) the user holds."""
         if not user or not user.is_authenticated or user.is_superuser:
             return 0
 
-        today = date.today()
-        user_role_levels = list(
-            Role.objects.filter(
-                positions__appointments__member=user,
-                positions__appointments__status=Appointment.APPOINTED,
-                positions__term_from__lte=today,
-                positions__term_end__gte=today,
-                role_type__in=Role.appointer_role_types(),
-            )
-            .values_list("role_type", flat=True)
-            .distinct()
-        )
-
-        if not user_role_levels:
+        roles = _current_appointer_roles(user)
+        if not roles:
             return 6  # Not an appointer, no appointer roles accessible.
 
-        return min(Role.role_type_to_level(rt) for rt in user_role_levels)
+        return min(Role.role_type_to_level(role.role_type) for role in roles)
 
     def _allowed_role_types(self, user):
-        """Role types the user may create / appoint to: their own level or lower."""
-        user_level = self._get_user_max_role_level(user)
-        return [
-            rt
-            for rt, _ in Role.TYPE_CHOICES
-            if Role.role_type_to_level(rt) >= user_level
-        ]
+        """Role types the user may create / appoint to (strictly below own)."""
+        # Admin-level appointers are unrestricted.
+        if any(role.role_type == Role.ADMIN for role in _current_appointer_roles(user)):
+            return [role_type for role_type, _ in Role.TYPE_CHOICES]
 
-    def get_team_filter(self, team_ids):
-        return {}
+        return _strictly_below_role_types(self._get_user_max_role_level(user))
 
-    def get_object_team_ids(self, obj):
-        """Team ids an object belongs to (a role may now belong to several)."""
-        return []
+    def _is_org_wide(self, user):
+        """True when the user's scope spans the whole organisation.
+
+        Board, admin and FUM are organisation-wide, whereas presidium and group
+        leaders are restricted to their own teams.
+        """
+        board_level = Role.role_type_to_level(Role.BOARD)
+        return any(
+            role.role_type == Role.FUM
+            or Role.role_type_to_level(role.role_type) <= board_level
+            for role in _current_appointer_roles(user)
+        )
+
+    def get_scope_q(self, user, role_prefix=None):
+        """Scope Q object for the admin's model (or for role_prefix)."""
+        if role_prefix is None:
+            role_prefix = self.role_lookup
+        prefix = f"{role_prefix}__" if role_prefix else ""
+        return role_scope_q(user, prefix=prefix)
 
     def has_module_permission(self, request):
         return request.user.is_superuser or self._is_appointer(request.user)
 
-    def has_view_permission(self, request, obj=None):
+    def _has_scope(self, request, obj=None):
         if request.user.is_superuser:
             return True
         if not self._is_appointer(request.user):
@@ -198,8 +328,15 @@ class AppointerTeamScopeMixin:
             obj = self.get_object(request, obj)
             if obj is None:
                 return False
-        appointer_team_ids = set(self._get_appointer_team_ids(request.user))
-        return bool(set(self.get_object_team_ids(obj)) & appointer_team_ids)
+        return (
+            type(obj)
+            .objects.filter(pk=obj.pk)
+            .filter(self.get_scope_q(request.user))
+            .exists()
+        )
+
+    def has_view_permission(self, request, obj=None):
+        return self._has_scope(request, obj=obj)
 
     def has_add_permission(self, request):
         if request.user.is_superuser:
@@ -207,21 +344,23 @@ class AppointerTeamScopeMixin:
         return self._is_appointer(request.user)
 
     def has_change_permission(self, request, obj=None):
-        return self.has_view_permission(request, obj=obj)
+        return self._has_scope(request, obj=obj)
 
     def has_delete_permission(self, request, obj=None):
-        return self.has_view_permission(request, obj=obj)
+        return self._has_scope(request, obj=obj)
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         if request.user.is_superuser:
             return queryset
 
-        team_ids = self._get_appointer_team_ids(request.user)
-        if not team_ids:
-            return queryset.none()
+        return queryset.filter(self.get_scope_q(request.user)).distinct()
 
-        return queryset.filter(**self.get_team_filter(team_ids)).distinct()
+    def _application_in_scope(self, request, application):
+        """True when the given Application falls inside the user's scope."""
+        if request.user.is_superuser:
+            return True
+        return self.get_queryset(request).filter(pk=application.pk).exists()
 
     def delete_queryset(self, request, queryset):
         pk_list = list(queryset.values_list("pk", flat=True))
@@ -368,8 +507,17 @@ class TeamAdmin(ModelAdmin):
 
 @admin.register(Role)
 class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
-    list_display = ("title_en", "title_sv", "display_teams", "role_type", "archived")
-    list_filter = ("teams", "role_type", "archived")
+    role_lookup = ""
+
+    list_display = (
+        "title_en",
+        "title_sv",
+        "display_teams",
+        "role_type",
+        "fum_managed",
+        "archived",
+    )
+    list_filter = ("teams", "role_type", "fum_managed", "archived")
     search_fields = (
         "title_en",
         "title_sv",
@@ -385,21 +533,18 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def display_teams(self, obj):
         return ", ".join(obj.teams.values_list("name_en", flat=True))
 
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        if request.user.is_superuser:
-            return queryset
-
-        return queryset.filter(role_type__in=self._allowed_role_types(request.user))
-
-    def get_team_filter(self, team_ids):
-        return {"teams__id__in": team_ids}
-
-    def get_object_team_ids(self, obj):
-        return list(obj.teams.values_list("id", flat=True))
+    def get_form(self, request, obj=None, **kwargs):
+        # Remember the edited instance so the role_type choice field can keep
+        # its current value even when it sits outside the allowed types.
+        self._editing_obj = obj
+        return super().get_form(request, obj=obj, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if not request.user.is_superuser and db_field.name == "teams":
+        if (
+            not request.user.is_superuser
+            and db_field.name == "teams"
+            and not self._is_org_wide(request.user)
+        ):
             team_ids = self._get_appointer_team_ids(request.user)
             kwargs["queryset"] = Team.objects.filter(id__in=team_ids)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
@@ -407,6 +552,9 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == "role_type" and not request.user.is_superuser:
             allowed_types = set(self._allowed_role_types(request.user))
+            editing_obj = getattr(self, "_editing_obj", None)
+            if editing_obj is not None:
+                allowed_types.add(editing_obj.role_type)
             kwargs["choices"] = [
                 (rt, label)
                 for rt, label in Role.TYPE_CHOICES
@@ -417,6 +565,8 @@ class RoleAdmin(AppointerTeamScopeMixin, ModelAdmin):
 
 @admin.register(Position)
 class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
+    role_lookup = "role"
+
     list_display = (
         "role",
         "recruitment_start",
@@ -430,19 +580,10 @@ class PositionAdmin(AppointerTeamScopeMixin, ModelAdmin):
     list_filter_submit = True
     date_hierarchy = "recruitment_start"
 
-    def get_team_filter(self, team_ids):
-        return {"role__teams__id__in": team_ids}
-
-    def get_object_team_ids(self, obj):
-        return list(obj.role.teams.values_list("id", flat=True))
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "role":
-            team_ids = self._get_appointer_team_ids(request.user)
-            allowed_types = self._allowed_role_types(request.user)
             kwargs["queryset"] = Role.objects.filter(
-                teams__id__in=team_ids,
-                role_type__in=allowed_types,
+                self.get_scope_q(request.user, "")
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -452,27 +593,21 @@ class ReferenceInline(admin.TabularInline):
     readonly_fields = ("name", "phone_num", "title", "email", "comment")
     can_delete = False
 
-    def _get_appointer_team_ids(self, user):
-        if not user or not user.is_authenticated or user.is_superuser:
-            return []
-
-        if hasattr(user, "get_appointer_team_ids"):
-            return user.get_appointer_team_ids()
-
-        return []
-
     def _has_application_scope(self, request, obj=None):
         if request.user.is_superuser:
             return True
 
-        scopes = _get_user_team_scopes(request.user)
-        if not scopes or not _application_any_viewable(scopes):
-            return False
-
         if obj is None:
+            # The parent admin gates whether the changelist is reachable.
             return True
 
-        return _application_viewable(obj, scopes)
+        queryset = Application.objects.filter(pk=obj.pk).filter(
+            role_scope_q(request.user, "position__role__")
+        )
+        hidden = _previous_appointments_hidden_q(request.user)
+        if hidden is not None:
+            queryset = queryset.exclude(hidden)
+        return queryset.exists()
 
     def has_view_permission(self, request, obj=None):
         return self._has_application_scope(request, obj)
@@ -488,6 +623,8 @@ class ReferenceInline(admin.TabularInline):
 
 @admin.register(Application)
 class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
+    role_lookup = "position__role"
+
     list_display = ("position", "member", "status", "decision_date")
     list_filter = ("status", "position__role__teams")
     search_fields = (
@@ -504,17 +641,23 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    def has_view_permission(self, request, obj=None):
-        """Users appointed to presidium / group leader only see applications
-        submitted from their appointment date onward. Board+ appointers and
-        superusers see all."""
+    def get_queryset(self, request):
+        """Applications allowed by the level/FUM scope (from the mixin), minus
+        the ones that predate the user's own appointment (GDPR)."""
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+
+        hidden = _previous_appointments_hidden_q(request.user)
+        if hidden is not None:
+            queryset = queryset.exclude(hidden)
+        return queryset.distinct()
+
+    def _has_application_permission(self, request, obj=None):
         if request.user.is_superuser:
             return True
-
-        scopes = _get_user_team_scopes(request.user)
-        if not scopes or not _application_any_viewable(scopes):
+        if not self._is_appointer(request.user):
             return False
-
         if obj is None:
             return True
         if not hasattr(obj, "_meta"):
@@ -522,19 +665,16 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
             if obj is None:
                 return False
 
-        return _application_viewable(obj, scopes)
+        return self.get_queryset(request).filter(pk=obj.pk).exists()
 
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        if request.user.is_superuser:
-            return queryset
+    def has_view_permission(self, request, obj=None):
+        return self._has_application_permission(request, obj)
 
-        scopes = _get_user_team_scopes(request.user)
-        visibility = _application_visibility_filter(scopes)
-        if visibility is None:
-            return queryset.none()
+    def has_change_permission(self, request, obj=None):
+        return self._has_application_permission(request, obj)
 
-        return queryset.filter(visibility).distinct()
+    def has_delete_permission(self, request, obj=None):
+        return self._has_application_permission(request, obj)
 
     @action(
         description=_("Appoint"),
@@ -546,19 +686,14 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
             "position", "member", "position__role"
         ).get(pk=object_id)
 
-        if not request.user.is_superuser:
-            role_level = Role.role_type_to_level(application.position.role.role_type)
-            if role_level < self._get_user_max_role_level(request.user):
-                messages.error(
-                    request,
-                    _(
-                        "You can only appoint to roles at the same or lower "
-                        "level as your own."
-                    ),
-                )
-                return redirect(
-                    reverse("admin:backend_application_change", args=[object_id])
-                )
+        if not self._application_in_scope(request, application):
+            messages.error(
+                request,
+                _("You do not have permission to manage this application."),
+            )
+            return redirect(
+                reverse("admin:backend_application_change", args=[object_id])
+            )
 
         application.status = Application.APPOINTED
         application.decision_date = date.today()
@@ -582,31 +717,34 @@ class ApplicationAdmin(AppointerTeamScopeMixin, ModelAdmin):
     )
     def turn_down_application(self, request, object_id):
         application = Application.objects.get(pk=object_id)
+
+        if not self._application_in_scope(request, application):
+            messages.error(
+                request,
+                _("You do not have permission to manage this application."),
+            )
+            return redirect(
+                reverse("admin:backend_application_change", args=[object_id])
+            )
+
         application.status = Application.TURNED_DOWN
         application.decision_date = date.today()
         application.save(update_fields=["status", "decision_date"])
         messages.success(request, _("Application turned down."))
         return redirect(reverse("admin:backend_application_change", args=[object_id]))
 
-    def get_team_filter(self, team_ids):
-        return {"position__role__teams__id__in": team_ids}
-
-    def get_object_team_ids(self, obj):
-        return list(obj.position.role.teams.values_list("id", flat=True))
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
-            team_ids = self._get_appointer_team_ids(request.user)
-            allowed_types = self._allowed_role_types(request.user)
             kwargs["queryset"] = Position.objects.filter(
-                role__teams__id__in=team_ids,
-                role__role_type__in=allowed_types,
+                self.get_scope_q(request.user, "role")
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(Appointment)
 class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
+    role_lookup = "position__role"
+
     list_display = ("member", "position", "status", "appointed_date", "appointed_by")
     list_filter = ("status", "position__role__teams")
     search_fields = (
@@ -618,19 +756,10 @@ class AppointmentAdmin(AppointerTeamScopeMixin, ModelAdmin):
     list_filter_submit = True
     date_hierarchy = "appointed_date"
 
-    def get_team_filter(self, team_ids):
-        return {"position__role__teams__id__in": team_ids}
-
-    def get_object_team_ids(self, obj):
-        return list(obj.position.role.teams.values_list("id", flat=True))
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if not request.user.is_superuser and db_field.name == "position":
-            team_ids = self._get_appointer_team_ids(request.user)
-            allowed_types = self._allowed_role_types(request.user)
             kwargs["queryset"] = Position.objects.filter(
-                role__teams__id__in=team_ids,
-                role__role_type__in=allowed_types,
+                self.get_scope_q(request.user, "role")
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 

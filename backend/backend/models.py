@@ -721,6 +721,15 @@ class Role(models.Model):
         null=False,
     )
 
+    fum_managed = models.BooleanField(
+        default=False,
+        verbose_name=_("Managed by FUM"),
+        help_text=_(
+            "Whether the election committee (FUM) may see and manage "
+            "applications for this role"
+        ),
+    )
+
     @staticmethod
     def role_type_to_level(role_type):
         """
